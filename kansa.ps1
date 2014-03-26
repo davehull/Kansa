@@ -32,6 +32,22 @@ Param(
         [String]$OutputPath="OutputPath\"
 )
 
+# $sharename = "\\CONFIGURE\THIS"
+$sharename = ".\"
+# make a \bin\ dir in the share for latest version of Sysinternals autorunsc.exe and handle.exe 
+# available from http://technet.microsoft.com/en-us/sysinternals
+
+if ($sharename -match "CONFIGURE") {
+    Write-Host "`n[*] ERROR: You must edit the script and configure a share for the data to be written to, and for autorunsc.exe to be run from.`n"
+    Exit
+}
+
+#put autorunsc.exe, handle.exe in the following path
+$sharebin = $sharename + "\bin\"
+
+$zipfile = $temp + "\" + $this_computer + "_kansa.zip"
+$ErrorLog = $temp + "\" + $this_computer + "_error.log"
+
 Write-Debug "`$ModulePath is ${ModulePath}."
 Write-Debug "`$OutputPath is ${OutputPath}."
 
@@ -54,7 +70,7 @@ Param(
 )
     Write-Verbose "Entering $($MyInvocation.MyCommand)"
     Try {
-        ls -r $ModulePath
+        ls -r $ModulePath\*.ps1 | select name
     } Catch [Exception] {
         $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
         $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog

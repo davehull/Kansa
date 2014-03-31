@@ -22,6 +22,17 @@ An optional parameter that specifies the main output path. Each host's
 output will be written to subdirectories beneath the main output path.
 .EXAMPLE
 Kansa.ps1 -ModulePath .\Kansas -OutputPath .\AtlantaDataCenter\
+
+.NOTE
+In the absence of a configuration file, specifying which modules to run, 
+this script will use Invoke-Command to run each module across all hosts.
+The script queries Acitve Directory for a complete list of hosts, pings
+each of those hosts and if it receives a response, invokes each module
+on those hosts.
+
+Each module should write its output using Write-Output, this script
+will be responsible for writing that output to an appropriately named
+output file.
 #>
 
 [CmdletBinding()]
@@ -31,22 +42,6 @@ Param(
     [Parameter(Mandatory=$False,Position=1)]
         [String]$OutputPath="OutputPath\"
 )
-
-# $sharename = "\\CONFIGURE\THIS"
-$sharename = ".\"
-# make a \bin\ dir in the share for latest version of Sysinternals autorunsc.exe and handle.exe 
-# available from http://technet.microsoft.com/en-us/sysinternals
-
-if ($sharename -match "CONFIGURE") {
-    Write-Host "`n[*] ERROR: You must edit the script and configure a share for the data to be written to, and for autorunsc.exe to be run from.`n"
-    Exit
-}
-
-#put autorunsc.exe, handle.exe in the following path
-$sharebin = $sharename + "\bin\"
-
-$zipfile = $temp + "\" + $this_computer + "_kansa.zip"
-$ErrorLog = $temp + "\" + $this_computer + "_error.log"
 
 Write-Debug "`$ModulePath is ${ModulePath}."
 Write-Debug "`$OutputPath is ${OutputPath}."
@@ -76,5 +71,22 @@ Param(
         $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
     }
 }
+
+function Load-AD {
+    Write-Verbose "Entering $($MyInvocation.MyCommand)"
+    if (Get-Module -ListAvailable | ? { $_.Name -match "ActiveDirectory" }) {
+        try {
+            Import-Module ActiveDirectory -ErrorAction Stop | Out-Null
+        } catch {
+            Write-Error "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting."
+            exit
+        }
+    } else {
+        Write-Error "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting."
+        exit
+    }
+}
+
+Load-AD        
 
 Get-Modules $ModulePath

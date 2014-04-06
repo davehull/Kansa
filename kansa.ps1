@@ -3,12 +3,11 @@
 Kansa is the codename for the modular rewrite of Mal-Seine.
 .DESCRIPTION
 In this modular version of Mal-Seine, Kansa enumerates the available 
-modules, calls the main function of each user designated module, 
-redirects error and output information from the modules to their
-proper places.
+modules, calls the main function of each module and redirects error and 
+output information from the modules to their proper places.
 
 This script was written with the intention of avoiding the need for
-CredSSP, therefore the need for second-hops must be avoided.
+CredSSP, therefore "second-hops" must be avoided.
 
 The script requires Remote Server Administration Tools (RSAT). These
 are available from Microsoft's Download Center for Windows 7 and 8.
@@ -20,10 +19,17 @@ An optional parameter that specifies the path to the collector modules.
 .PARAMETER OutputPath
 An optional parameter that specifies the main output path. Each host's 
 output will be written to subdirectories beneath the main output path.
+.PARAMETER ServerList
+An optional list of servers from the current forest to collect data from.
+In the absence of this parameter, collection will be attempted against 
+all hosts in the current forest.
+.PARAMETER Transcribe
+An optional parameter that causes Start-Transcript to run at the start
+of the script, writing to OutputPath\yyyyMMddhhmmss.log
 .EXAMPLE
 Kansa.ps1 -ModulePath .\Kansas -OutputPath .\AtlantaDataCenter\
 
-.NOTE
+.NOTES
 In the absence of a configuration file, specifying which modules to run, 
 this script will use Invoke-Command to run each module across all hosts.
 The script queries Acitve Directory for a complete list of hosts, pings
@@ -40,53 +46,115 @@ Param(
     [Parameter(Mandatory=$False,Position=0)]
         [String]$ModulePath="Modules\",
     [Parameter(Mandatory=$False,Position=1)]
-        [String]$OutputPath="OutputPath\"
+        [String]$OutputPath="OutputPath\",
+    [Parameter(Mandatory=$False,Position=2)]
+        [String]$ServerList=$Null,
+    [Parameter(Mandatory=$False,Position=3)]
+        [Switch]$Transcribe
 )
+
+If ($Transcribe) {
+    $TransFile = $OutputPath + ([string] (Get-Date -Format yyyyMMddHHmmss)) + ".log"
+    $Suppress = Start-Transcript -Path $TransFile
+}
 
 Write-Debug "`$ModulePath is ${ModulePath}."
 Write-Debug "`$OutputPath is ${OutputPath}."
+Write-Debug "`$ServerList is ${ServerList}."
 
-if (-not (Test-Path($ModulePath))) {
-    Write-Error -Category InvalidArgument -Message "User supplied ModulePath, $ModulePath, was not found."
-    Exit
+function Check-Params {
+<#
+.SYNOPSIS
+Sanity check command line parameters. Throw an error and exit if problems are found.
+#>
+    Write-Debug "Entering $($MyInvocation.MyCommand)"
+    $Exit = $False
+    if (-not (Test-Path($ModulePath))) {
+        Write-Error -Category InvalidArgument -Message "User supplied ModulePath, $ModulePath, was not found."
+        $Exit = $True
+    }
+    if (-not (Test-Path($OutputPath))) {
+        Write-Error -Category InvalidArgument -Message "User supplied OutputPath, $OutputPath, was not found."
+        $Exit = $True
+    }
+    if ($ServerList -and -not (Test-Path($ServerList))) {
+        Write-Error -Category InvalidArgument -Message "User supplied ServerList, $ServerList, was not found."
+        $Exit = $True
+    }
+
+    if ($Exit) {
+        Write-Output "One or more errors were encountered with user supplied arguments. Exiting."
+        Exit-Script
+    }
+    Write-Debug "Exiting $($MyInvocation.MyCommand)"
 }
 
-if (-not (Test-Path($OutputPath))) {
-    Write-Error -Category InvalidArgument -Message "User supplied OutputPath, $OutputPath, was not found."
+function Exit-Script {
+<#
+.SYNOPSIS
+Exit the script somewhat gracefully, closing any open transcript.
+#>
+    if ($Transcribe) {
+        $Suppress = Stop-Transcript
+    }
     Exit
 }
 
 $ErrorLog = $OutputPath + "\Error.Log"
 
 function Get-Modules {
+<#
+.SYNOPSIS
+Returns a listing of availble modules from $ModulePath
+#>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
         [String]$ModulePath
 )
-    Write-Verbose "Entering $($MyInvocation.MyCommand)"
+    Write-Debug "Entering $($MyInvocation.MyCommand)"
     Try {
-        ls -r $ModulePath\*.ps1 | select name
+        Write-Output "Available modules:"
+        ls -r $ModulePath\*.ps1 | % { $_.Name } 
     } Catch [Exception] {
         $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
         $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
     }
+    Write-Debug "Exiting $($MyInvocation.MyCommand)"
 }
 
 function Load-AD {
-    Write-Verbose "Entering $($MyInvocation.MyCommand)"
-    if (Get-Module -ListAvailable | ? { $_.Name -match "ActiveDirectory" }) {
+    Write-Debug "Entering $($MyInvocation.MyCommand)"
+    if (Get-Module -ListAvailable | ? { $_.Name -match "ActiveDirectory" }){
         try {
             Import-Module ActiveDirectory -ErrorAction Stop | Out-Null
         } catch {
             Write-Error "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting."
-            exit
+            Exit-Script
         }
     } else {
         Write-Error "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting."
-        exit
+        Exit-Script
+    }
+    Write-Debug "Exiting $($MyInvocation.MyCommand)"
+}
+
+function Get-Forest {
+    Write-Debug "Entering $($MyInvocation.MyCommand)"
+    try {
+        (Get-ADForest).Name
+    } catch {
+        Write-Error "Get-Forest could not find current forest."
     }
 }
+
+Check-Params
 
 Load-AD        
 
 Get-Modules $ModulePath
+
+
+$forest = Get-Forest
+Write-Verbose "Forest is ${forest}."
+
+Exit-Script

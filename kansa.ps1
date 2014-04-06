@@ -68,7 +68,7 @@ Sanity check command line parameters. Throw an error and exit if problems are fo
         Write-Error -Category InvalidArgument -Message "User supplied OutputPath, $OutputPath, was not found."
         $Exit = $True
     }
-    if ($HostList -and -not (Test-Path($ServerList))) {
+    if ($HostList -and -not (Test-Path($HostList))) {
         Write-Error -Category InvalidArgument -Message "User supplied HostList, $HostList, was not found."
         $Exit = $True
     }
@@ -102,8 +102,9 @@ Param(
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     Try {
-        Write-Output "Available modules:"
-        ls -r $ModulePath\*.ps1 | % { $_.Name } 
+        $Modules = ls -r $ModulePath\*.ps1 | % { $_.Name } 
+        Write-Verbose "Available modules: ${Modules}"
+        $Modules 
     } Catch [Exception] {
         $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
         $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
@@ -184,14 +185,14 @@ Write-Debug "`$ServerList is ${ServerList}."
 
 Check-Params
 Load-AD        
-Get-Modules $ModulePath
-if (-not $ServerList) {
+$Modules = Get-Modules $ModulePath
+if (-not $HostList) {
     Write-Verbose "No HostList provided. Building one, this may take some time."
     $Forest = Get-Forest
     $Targets = Get-Targets
 } else {
     $Targets = gc $HostList
-    Write-Verbose "Targets are: ${Targets}"
+    Write-Verbose "Targets are: ${Targets}."
 }
 
 

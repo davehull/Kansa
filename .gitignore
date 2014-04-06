@@ -1,0 +1,3 @@
+# Never upload hostlist
+hostlist
+!.gitignore

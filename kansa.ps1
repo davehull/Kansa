@@ -48,19 +48,10 @@ Param(
     [Parameter(Mandatory=$False,Position=1)]
         [String]$OutputPath="Output\",
     [Parameter(Mandatory=$False,Position=2)]
-        [String]$ServerList=$Null,
+        [String]$HostList=$Null,
     [Parameter(Mandatory=$False,Position=3)]
         [Switch]$Transcribe
 )
-
-If ($Transcribe) {
-    $TransFile = $OutputPath + ([string] (Get-Date -Format yyyyMMddHHmmss)) + ".log"
-    $Suppress = Start-Transcript -Path $TransFile
-}
-
-Write-Debug "`$ModulePath is ${ModulePath}."
-Write-Debug "`$OutputPath is ${OutputPath}."
-Write-Debug "`$ServerList is ${ServerList}."
 
 function Check-Params {
 <#
@@ -77,8 +68,8 @@ Sanity check command line parameters. Throw an error and exit if problems are fo
         Write-Error -Category InvalidArgument -Message "User supplied OutputPath, $OutputPath, was not found."
         $Exit = $True
     }
-    if ($ServerList -and -not (Test-Path($ServerList))) {
-        Write-Error -Category InvalidArgument -Message "User supplied ServerList, $ServerList, was not found."
+    if ($HostList -and -not (Test-Path($ServerList))) {
+        Write-Error -Category InvalidArgument -Message "User supplied HostList, $HostList, was not found."
         $Exit = $True
     }
 
@@ -99,8 +90,6 @@ Exit the script somewhat gracefully, closing any open transcript.
     }
     Exit
 }
-
-$ErrorLog = $OutputPath + "\Error.Log"
 
 function Get-Modules {
 <#
@@ -141,14 +130,28 @@ function Load-AD {
 function Get-Forest {
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     try {
-        (Get-ADForest).Name
+        $Forest = (Get-ADForest -ErrorAction Stop).Name
+        Write-Verbose "Forest is ${forest}."
+        $Forest
     } catch {
         Write-Error "Get-Forest could not find current forest."
+        Exit-Script
     }
 }
 
 function Get-Targets {
-    $Targets = Get-ADComputer -Filter | Select-Object Name
+    Write-Debug "Entering $($MyInvocation.MyCommand)"
+    Try {
+        $Targets = Get-ADComputer -Filter * | Select-Object -ExpandProperty Name
+        Write-Verbose "`$Targets are ${Targets}."
+        $Targets
+    } Catch [Exception] {
+        $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
+        $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
+        Write-Error "Get-Targets failed. See $Errorlog for details. Quitting."
+        Exit-Script
+    }
+    Write-Debug "Exiting $($MyInvocation.MyCommand)"
 }
 
 function FuncTemplate {
@@ -164,18 +167,32 @@ Param(
     Try {
         <# code goes here #>
     } Catch [Exception] {
-        <# handle exception #>
+        $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
+        $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
 
+If ($Transcribe) {
+    $TransFile = $OutputPath + ([string] (Get-Date -Format yyyyMMddHHmmss)) + ".log"
+    $Suppress = Start-Transcript -Path $TransFile
+}
+$ErrorLog = $OutputPath + "\Error.Log"
+Write-Debug "`$ModulePath is ${ModulePath}."
+Write-Debug "`$OutputPath is ${OutputPath}."
+Write-Debug "`$ServerList is ${ServerList}."
+
 Check-Params
-
 Load-AD        
-
 Get-Modules $ModulePath
+if (-not $ServerList) {
+    Write-Verbose "No HostList provided. Building one, this may take some time."
+    $Forest = Get-Forest
+    $Targets = Get-Targets
+} else {
+    $Targets = gc $HostList
+    Write-Verbose "Targets are: ${Targets}"
+}
 
-$forest = Get-Forest
-Write-Verbose "Forest is ${forest}."
 
 Exit-Script

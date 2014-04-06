@@ -25,7 +25,7 @@ In the absence of this parameter, collection will be attempted against
 all hosts in the current forest.
 .PARAMETER Transcribe
 An optional parameter that causes Start-Transcript to run at the start
-of the script, writing to OutputPath\yyyyMMddhhmmss.log
+of the script, writing to $OutputPath\yyyyMMddhhmmss.log
 .EXAMPLE
 Kansa.ps1 -ModulePath .\Kansas -OutputPath .\AtlantaDataCenter\
 
@@ -46,7 +46,7 @@ Param(
     [Parameter(Mandatory=$False,Position=0)]
         [String]$ModulePath="Modules\",
     [Parameter(Mandatory=$False,Position=1)]
-        [String]$OutputPath="OutputPath\",
+        [String]$OutputPath="Output\",
     [Parameter(Mandatory=$False,Position=2)]
         [String]$ServerList=$Null,
     [Parameter(Mandatory=$False,Position=3)]
@@ -147,12 +147,33 @@ function Get-Forest {
     }
 }
 
+function Get-Targets {
+    $Targets = Get-ADComputer -Filter | Select-Object Name
+}
+
+function FuncTemplate {
+<#
+.SYNOPSIS
+Default function template, copy when making new function
+#>
+Param(
+    [Parameter(Mandatory=$False,Position=0)]
+        [String]$ParamTemplate=$Null
+)
+    Write-Debug "Entering $($MyInvocation.MyCommand)"
+    Try {
+        <# code goes here #>
+    } Catch [Exception] {
+        <# handle exception #>
+    }
+    Write-Debug "Exiting $($MyInvocation.MyCommand)"    
+}
+
 Check-Params
 
 Load-AD        
 
 Get-Modules $ModulePath
-
 
 $forest = Get-Forest
 Write-Verbose "Forest is ${forest}."

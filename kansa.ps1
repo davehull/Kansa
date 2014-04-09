@@ -9,6 +9,9 @@ output information from the modules to their proper places.
 This script was written with the intention of avoiding the need for
 CredSSP, therefore "second-hops" must be avoided.
 
+The script assumes you will have administrator level privileges on
+target hosts, though such privileges may not be required by all modules.
+
 The script requires Remote Server Administration Tools (RSAT). These
 are available from Microsoft's Download Center for Windows 7 and 8.
 You can search for RSAT at:
@@ -19,16 +22,21 @@ An optional parameter that specifies the path to the collector modules.
 .PARAMETER OutputPath
 An optional parameter that specifies the main output path. Each host's 
 output will be written to subdirectories beneath the main output path.
-.PARAMETER ServerList
+.PARAMETER HostList
 An optional list of servers from the current forest to collect data from.
 In the absence of this parameter, collection will be attempted against 
 all hosts in the current forest.
+.PARAMETER Credential
+An optional credential that the script will use for execution. Use the
+$Credential = Get-Credential convention to populate a suitable variable.
 .PARAMETER Transcribe
 An optional parameter that causes Start-Transcript to run at the start
 of the script, writing to $OutputPath\yyyyMMddhhmmss.log
-.EXAMPLE
-Kansa.ps1 -ModulePath .\Kansas -OutputPath .\AtlantaDataCenter\
-
+.INPUTS
+None
+You cannot pipe objects to this cmdlet
+.OUTPUTS
+Various and sundry.
 .NOTES
 In the absence of a configuration file, specifying which modules to run, 
 this script will use Invoke-Command to run each module across all hosts.
@@ -39,6 +47,18 @@ on those hosts.
 Each module should write its output using Write-Output, this script
 will be responsible for writing that output to an appropriately named
 output file.
+.EXAMPLE
+Kansa.ps1 -ModulePath .\Kansas -OutputPath .\AtlantaDataCenter\
+In the above example the user has specified the module path and a path
+for the tool's output. Note that error logging and transcriptions (if
+specified using -transcribe) are written to the output path. Kansa will
+query active directory for a list of targets in the current forest.
+.EXAMPLE
+Kansa.ps1 -ModulePath .\Modules -HostList hosts.txt -Credential $Credential -Transcribe -Verbose
+In this example the user has specified a module path, a list of hosts to
+target, a user credential under which to execute. The -Transcribe and 
+-Verbose flags are also supplied causing all script output to be written
+to a transcript and for the script to be more verbose.
 #>
 
 [CmdletBinding()]
@@ -50,6 +70,8 @@ Param(
     [Parameter(Mandatory=$False,Position=2)]
         [String]$HostList=$Null,
     [Parameter(Mandatory=$False,Position=3)]
+        [String]$Credential=$Null,
+    [Parameter(Mandatory=$False,Position=4)]
         [Switch]$Transcribe
 )
 
@@ -178,7 +200,7 @@ If ($Transcribe) {
     $TransFile = $OutputPath + ([string] (Get-Date -Format yyyyMMddHHmmss)) + ".log"
     $Suppress = Start-Transcript -Path $TransFile
 }
-$ErrorLog = $OutputPath + "\Error.Log"
+$ErrorLog = $OutputPath + "Error.Log"
 Write-Debug "`$ModulePath is ${ModulePath}."
 Write-Debug "`$OutputPath is ${OutputPath}."
 Write-Debug "`$ServerList is ${ServerList}."

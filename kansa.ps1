@@ -22,10 +22,12 @@ An optional parameter that specifies the path to the collector modules.
 .PARAMETER OutputPath
 An optional parameter that specifies the main output path. Each host's 
 output will be written to subdirectories beneath the main output path.
-.PARAMETER HostList
+.PARAMETER TargetList
 An optional list of servers from the current forest to collect data from.
 In the absence of this parameter, collection will be attempted against 
 all hosts in the current forest.
+.PARAMETER TargetCount
+An optional parameter that specifies the maximum number of targets.
 .PARAMETER Credential
 An optional credential that the script will use for execution. Use the
 $Credential = Get-Credential convention to populate a suitable variable.
@@ -54,7 +56,7 @@ for the tool's output. Note that error logging and transcriptions (if
 specified using -transcribe) are written to the output path. Kansa will
 query active directory for a list of targets in the current forest.
 .EXAMPLE
-Kansa.ps1 -ModulePath .\Modules -HostList hosts.txt -Credential $Credential -Transcribe -Verbose
+Kansa.ps1 -ModulePath .\Modules -TargetList hosts.txt -Credential $Credential -Transcribe -Verbose
 In this example the user has specified a module path, a list of hosts to
 target, a user credential under which to execute. The -Transcribe and 
 -Verbose flags are also supplied causing all script output to be written
@@ -68,10 +70,12 @@ Param(
     [Parameter(Mandatory=$False,Position=1)]
         [String]$OutputPath="Output\",
     [Parameter(Mandatory=$False,Position=2)]
-        [String]$HostList=$Null,
+        [String]$TargetList=$Null,
     [Parameter(Mandatory=$False,Position=3)]
-        [String]$Credential=$Null,
+        [int]$TargetCount=0,
     [Parameter(Mandatory=$False,Position=4)]
+        [String]$Credential=$Null,
+    [Parameter(Mandatory=$False,Position=5)]
         [Switch]$Transcribe
 )
 
@@ -90,11 +94,14 @@ Sanity check command line parameters. Throw an error and exit if problems are fo
         Write-Error -Category InvalidArgument -Message "User supplied OutputPath, $OutputPath, was not found."
         $Exit = $True
     }
-    if ($HostList -and -not (Test-Path($HostList))) {
-        Write-Error -Category InvalidArgument -Message "User supplied HostList, $HostList, was not found."
+    if ($TargetList -and -not (Test-Path($TargetList))) {
+        Write-Error -Category InvalidArgument -Message "User supplied TargetList, $TargetList, was not found."
         $Exit = $True
     }
-
+    if ($TargetCount -lt 0) {
+        Write-Error -Category InvalidArgument -Message "User supplied TargetCount, $TargetCount, was negative."
+        $Exit = $True
+    }
     if ($Exit) {
         Write-Output "One or more errors were encountered with user supplied arguments. Exiting."
         Exit-Script
@@ -163,11 +170,33 @@ function Get-Forest {
 }
 
 function Get-Targets {
+Param(
+    [Parameter(Mandatory=$False,Position=0)]
+        [String]$TargetList=$Null,
+    [Parameter(Mandatory=$False,Position=1)]
+        [int]$TargetCount=0
+)
     Write-Debug "Entering $($MyInvocation.MyCommand)"
-    Try {
-        $Targets = Get-ADComputer -Filter * | Select-Object -ExpandProperty Name
+    if ($TargetList) {
+        if ($TargetCount -eq 0) {
+            $Targets = Get-Content $TargetList
+        } else {
+            $Targets = Get-Content $TargetList -TotalCount $TargetCount
+        }
         Write-Verbose "`$Targets are ${Targets}."
-        $Targets
+        return $Targets
+    } 
+        
+    Try {
+        Write-Verbose "`$TargetCount is ${TargetCount}."
+        if ($TargetCount -eq 0 -or $TargetCount -eq $Null) {
+            $Targets = Get-ADComputer -Filter * | Select-Object -ExpandProperty Name
+        } else {
+            $Targets = Get-ADComputer -Filter * -ResultSetSize $TargetCount | `
+                Select-Object -ExpandProperty Name
+        }
+        Write-Verbose "`$Targets are ${Targets}."
+        return $Targets
     } Catch [Exception] {
         $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
         $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
@@ -195,6 +224,8 @@ Param(
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
+<# End FuncTemplate #>
+
 
 If ($Transcribe) {
     $TransFile = $OutputPath + ([string] (Get-Date -Format yyyyMMddHHmmss)) + ".log"
@@ -203,19 +234,12 @@ If ($Transcribe) {
 $ErrorLog = $OutputPath + "Error.Log"
 Write-Debug "`$ModulePath is ${ModulePath}."
 Write-Debug "`$OutputPath is ${OutputPath}."
-Write-Debug "`$ServerList is ${ServerList}."
+Write-Debug "`$ServerList is ${TargetList}."
 
 Check-Params
 Load-AD        
 $Modules = Get-Modules $ModulePath
-if (-not $HostList) {
-    Write-Verbose "No HostList provided. Building one, this may take some time."
-    $Forest = Get-Forest
-    $Targets = Get-Targets
-} else {
-    $Targets = gc $HostList
-    Write-Verbose "Targets are: ${Targets}."
-}
-
+$Targets = Get-Targets $TargetList $TargetCount
+Write-Verbose "Targets are: ${Targets}."
 
 Exit-Script

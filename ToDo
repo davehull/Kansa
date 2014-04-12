@@ -1,1 +1,2 @@
 1. Automate some quick analysis over results (i.e. compare file sizes, number of lines)
+2. Add some check for $Credential to Check-Params

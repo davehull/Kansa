@@ -41,14 +41,32 @@ You cannot pipe objects to this cmdlet
 Various and sundry.
 .NOTES
 In the absence of a configuration file, specifying which modules to run, 
-this script will use Invoke-Command to run each module across all hosts.
+this script will run each module across all hosts.
+
+Each module should write its output using Write-Output, this script
+will write that output to an appropriately named output file that will
+include the hostname-modulename.extension.
+
+Modules can specify their output file extensions on their first line using
+the following syntax:
+
+$Ext = ".tsv"
+
+The default file extension, if one is not provided, is ".txt".
+
+Because modules should only collect data from remote hosts, their filenames
+must begin with "Get-". Examples:
+Get-PrefetchListing.ps1
+Get-Netstat.ps1
+
+Any module not beginning with "Get-" will be ignored. When data is output,
+the "Get-" is removed in the output filename.
+
+
 The script queries Acitve Directory for a complete list of hosts, pings
 each of those hosts and if it receives a response, invokes each module
 on those hosts.
 
-Each module should write its output using Write-Output, this script
-will be responsible for writing that output to an appropriately named
-output file.
 .EXAMPLE
 Kansa.ps1 -ModulePath .\Kansas -OutputPath .\AtlantaDataCenter\
 In the above example the user has specified the module path and a path
@@ -74,7 +92,7 @@ Param(
     [Parameter(Mandatory=$False,Position=3)]
         [int]$TargetCount=0,
     [Parameter(Mandatory=$False,Position=4)]
-        [String]$Credential=$Null,
+        [PSCredential]$Credential=$Null,
     [Parameter(Mandatory=$False,Position=5)]
         [Switch]$Transcribe
 )
@@ -122,6 +140,7 @@ Sanity check command line parameters. Throw an error and exit if problems are fo
         Write-Error -Category InvalidArgument -Message "User supplied TargetCount, $TargetCount, was negative."
         $Exit = $True
     }
+    #TKTK Add test for $Credential
     if ($Exit) {
         Write-Output "One or more errors were encountered with user supplied arguments. Exiting."
         Exit-Script
@@ -136,6 +155,9 @@ Exit the script somewhat gracefully, closing any open transcript.
 #>
     if ($Transcribe) {
         $Suppress = Stop-Transcript
+    }
+    if (Test-Path($ErrorLog)) {
+        Write-Output "Script completed with errors. See ${ErrorLog} for details."
     }
     Exit
 }
@@ -152,7 +174,7 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     Write-Debug "`$ModulePath is ${ModulePath}."
     Try {
-        $Modules = ls -r $ModulePath\*.ps1
+        $Modules = ls -r $ModulePath\Get-*.ps1 -ErrorAction Stop
         Write-Verbose "Available modules: $($Modules | Select-Object -ExpandProperty Name)"
         $Modules
     } Catch [Exception] {
@@ -166,7 +188,7 @@ function Load-AD {
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     if (Get-Module -ListAvailable | ? { $_.Name -match "ActiveDirectory" }){
         try {
-            Import-Module ActiveDirectory -ErrorAction Stop | Out-Null
+            Import-Module ActiveDirectory -ErrorAction Stop #| Out-Null
         } catch {
             Write-Error "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting."
             Exit-Script
@@ -211,9 +233,10 @@ Param(
     Try {
         Write-Verbose "`$TargetCount is ${TargetCount}."
         if ($TargetCount -eq 0 -or $TargetCount -eq $Null) {
-            $Targets = Get-ADComputer -Filter * | Select-Object -ExpandProperty Name
+            $Targets = Get-ADComputer -Filter * -ErrorAction Stop | `
+                Select-Object -ExpandProperty Name 
         } else {
-            $Targets = Get-ADComputer -Filter * -ResultSetSize $TargetCount | `
+            $Targets = Get-ADComputer -Filter * -ResultSetSize $TargetCount -ErrorAction Stop | `
                 Select-Object -ExpandProperty Name
         }
         Write-Verbose "`$Targets are ${Targets}."
@@ -243,16 +266,26 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     foreach($Target in $Targets) {
         foreach($Module in $Modules) {
-            Invoke-Command -ComputerName $Target -FilePath $Module
+            $ExtLine = gc $Module -TotalCount 1
+            if ($ExtLine -match '\$Ext\s*=\s*(.*)') {
+                $Extension = $Matches[1] -replace "`""
+                if (!$Extension.StartsWith(".")) {
+                    $Extension = "." + $Extension
+                }
+            } else {
+                $Extension = ".txt"
+            }
+            $ModuleName = $Module | Select-Object -ExpandProperty BaseName
+            $Outfile = $OutputPath + $Target + "-" + $($ModuleName -Replace "Get-") + $Extension
+            Write-Debug "`$Outfile is ${Outfile}."
+            Try {
+                Invoke-Command -ComputerName $Target -FilePath $Module -ErrorAction Stop | `
+                    Set-Content -Encoding Ascii -Path $Outfile -ErrorAction Stop
+            } Catch [Exception] {
+                $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
+                $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
+            }
         }
-    }
-    Try {
-        
-        
-
-    } Catch [Exception] {
-        $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
-        $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
@@ -264,6 +297,10 @@ If ($Transcribe) {
     $Suppress = Start-Transcript -Path $TransFile
 }
 $ErrorLog = $OutputPath + "Error.Log"
+if (Test-Path($ErrorLog)) {
+    Remove-Item -Path $ErrorLog
+}
+
 Write-Debug "`$ModulePath is ${ModulePath}."
 Write-Debug "`$OutputPath is ${OutputPath}."
 Write-Debug "`$ServerList is ${TargetList}."
@@ -278,6 +315,8 @@ if (!$TargetList) {
 }
 
 $Modules = Get-Modules -ModulePath $ModulePath
+
+Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential
 
 
 

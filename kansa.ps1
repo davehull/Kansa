@@ -237,9 +237,15 @@ Write-Debug "`$OutputPath is ${OutputPath}."
 Write-Debug "`$ServerList is ${TargetList}."
 
 Check-Params
-Load-AD        
-$Modules = Get-Modules $ModulePath
-$Targets = Get-Targets $TargetList $TargetCount
-Write-Verbose "Targets are: ${Targets}."
+if (!$TargetList) {
+    Write-Verbose "No TargetList specified. Building one requires RAST and will take some time."
+    Load-AD
+    Get-Targets -TargetCount $TargetCount
+} else {
+    $Targets = Get-Targets -TargetList $TargetList -TargetCount $TargetCount
+}
+
+$Modules = Get-Modules -ModulePath $ModulePath
+
 
 Exit-Script

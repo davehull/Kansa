@@ -79,6 +79,26 @@ Param(
         [Switch]$Transcribe
 )
 
+function FuncTemplate {
+<#
+.SYNOPSIS
+Default function template, copy when making new function
+#>
+Param(
+    [Parameter(Mandatory=$False,Position=0)]
+        [String]$ParamTemplate=$Null
+)
+    Write-Debug "Entering $($MyInvocation.MyCommand)"
+    Try {
+        <# code goes here #>
+    } Catch [Exception] {
+        $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
+        $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
+    }
+    Write-Debug "Exiting $($MyInvocation.MyCommand)"    
+}
+<# End FuncTemplate #>
+
 function Check-Params {
 <#
 .SYNOPSIS
@@ -130,10 +150,11 @@ Param(
         [String]$ModulePath
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
+    Write-Debug "`$ModulePath is ${ModulePath}."
     Try {
-        $Modules = ls -r $ModulePath\*.ps1 | % { $_.Name } 
-        Write-Verbose "Available modules: ${Modules}"
-        $Modules 
+        $Modules = ls -r $ModulePath\*.ps1
+        Write-Verbose "Available modules: $($Modules | Select-Object -ExpandProperty Name)"
+        $Modules
     } Catch [Exception] {
         $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
         $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
@@ -206,25 +227,36 @@ Param(
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
 }
 
-function FuncTemplate {
+function Get-TargetData {
 <#
 .SYNOPSIS
-Default function template, copy when making new function
+Runs each specified module against each specified target.
 #>
 Param(
-    [Parameter(Mandatory=$False,Position=0)]
-        [String]$ParamTemplate=$Null
+    [Parameter(Mandatory=$True,Position=0)]
+        [Array]$Targets,
+    [Parameter(Mandatory=$True,Position=1)]
+        [Array]$Modules,
+    [Parameter(Mandatory=$False,Position=2)]
+        [PSCredential]$Credential=$False
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
+    foreach($Target in $Targets) {
+        foreach($Module in $Modules) {
+            Invoke-Command -ComputerName $Target -FilePath $Module
+        }
+    }
     Try {
-        <# code goes here #>
+        
+        
+
     } Catch [Exception] {
         $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
         $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
-<# End FuncTemplate #>
+
 
 
 If ($Transcribe) {
@@ -246,6 +278,7 @@ if (!$TargetList) {
 }
 
 $Modules = Get-Modules -ModulePath $ModulePath
+
 
 
 Exit-Script

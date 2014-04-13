@@ -3,3 +3,4 @@
 3. Rewrite netstat module to return objects so it works correctly with Export-Csv
 4. Add module configuration support, allow users to specify the order of collection as well as specific modules
 5. Add support for $Credential
+6. Finish porting all existing collectors in Mal-Seine

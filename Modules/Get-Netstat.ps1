@@ -1,8 +1,11 @@
-﻿$Ext = ".tsv"
+﻿# OUTPUT txt
 <#
 .SYNOPSIS
 Get-Netstat.ps1 acquires netstat -naob output and reformats on the 
 target as tsv output.
+ToDo: Output from this module is tab delimited text. Need to rewrite it so
+it works with the OUTPUT tsv directive. I think that means returning objects
+rather than text.
 #>
 
 function Get-AddrPort {

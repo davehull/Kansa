@@ -1,4 +1,4 @@
-﻿$Ext = ".txt"
+﻿# OUTPUT txt
 <#
 .SYNOPSIS
 Get-DNSCache.ps1 acquires DNS cache entries from the target host.

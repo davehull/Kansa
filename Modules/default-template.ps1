@@ -1,13 +1,34 @@
-﻿$Ext = ".txt"
+﻿# OUTPUT txt
 <#
 .SYNOPSIS
 Default module template
-Put the file extension for your output inside the quotes on the first line
-Output from the module should be written using Write-Output or just sent
-to the pipeline, the calling script will handle writing the output to a
-file.
 
-Because modules are only intended to be used to collect data, they should
-be named according to the verb-noun convention, in this case "Get-Data.ps1"
-where "Data" is the element your script is written to collect.
+Q. How does a module tell the caller how to handle its output?
+A. By placing a comment on the FIRST line of the module like one of the 
+following:
+# OUTPUT csv
+# OUTPUT tsv
+# OUTPUT txt
+# OUTPUT xml
+
+Q. Can't I place the OUTPUT directive on line two?
+A. Not if you want it to work correctly. OUTPUT directives shall only
+be honored if they are on the first line of the module. Be they on line
+two or three or greater, they shall not be enforced.
+
+Q. What if a module doesn't specify its output?
+A. The caller will assume the output is text and pipe it to a text file.
+
+Q. Are there naming requirements for modules?
+A. Yes. because modules are intended only to gather data, they must be 
+named according to Powershell's verb-noun convention. Examples:
+Get-PrefetchListing.ps1
+Get-DNSCache.ps1
+Get-Prox.ps1
+
+Q. Any other requirements?
+A. Many modules assume they will be run with administrator privileges,
+Get-Netstat.ps1, for example. Interestingly, Get-Netstat.ps1 will run
+without admin privs, but it won't provide the output that the analyst 
+wanted.
 #>

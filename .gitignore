@@ -1,3 +1,4 @@
 # Never upload hostlist
 hostlist*
+test
 !.gitignore

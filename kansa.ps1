@@ -266,21 +266,44 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     foreach($Target in $Targets) {
         foreach($Module in $Modules) {
-            $ExtLine = gc $Module -TotalCount 1
-            if ($ExtLine -match '\$Ext\s*=\s*(.*)') {
-                $Extension = $Matches[1] -replace "`""
-                if (!$Extension.StartsWith(".")) {
-                    $Extension = "." + $Extension
-                }
-            } else {
-                $Extension = ".txt"
-            }
             $ModuleName = $Module | Select-Object -ExpandProperty BaseName
-            $Outfile = $OutputPath + $Target + "-" + $($ModuleName -Replace "Get-") + $Extension
+            $Outfile = $OutputPath + $Target + "-" + `
+                $($ModuleName -Replace "Get-")
+            $OutputMethod = gc $Module -TotalCount 1
+            switch -Wildcard ($OutputMethod) {
+                "*csv" {
+                    $Outfile = $Outfile + ".csv"
+                    $OutputScriptBlock = { 
+                        Invoke-Command -ComputerName $Target -FilePath $Module -ErrorAction Stop | `
+                            Export-Csv -NoTypeInformation $Outfile 
+                    }
+                }
+                "*tsv" {
+                    $Outfile = $Outfile + ".tsv"
+                    $OutputScriptBlock = { 
+                        Invoke-Command -ComputerName $Target -FilePath $Module -ErrorAction Stop | `
+                            Export-Csv -NoTypeInformation -Delimiter "`t" $Outfile 
+                    }
+                }
+                "*xml" {
+                    $Outfile = $Outfile + ".xml"
+                    $OutputScriptBlock = { 
+                        Invoke-Command -ComputerName $Target -FilePath $Module -ErrorAction Stop | `
+                            Export-Clixml $Outfile 
+                    }
+                }
+                default {
+                    $Outfile = $Outfile + ".txt"
+                    $OutputScriptBlock = { 
+                        Invoke-Command -ComputerName $Target -FilePath $Module -ErrorAction Stop | `
+                            Set-Content -Encoding Ascii $Outfile 
+                    }
+                }
+            }
+            $OutScriptBlock = [scriptblock]::Create($OutputScriptBlock)
             Write-Debug "`$Outfile is ${Outfile}."
             Try {
-                Invoke-Command -ComputerName $Target -FilePath $Module -ErrorAction Stop | `
-                    Set-Content -Encoding Ascii -Path $Outfile -ErrorAction Stop
+                & $OutScriptBlock
             } Catch [Exception] {
                 $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
                 $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog

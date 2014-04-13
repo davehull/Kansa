@@ -1,4 +1,4 @@
-﻿$Ext = ".txt"
+﻿# OUTPUT txt
 <#
 .SYNOPSIS
 Get listing of prefetch files

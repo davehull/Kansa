@@ -274,29 +274,33 @@ Param(
                 "*csv" {
                     $Outfile = $Outfile + ".csv"
                     $OutputScriptBlock = { 
-                        Invoke-Command -ComputerName $Target -FilePath $Module -ErrorAction Stop | `
-                            Export-Csv -NoTypeInformation $Outfile 
+                        Invoke-Command -ComputerName $Target -FilePath $Module `
+                            -SessionOption (New-PSSessionOption -NoMachineProfile) -ErrorAction Stop | `
+                                Export-Csv -NoTypeInformation $Outfile 
                     }
                 }
                 "*tsv" {
                     $Outfile = $Outfile + ".tsv"
                     $OutputScriptBlock = { 
-                        Invoke-Command -ComputerName $Target -FilePath $Module -ErrorAction Stop | `
-                            Export-Csv -NoTypeInformation -Delimiter "`t" $Outfile 
+                        Invoke-Command -ComputerName $Target -FilePath $Module `
+                            -SessionOption (New-PSSessionOption -NoMachineProfile) -ErrorAction Stop | `
+                                Export-Csv -NoTypeInformation -Delimiter "`t" $Outfile 
                     }
                 }
                 "*xml" {
                     $Outfile = $Outfile + ".xml"
                     $OutputScriptBlock = { 
-                        Invoke-Command -ComputerName $Target -FilePath $Module -ErrorAction Stop | `
-                            Export-Clixml $Outfile 
+                        Invoke-Command -ComputerName $Target -FilePath $Module `
+                            -SessionOption (New-PSSessionOption -NoMachineProfile) -ErrorAction Stop | `
+                                Export-Clixml $Outfile 
                     }
                 }
                 default {
                     $Outfile = $Outfile + ".txt"
                     $OutputScriptBlock = { 
-                        Invoke-Command -ComputerName $Target -FilePath $Module -ErrorAction Stop | `
-                            Set-Content -Encoding Ascii $Outfile 
+                        Invoke-Command -ComputerName $Target -FilePath $Module `
+                            -SessionOption (New-PSSessionOption -NoMachineProfile) -ErrorAction Stop | `
+                                Set-Content -Encoding Ascii $Outfile 
                     }
                 }
             }

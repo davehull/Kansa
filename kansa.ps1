@@ -273,7 +273,7 @@ Param(
             switch -Wildcard ($OutputMethod) {
                 "*csv" {
                     $Outfile = $Outfile + ".csv"
-                    $OutputScriptBlock = { 
+                    $InvokeScriptBlock = { 
                         Invoke-Command -ComputerName $Target -FilePath $Module `
                             -SessionOption (New-PSSessionOption -NoMachineProfile) -ErrorAction Stop | `
                                 Export-Csv -NoTypeInformation $Outfile 
@@ -281,7 +281,7 @@ Param(
                 }
                 "*tsv" {
                     $Outfile = $Outfile + ".tsv"
-                    $OutputScriptBlock = { 
+                    $InvokeScriptBlock = { 
                         Invoke-Command -ComputerName $Target -FilePath $Module `
                             -SessionOption (New-PSSessionOption -NoMachineProfile) -ErrorAction Stop | `
                                 Export-Csv -NoTypeInformation -Delimiter "`t" $Outfile 
@@ -289,7 +289,7 @@ Param(
                 }
                 "*xml" {
                     $Outfile = $Outfile + ".xml"
-                    $OutputScriptBlock = { 
+                    $InvokeScriptBlock = { 
                         Invoke-Command -ComputerName $Target -FilePath $Module `
                             -SessionOption (New-PSSessionOption -NoMachineProfile) -ErrorAction Stop | `
                                 Export-Clixml $Outfile 
@@ -297,17 +297,16 @@ Param(
                 }
                 default {
                     $Outfile = $Outfile + ".txt"
-                    $OutputScriptBlock = { 
+                    $InvokeScriptBlock = { 
                         Invoke-Command -ComputerName $Target -FilePath $Module `
                             -SessionOption (New-PSSessionOption -NoMachineProfile) -ErrorAction Stop | `
                                 Set-Content -Encoding Ascii $Outfile 
                     }
                 }
             }
-            $OutScriptBlock = [scriptblock]::Create($OutputScriptBlock)
             Write-Debug "`$Outfile is ${Outfile}."
             Try {
-                & $OutScriptBlock
+                & $InvokeScriptBlock
             } Catch [Exception] {
                 $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
                 $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog

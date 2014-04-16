@@ -1,0 +1,4 @@
+# Never upload supporting binaries
+# Directory is used for things like Sysinternals Autoruns, Handle, etc.
+*
+!.gitignore

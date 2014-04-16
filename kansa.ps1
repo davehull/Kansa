@@ -94,6 +94,8 @@ Param(
     [Parameter(Mandatory=$False,Position=4)]
         [PSCredential]$Credential=$Null,
     [Parameter(Mandatory=$False,Position=5)]
+        [switch]$Ping,
+    [Parameter(Mandatory=$False,Position=6)]
         [Switch]$Transcribe
 )
 
@@ -116,37 +118,6 @@ Param(
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
 <# End FuncTemplate #>
-
-function Check-Params {
-<#
-.SYNOPSIS
-Sanity check command line parameters. Throw an error and exit if problems are found.
-#>
-    Write-Debug "Entering $($MyInvocation.MyCommand)"
-    $Exit = $False
-    if (-not (Test-Path($ModulePath))) {
-        Write-Error -Category InvalidArgument -Message "User supplied ModulePath, $ModulePath, was not found."
-        $Exit = $True
-    }
-    if (-not (Test-Path($OutputPath))) {
-        Write-Error -Category InvalidArgument -Message "User supplied OutputPath, $OutputPath, was not found."
-        $Exit = $True
-    }
-    if ($TargetList -and -not (Test-Path($TargetList))) {
-        Write-Error -Category InvalidArgument -Message "User supplied TargetList, $TargetList, was not found."
-        $Exit = $True
-    }
-    if ($TargetCount -lt 0) {
-        Write-Error -Category InvalidArgument -Message "User supplied TargetCount, $TargetCount, was negative."
-        $Exit = $True
-    }
-    #TKTK Add test for $Credential
-    if ($Exit) {
-        Write-Output "One or more errors were encountered with user supplied arguments. Exiting."
-        Exit-Script
-    }
-    Write-Debug "Exiting $($MyInvocation.MyCommand)"
-}
 
 function Exit-Script {
 <#
@@ -175,7 +146,7 @@ Param(
     Write-Debug "`$ModulePath is ${ModulePath}."
     Try {
         $Modules = ls -r $ModulePath\Get-*.ps1 -ErrorAction Stop
-        Write-Verbose "Available modules: $($Modules | Select-Object -ExpandProperty Name)"
+        Write-Verbose "Available modules: $($Modules | Select-Object -ExpandProperty BaseName)"
         $Modules
     } Catch [Exception] {
         $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
@@ -264,74 +235,138 @@ Param(
         [PSCredential]$Credential=$False
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
-    foreach($Target in $Targets) {
-        foreach($Module in $Modules) {
-            $ModuleName = $Module | Select-Object -ExpandProperty BaseName
-            $Outfile = $OutputPath + $Target + "-" + `
-                $($ModuleName -Replace "Get-")
-            $OutputMethod = gc $Module -TotalCount 1
+
+    Try {
+        $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile) `
+            -ErrorAction Stop
+    } Catch [Exception] {
+        $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
+        $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
+    }
+
+    foreach($Module in $Modules) {
+        $ModuleName = $Module | Select-Object -ExpandProperty BaseName
+        $OutputMethod = Get-Content $Module -TotalCount 1
+        $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ErrorAction Stop -AsJob
+        Write-Verbose "Waiting for $ModuleName to complete."
+        Wait-Job $Job
+        $Recpts = Receive-Job $Job
+
+        foreach($Recpt in $Recpts) {
+            $Outfile = $OutputPath + $Recpt.PSComputerName + "-" + $($ModuleName -Replace "Get-")
             switch -Wildcard ($OutputMethod) {
                 "*csv" {
                     $Outfile = $Outfile + ".csv"
-                    $InvokeScriptBlock = { 
-                        Invoke-Command -ComputerName $Target -FilePath $Module `
-                            -SessionOption (New-PSSessionOption -NoMachineProfile) -ErrorAction Stop | `
-                                Export-Csv -NoTypeInformation $Outfile 
-                    }
+                    $Recpt | Export-Csv -NoTypeInformation $Outfile
                 }
                 "*tsv" {
                     $Outfile = $Outfile + ".tsv"
-                    $InvokeScriptBlock = { 
-                        Invoke-Command -ComputerName $Target -FilePath $Module `
-                            -SessionOption (New-PSSessionOption -NoMachineProfile) -ErrorAction Stop | `
-                                Export-Csv -NoTypeInformation -Delimiter "`t" $Outfile 
-                    }
+                    $Recpt | Export-Csv -NoTypeInformation -Delimiter "`t" $Outfile
                 }
                 "*xml" {
                     $Outfile = $Outfile + ".xml"
-                    $InvokeScriptBlock = { 
-                        Invoke-Command -ComputerName $Target -FilePath $Module `
-                            -SessionOption (New-PSSessionOption -NoMachineProfile) -ErrorAction Stop | `
-                                Export-Clixml $Outfile 
-                    }
+                    $Recpt | Export-Clixml $Outfile
                 }
                 default {
                     $Outfile = $Outfile + ".txt"
-                    $InvokeScriptBlock = { 
-                        Invoke-Command -ComputerName $Target -FilePath $Module `
-                            -SessionOption (New-PSSessionOption -NoMachineProfile) -ErrorAction Stop | `
-                                Set-Content -Encoding Ascii $Outfile 
-                    }
+                    $Recpt | Add-Content -Encoding Ascii $Outfile
                 }
             }
-            Write-Debug "`$Outfile is ${Outfile}."
-            Try {
-                & $InvokeScriptBlock
-            } Catch [Exception] {
-                $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
-                $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
-            }
+
         }
     }
+    Remove-PSSession $PSSessions
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
 
+function Push-Bindep {
+<#
+.SYNOPSIS
+Attempts to copy required binary, $bindep to $Target.
+#>
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [String]$Bindep,
+    [Parameter(Mandatory=$True,Position=1)]
+        [System.Management.Automation.Runspace.PSSession]$PSSession,
+    [Parameter(Mandatory=$True,Position=2)]
+        [String]$Target
+)
+    Write-Debug "Entering $($MyInvocation.MyCommand)"
+    Write-Verbose "Attempting push to ${$Target}..."
+    Try {
+        $BindepShare = $False
+        $RemoteShares = Invoke-Command { net share } -Session $PSSession -ErrorAction Stop
+        if ($RemoteShares -match "ADMIN\$") {
+            Write-Verbose "Found ADMIN`$ share on ${Target}."
+            $BindepShare = Invoke-Command { $env:SystemRoot } -session $PSSession -ErrorAction Stop
+            Copy-Item "$ModulePath\bin\$bindep" "\\$Target\ADMIN$\$bindep" -ErrorAction Stop
+        } else {
+            Write-Verbose "No ADMIN`$ share on ${Target}. Can't push ${Bindep} to ${Target}."
+            # Todo: add support for alternate, default shares.
+            $BindepShare = $False
+        }            
+    } Catch [Exception] {
+        $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
+        $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
+    }
+    $BindepShare
+    Write-Debug "Exiting $($MyInvocation.MyCommand)"    
+}
 
+# Sanity check parameters
+Write-Debug "Sanity checking parameters"
+$Exit = $False
+if (-not (Test-Path($ModulePath))) {
+    Write-Error -Category InvalidArgument -Message "User supplied ModulePath, $ModulePath, was not found."
+    $Exit = $True
+}
+if (-not (Test-Path($OutputPath))) {
+    Write-Error -Category InvalidArgument -Message "User supplied OutputPath, $OutputPath, was not found."
+    $Exit = $True
+} else {
+    if (-not $OutputPath.EndsWith("\")) {
+        $OutputPath = $OutputPath + "\"
+        $OutputPath
+    }
+}
+if ($TargetList -and -not (Test-Path($TargetList))) {
+    Write-Error -Category InvalidArgument -Message "User supplied TargetList, $TargetList, was not found."
+    $Exit = $True
+}
+if ($TargetCount -lt 0) {
+    Write-Error -Category InvalidArgument -Message "User supplied TargetCount, $TargetCount, was negative."
+    $Exit = $True
+}
+#TKTK Add test for $Credential
+if ($Exit) {
+    Write-Output "One or more errors were encountered with user supplied arguments. Exiting."
+    Exit-Script
+}
+Write-Debug "Parameter sanity check complete."
+# End paramter sanity check
 
 If ($Transcribe) {
     $TransFile = $OutputPath + ([string] (Get-Date -Format yyyyMMddHHmmss)) + ".log"
     $Suppress = Start-Transcript -Path $TransFile
 }
 $ErrorLog = $OutputPath + "Error.Log"
+
 if (Test-Path($ErrorLog)) {
     Remove-Item -Path $ErrorLog
+}
+
+if ($Ping) {
+    $Ping = $True
+} else {
+    $Ping = $False
 }
 
 Write-Debug "`$ModulePath is ${ModulePath}."
 Write-Debug "`$OutputPath is ${OutputPath}."
 Write-Debug "`$ServerList is ${TargetList}."
 
-Check-Params
+
 if (!$TargetList) {
     Write-Verbose "No TargetList specified. Building one requires RAST and will take some time."
     Load-AD
@@ -343,7 +378,5 @@ if (!$TargetList) {
 $Modules = Get-Modules -ModulePath $ModulePath
 
 Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential
-
-
 
 Exit-Script

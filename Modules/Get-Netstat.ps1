@@ -81,7 +81,7 @@ if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]:
             $LocalAddress, $LocalPort = Get-AddrPort($LocalAddress)
             $ForeignAddress, $ForeignPort = Get-AddrPort($ForeignAddress)
             $o = "" | Select-Object Protocol, LocalAddress, LocalPort, ForeignAddress, ForeignPort, State, PId
-            $o.Protocol, $o.LocalAddress, $o.LocalPort, $o.ForeignAddress, $o.ForeignPort, $o.State, $o.PId= `
+            $o.Protocol, $o.LocalAddress, $o.LocalPort, $o.ForeignAddress, $o.ForeignPort, $o.State, $o.PId = `
                 $Protocol, $LocalAddress, $LocalPort, $ForeignAddress, $ForeignPort, $State, $Pid
             $o
         }

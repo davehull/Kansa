@@ -248,17 +248,17 @@ Param(
         $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ErrorAction Stop -AsJob
         Write-Verbose "Waiting for $ModuleName to complete."
         Wait-Job $Job
-        $Recpts = Receive-Job $Job
-        foreach($Recpt in $Recpts) {
-            $Outfile = $OutputPath + $Recpt.PSComputerName + "-" + $($ModuleName -Replace "Get-")
+        foreach($ChildJob in $Job.ChildJobs) { 
+            $Recpt = Receive-Job $ChildJob
+            $Outfile = $OutputPath + $ChildJob.Location + "-" + $($ModuleName -Replace "Get-")
             switch -Wildcard ($OutputMethod) {
                 "*csv" {
                     $Outfile = $Outfile + ".csv"
-                    $Recpt | Export-Csv -NoTypeInformation $Outfile -Append
+                    $Recpt | Export-Csv -NoTypeInformation $Outfile
                 }
                 "*tsv" {
                     $Outfile = $Outfile + ".tsv"
-                    $Recpt | Export-Csv -NoTypeInformation -Delimiter "`t" $Outfile -Append
+                    $Recpt | Export-Csv -NoTypeInformation -Delimiter "`t" $Outfile
                 }
                 "*xml" {
                     $Outfile = $Outfile + ".xml"
@@ -269,7 +269,6 @@ Param(
                     $Recpt | Add-Content -Encoding Ascii $Outfile
                 }
             }
-
         }
     }
     Remove-PSSession $PSSessions

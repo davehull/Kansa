@@ -236,42 +236,42 @@ Param(
 
     Try {
         $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile) `
-            -ErrorAction Stop
+            -ErrorAction SilentlyContinue
+
+        foreach($Module in $Modules) {
+            $ModuleName = $Module | Select-Object -ExpandProperty BaseName
+            $OutputMethod = Get-Content $Module -TotalCount 1
+            $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ErrorAction SilentlyContinue -AsJob
+            Write-Verbose "Waiting for $ModuleName to complete."
+            Wait-Job $Job -ErrorAction SilentlyContinue
+            foreach($ChildJob in $Job.ChildJobs) { 
+                $Recpt = Receive-Job $ChildJob -ErrorAction SilentlyContinue
+                $Outfile = $OutputPath + $ChildJob.Location + "-" + $($ModuleName -Replace "Get-")
+                switch -Wildcard ($OutputMethod) {
+                    "*csv" {
+                        $Outfile = $Outfile + ".csv"
+                        $Recpt | Export-Csv -NoTypeInformation $Outfile
+                    }
+                    "*tsv" {
+                        $Outfile = $Outfile + ".tsv"
+                        $Recpt | Export-Csv -NoTypeInformation -Delimiter "`t" $Outfile
+                    }
+                    "*xml" {
+                        $Outfile = $Outfile + ".xml"
+                        $Recpt | Export-Clixml $Outfile
+                    }
+                    default {
+                        $Outfile = $Outfile + ".txt"
+                        $Recpt | Add-Content -Encoding Ascii $Outfile
+                    }
+                }
+            }
+        }
+        Remove-PSSession $PSSessions -ErrorAction SilentlyContinue
     } Catch [Exception] {
         $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
         $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
     }
-
-    foreach($Module in $Modules) {
-        $ModuleName = $Module | Select-Object -ExpandProperty BaseName
-        $OutputMethod = Get-Content $Module -TotalCount 1
-        $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ErrorAction Stop -AsJob
-        Write-Verbose "Waiting for $ModuleName to complete."
-        Wait-Job $Job
-        foreach($ChildJob in $Job.ChildJobs) { 
-            $Recpt = Receive-Job $ChildJob
-            $Outfile = $OutputPath + $ChildJob.Location + "-" + $($ModuleName -Replace "Get-")
-            switch -Wildcard ($OutputMethod) {
-                "*csv" {
-                    $Outfile = $Outfile + ".csv"
-                    $Recpt | Export-Csv -NoTypeInformation $Outfile
-                }
-                "*tsv" {
-                    $Outfile = $Outfile + ".tsv"
-                    $Recpt | Export-Csv -NoTypeInformation -Delimiter "`t" $Outfile
-                }
-                "*xml" {
-                    $Outfile = $Outfile + ".xml"
-                    $Recpt | Export-Clixml $Outfile
-                }
-                default {
-                    $Outfile = $Outfile + ".txt"
-                    $Recpt | Add-Content -Encoding Ascii $Outfile
-                }
-            }
-        }
-    }
-    Remove-PSSession $PSSessions
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
 

@@ -191,9 +191,9 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     if ($TargetList) {
         if ($TargetCount -eq 0) {
-            $Targets = Get-Content $TargetList
+            $Targets = Get-Content $TargetList | % { $_.Trim() } | Where-Object { $_.Length -gt 0 }
         } else {
-            $Targets = Get-Content $TargetList -TotalCount $TargetCount
+            $Targets = Get-Content $TargetList | % { $_.Trim() } | Where-Object { $_.Length -gt 0 } | Select-Object -First $TargetCount
         }
         Write-Verbose "`$Targets are ${Targets}."
         return $Targets

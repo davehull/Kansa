@@ -42,7 +42,7 @@ foreach($line in $data) {
     } elseif ($line -match "(START SERVICE|STOP SERVICE)") {
         if ($ServiceName -and $Action -and $Condition) {
             $o = "" | Select-Object ServiceName, Action, Condition, Value
-            $o.ServiceName, $o.Action, $o.Condition, $o.Value, $o.ComputerName = (($ServiceName,$Action,$Condition,$Value) -replace "False", $null)
+            $o.ServiceName, $o.Action, $o.Condition, $o.Value = (($ServiceName,$Action,$Condition,$Value) -replace "False", $null)
             $o
         }
         $Action = ($matches[1])

@@ -14,7 +14,7 @@ included with Kansa.
 #>
 
 if (Test-Path "$env:SystemRoot\Autorunsc.exe") {
-    & $env:SystemRoot\Autorunsc.exe /accepteula -a -v -c -f '*'
+    & $env:SystemRoot\Autorunsc.exe /accepteula -a -v -c -f '*' 2> $null
 } else {
     Write-Error "Autorunsc.exe not found in $env:SystemRoot."
 }

@@ -142,8 +142,24 @@ Param(
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     Write-Debug "`$ModulePath is ${ModulePath}."
+    $Modules = $FoundModules = @()
     Try {
-        $Modules = ls -r $ModulePath\Get-*.ps1 -ErrorAction Stop
+        $ModConf = $ModulePath + "\" + "Modules.conf"
+        if (Test-Path($Modconf)) {
+            Write-Verbose "Found ${ModulePath}\Modules.conf."
+            $Modules = Get-Content $ModulePath\Modules.conf -ErrorAction Stop | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
+            foreach ($Module in $Modules) {
+                $Modpath = $ModulePath + "\" + $Module
+                if (!(Test-Path($Modpath))) {
+                    Write-Error "Could not find module specified in ${ModulePath}\Modules.conf: $Module. Quitting."
+                    Exit-Script
+                }
+                $FoundModules += ls $ModPath   
+            }
+            $Modules = $FoundModules
+        } else {
+            $Modules = ls -r $ModulePath\Get-*.ps1 -ErrorAction Stop
+        }
         Write-Verbose "Available modules: $($Modules | Select-Object -ExpandProperty BaseName)"
         $Modules
     } Catch [Exception] {

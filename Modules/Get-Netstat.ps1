@@ -1,4 +1,4 @@
-﻿# OUTPUT txt
+﻿# OUTPUT tsv
 <#
 .SYNOPSIS
 Get-Netstat.ps1 acquires netstat -naob output and reformats on the 
@@ -28,7 +28,6 @@ Param(
 if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
 # If run as admin, collect Component and Process names in addition to other data.
     $netstatScriptBlock = { & $env:windir\system32\netstat.exe -naob }
-    ("Protocol","LocalAddress","LocalPort","ForeignAddress","ForeignPort","State","PId","Component","Process") -join "`t"
     foreach($line in $(& $netstatScriptBlock)) {
         if ($line.length -gt 1 -and $line -notmatch "Active |Proto ") {
             $line = $line.trim()
@@ -58,7 +57,11 @@ if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]:
             if ($Component -and $Process) {
                 $LocalAddress, $LocalPort = Get-AddrPort($LocalAddress)
                 $ForeignAddress, $ForeignPort = Get-AddrPort($ForeignAddress)
-                ($Protocol, $LocalAddress, $LocalPort, $ForeignAddress, $ForeignPort, $State, $ConPid, $Component, $Process) -join "`t"
+
+                $o = "" | Select-Object Protocol, LocalAddress, LocalPort, ForeignAddress, ForeignPort, State, ConPId, Component, Process
+                $o.Protocol, $o.LocalAddress, $o.LocalPort, $o.ForeignAddress, $o.ForeignPort, $o.State, $o.ConPId, $o.Component, $o.Process = `
+                    $Protocol, $LocalAddress, $LocalPort, $ForeignAddress, $ForeignPort, $State, $ConPid, $Component, $Process
+                $o
             }
         }
     }
@@ -77,7 +80,10 @@ if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]:
             }
             $LocalAddress, $LocalPort = Get-AddrPort($LocalAddress)
             $ForeignAddress, $ForeignPort = Get-AddrPort($ForeignAddress)
-            ($Protocol, $LocalAddress, $LocalPort, $ForeignAddress, $ForeignPort, $State, $ConPId) -join "`t"
+            $o = "" | Select-Object Protocol, LocalAddress, LocalPort, ForeignAddress, ForeignPort, State, PId
+            $o.Protocol, $o.LocalAddress, $o.LocalPort, $o.ForeignAddress, $o.ForeignPort, $o.State, $o.PId= `
+                $Protocol, $LocalAddress, $LocalPort, $ForeignAddress, $ForeignPort, $State, $Pid
+            $o
         }
     }
 }

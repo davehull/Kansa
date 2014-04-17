@@ -94,8 +94,6 @@ Param(
     [Parameter(Mandatory=$False,Position=4)]
         [PSCredential]$Credential=$Null,
     [Parameter(Mandatory=$False,Position=5)]
-        [switch]$Ping,
-    [Parameter(Mandatory=$False,Position=6)]
         [Switch]$Transcribe
 )
 
@@ -251,17 +249,16 @@ Param(
         Write-Verbose "Waiting for $ModuleName to complete."
         Wait-Job $Job
         $Recpts = Receive-Job $Job
-
         foreach($Recpt in $Recpts) {
             $Outfile = $OutputPath + $Recpt.PSComputerName + "-" + $($ModuleName -Replace "Get-")
             switch -Wildcard ($OutputMethod) {
                 "*csv" {
                     $Outfile = $Outfile + ".csv"
-                    $Recpt | Export-Csv -NoTypeInformation $Outfile
+                    $Recpt | Export-Csv -NoTypeInformation $Outfile -Append
                 }
                 "*tsv" {
                     $Outfile = $Outfile + ".tsv"
-                    $Recpt | Export-Csv -NoTypeInformation -Delimiter "`t" $Outfile
+                    $Recpt | Export-Csv -NoTypeInformation -Delimiter "`t" $Outfile -Append
                 }
                 "*xml" {
                     $Outfile = $Outfile + ".xml"
@@ -354,12 +351,6 @@ $ErrorLog = $OutputPath + "Error.Log"
 
 if (Test-Path($ErrorLog)) {
     Remove-Item -Path $ErrorLog
-}
-
-if ($Ping) {
-    $Ping = $True
-} else {
-    $Ping = $False
 }
 
 Write-Debug "`$ModulePath is ${ModulePath}."

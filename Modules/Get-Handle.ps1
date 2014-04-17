@@ -8,7 +8,7 @@ Acquires handle data using sysinternals handle.exe
 
 if (Test-Path "$env:SystemRoot\handle.exe") {
     $data = (& $env:SystemRoot\handle.exe /accepteula -a)
-    ("Process","PId","Owner","Type","Perms","Name") -join $Delimiter
+    #("Process","PId","Owner","Type","Perms","Name") -join $Delimiter
     foreach($line in $data) {
         $line = $line.Trim()
         if ($line -match " pid: ") {

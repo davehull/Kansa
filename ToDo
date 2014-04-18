@@ -4,3 +4,4 @@
 5. Add support for $Credential
 6. Finish porting all existing collectors in Mal-Seine
 7. Add support for binary dependencies (i.e. Autoruns, Handle)
+8. Figure out if there's a way to resolve non-log related GUIDs in SvcTrigs to human readable equivalents

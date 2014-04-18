@@ -266,11 +266,11 @@ Param(
                 switch -Wildcard ($OutputMethod) {
                     "*csv" {
                         $Outfile = $Outfile + ".csv"
-                        $Recpt | Export-Csv -NoTypeInformation $Outfile
+                        $Recpt | ConvertTo-Csv -NoTypeInformation | % { $_ -replace "`"" } | Set-Content -Encoding Ascii $Outfile
                     }
                     "*tsv" {
                         $Outfile = $Outfile + ".tsv"
-                        $Recpt | Export-Csv -NoTypeInformation -Delimiter "`t" $Outfile
+                        $Recpt | ConvertTo-Csv -NoTypeInformation -Delimiter "`t" | % { $_ -replace "`"" } | Set-Content -Encoding Ascii $Outfile
                     }
                     "*xml" {
                         $Outfile = $Outfile + ".xml"
@@ -278,7 +278,7 @@ Param(
                     }
                     default {
                         $Outfile = $Outfile + ".txt"
-                        $Recpt | Add-Content -Encoding Ascii $Outfile
+                        $Recpt | Set-Content -Encoding Ascii $Outfile
                     }
                 }
             }

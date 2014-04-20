@@ -7,7 +7,9 @@ A pattern common to the files to be analyzed, for example,
 -FileNamePattern SvcTrigs, will match all files with SvcTrigs
 in their name.
 .EXAMPLE
-./Get-FileLengths.ps1 -FileNamePattern ..\Output\*WMIEvt*
+.\Get-FileLengths.ps1 -FileNamePattern ..\Output\*WMIEvt*
+.EXAMPLE
+.\Analysis\meta\Get-FileLengths.ps1 -FileNamePattern .\Output\*dnscache.tsv
 #>
 
 [CmdletBinding()]

@@ -9,9 +9,10 @@ Add check for *svctrigs.tsv in current path
 
 $lpquery = @"
 SELECT
-    COUNT([Image Path], [Launch String]) as ct,
+    COUNT([Image Path], [Launch String], MD5) as ct,
     [Image Path],
-    [Launch String]
+    [Launch String],
+    MD5
 FROM
     *autorunsc.txt
 WHERE
@@ -19,7 +20,8 @@ WHERE
     ([Image Path] not like 'File not found%')
 GROUP BY
     [Image Path],
-    [Launch String]
+    [Launch String],
+    MD5
 ORDER BY
     ct ASC
 "@

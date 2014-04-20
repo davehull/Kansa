@@ -1,20 +1,7 @@
 ﻿<#
-Get-Lengths.ps1
-Lists sizes for the user specified files. Enabling
-analysts to quickly spot differences at a very high level.
-.PARAMETER FileNamePattern
-A pattern common to the files to be analyzed, for example,
--FileNamePattern SvcTrigs, will match all files with SvcTrigs
-in their name.
-.EXAMPLE
-./Get-FileLengths.ps1 -FileNamePattern ..\Output\*WMIEvt*
+.SYNOPSIS
+Common functions used by more than one of the Kansa scripts.
 #>
-
-[CmdletBinding()]
-Param(
-    [Parameter(Mandatory=$True,Position=0)]
-        [String]$FileNamePattern
-)
 
 function Get-Files {
 <#
@@ -29,7 +16,7 @@ Param(
     Write-Verbose "Entering $($MyInvocation.MyCommand)"
     Write-Verbose "Looking for files matching user supplied pattern, $FileNamePattern"
     Write-Verbose "This process traverses subdirectories so it may take some time."
-    $Files = @(ls -r $FileNamePattern)
+    $Files = @(ls -r $FileNamePattern | % { $_.FullName })
     if ($Files) {
         Write-Verbose "File(s) matching pattern, ${FileNamePattern}:`n$($Files -join "`n")"
         $Files
@@ -41,8 +28,3 @@ Param(
     }
     Write-Verbose "Exiting $($MyInvocation.MyCommand)"
 }
-
-
-$files = Get-Files $FileNamePattern
-
-$files | Select-Object BaseName, Length | Sort-Object Length | Out-GridView -Title "Kansa module output lengths: $FileNamePattern"

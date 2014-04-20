@@ -256,13 +256,15 @@ Param(
 
         foreach($Module in $Modules) {
             $ModuleName = $Module | Select-Object -ExpandProperty BaseName
+            $GetlessMod = $($ModuleName -replace "Get-")
+            $Suppress = New-Item -Path $OutputPath -name $GetlessMod -ItemType Directory -ErrorAction SilentlyContinue
             $OutputMethod = Get-Content $Module -TotalCount 1
             $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ErrorAction SilentlyContinue -AsJob
             Write-Verbose "Waiting for $ModuleName to complete."
             Wait-Job $Job -ErrorAction SilentlyContinue
             foreach($ChildJob in $Job.ChildJobs) { 
                 $Recpt = Receive-Job $ChildJob -ErrorAction SilentlyContinue
-                $Outfile = $OutputPath + $ChildJob.Location + "-" + $($ModuleName -Replace "Get-")
+                $Outfile = $OutputPath + $GetlessMod + "\" + $ChildJob.Location + "-" + $GetlessMod
                 switch -Wildcard ($OutputMethod) {
                     "*csv" {
                         $Outfile = $Outfile + ".csv"

@@ -1,6 +1,7 @@
 Kansa core:
 Add support for $Credential
 Add support for binary dependencies (i.e. copy-item autorunsc.exe, etc.)
+Modify output so each module has its own path
 
 Modules:
 Objectify output where it makes sense to do so

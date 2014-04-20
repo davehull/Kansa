@@ -7,4 +7,22 @@ Add check for logparser.exe in path
 Add check for *svctrigs.tsv in current path
 #>
 
-& logparser -i:tsv -fixedsep:on -dtlines:0 -rtp:50 "select Count(Condition, Value) as ct, ServiceName, Action, Condition, Value from *svctrigs.tsv group by ServiceName, Action, Condition, Value order by ct asc"
+$lpquery = @"
+SELECT
+    COUNT(Condition, Value) as ct, 
+    ServiceName, 
+    Action, 
+    Condition, 
+    Value 
+FROM
+    *svctrigs.tsv 
+GROUP BY
+    ServiceName, 
+    Action, 
+    Condition, 
+    Value 
+ORDER BY
+    ct ASC
+"@
+
+& logparser -i:tsv -fixedsep:on -dtlines:0 -rtp:50 $lpquery

@@ -1,13 +1,32 @@
 ﻿<#
 .SYNOPSIS
-Kansa is the codename for the modular rewrite of Mal-Seine.
+Kansa is the ame for the modular rewrite of Mal-Seine.
 .DESCRIPTION
-In this modular version of Mal-Seine, Kansa enumerates the available 
-modules, calls the main function of each module and redirects error and 
-output information from the modules to their proper places.
+In this modular version of Mal-Seine, Kansa looks for a modules.conf
+file in the -Modules directory. If one is found, it will control which 
+modules execute and in what order. If no modules.conf is found, all 
+modules will be executed in the order that ls reads them.
 
-This script was written with the intention of avoiding the need for
-CredSSP, therefore "second-hops" must be avoided.
+After parsing modules.conf or the -Modules path, Kansa will execute
+each module on each target (remote hosts) and write the output to a
+folder named for each module in the -Output path. Each target will have
+its data written to separate files.
+
+For example, the Get-PrefetchListing.ps1 module data will be written
+to Output\PrefetchListing\Hostname-PrefetchListing.txt.
+
+If a module returns Powershell objects, its data can be written out in
+one of several file formats, including csv, tsv and xml. Modules that
+return text should choose the txt output format. The first line of each 
+module should contain a comment specifying the output format, following
+this format:
+
+# OUTPUT xml
+
+This script was written to avoid the need for CredSSP, therefore 
+"second-hops" must be avoided. For more details on this see:
+
+http://trustedsignal.blogspot.com/2014/04/kansa-modular-live-response-tool-for.html
 
 The script assumes you will have administrator level privileges on
 target hosts, though such privileges may not be required by all modules.
@@ -43,29 +62,27 @@ Various and sundry.
 In the absence of a configuration file, specifying which modules to run, 
 this script will run each module across all hosts.
 
-Each module should write its output using Write-Output, this script
-will write that output to an appropriately named output file that will
-include the hostname-modulename.extension.
+Each module should return objects, ideally, though text is supported. See
+the discussion above about OUTPUT formats.
 
-Modules can specify their output file extensions on their first line using
-the following syntax:
-
-$Ext = ".tsv"
-
-The default file extension, if one is not provided, is ".txt".
-
-Because modules should only collect data from remote hosts, their filenames
+Because modules should only COLLECT data from remote hosts, their filenames
 must begin with "Get-". Examples:
 Get-PrefetchListing.ps1
 Get-Netstat.ps1
 
-Any module not beginning with "Get-" will be ignored. When data is output,
-the "Get-" is removed in the output filename.
+Any module not beginning with "Get-" will be ignored.
 
+Note this read-only aspect is unenforced, therefore Kansa can be used to
+make changes to remote hosts. As a result, it can be used to facilitate
+remediation.
 
-The script queries Acitve Directory for a complete list of hosts, pings
-each of those hosts and if it receives a response, invokes each module
-on those hosts.
+The script can take a list of targets, read from a text file, via the -Target
+argument. You may also supply the -TargetCount argument to limit how many hosts
+from the file will be targeted. 
+
+In the absence of the -Target argument containing a list of targets, the script
+will query Acitve Directory for a complete list of hosts and will attempt to 
+target all of them. As of this writing, failures are silently ignored.
 
 .EXAMPLE
 Kansa.ps1 -ModulePath .\Kansas -OutputPath .\AtlantaDataCenter\

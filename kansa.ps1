@@ -268,8 +268,14 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
 
     Try {
-        $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile) `
-            -ErrorAction SilentlyContinue
+        if ($Credential) {
+            $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile) `
+                -Credential $Credential -ErrorAction Continue
+                "Made it here"
+        } else {
+            $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile) `
+                -ErrorAction SilentlyContinue
+        }
 
         foreach($Module in $Modules) {
             $ModuleName = $Module | Select-Object -ExpandProperty BaseName
@@ -294,6 +300,10 @@ Param(
                     "*xml" {
                         $Outfile = $Outfile + ".xml"
                         $Recpt | Export-Clixml $Outfile
+                    }
+                    "*bin" {
+                        $Outfile = $Outfile + ".bin"
+                        $Recpt | Set-Content -Encoding Byte $Outfile
                     }
                     default {
                         $Outfile = $Outfile + ".txt"

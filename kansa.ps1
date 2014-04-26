@@ -16,7 +16,7 @@ For example, the Get-PrefetchListing.ps1 module data will be written
 to Output\PrefetchListing\Hostname-PrefetchListing.txt.
 
 If a module returns Powershell objects, its data can be written out in
-one of several file formats, including csv, tsv and xml. Modules that
+one of several file formats, including bin, csv, tsv and xml. Modules that
 return text should choose the txt output format. The first line of each 
 module should contain a comment specifying the output format, following
 this format:

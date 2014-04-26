@@ -1,7 +1,5 @@
 Kansa core:
-Add support for $Credential
 Add support for binary dependencies (i.e. copy-item autorunsc.exe, etc.)
-Update the .SYNOPSIS portion of kansa.ps1 so it's accurate
 
 Modules:
 Objectify output where it makes sense to do so
@@ -10,5 +8,4 @@ Can non-log related GUIDs be resolved to human readable values for Get-SvcTrigs.
 Analysis:
 Get-ProcessByAge.ps1
 Get-ProcessStack.ps1
-Get-NetstatForeignAddressStack.ps1
 Get-NetstatProcessStack.ps1

@@ -1,4 +1,5 @@
 ﻿# OUTPUT tsv
+# BINDEP Handle.exe
 <# 
 Acquires handle data using sysinternals handle.exe
 

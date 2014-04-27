@@ -1,4 +1,5 @@
 ﻿# OUTPUT bin
+# BINDEP Procdump.exe
 <#
 Get-ProcDump
 Acquires a Sysinternal procdump of the specified process

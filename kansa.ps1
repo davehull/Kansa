@@ -50,8 +50,23 @@ An optional parameter that specifies the maximum number of targets.
 .PARAMETER Credential
 An optional credential that the script will use for execution. Use the
 $Credential = Get-Credential convention to populate a suitable variable.
+.PARAMETER Pushbin
+An optional flag that causes Kansa to push required binaries to the 
+ADMIN$ shares of targets. Modules that need to work with Pushbin, must 
+include the "# BINDEP <binary>" directive on the second line of their 
+script and users of Kansa must copy the required <binary> to the 
+Modules\bin\ folder.
+
+For example, the Get-Autorunsc.ps1 collector has a binary dependency on
+Sysinternals Autorunsc.exe. The second line of Get-Autorunsc.ps1 contains
+the "# BINDEP autorunsc.exe" directive and a copy of autorunsc.exe is placed 
+in the Modules\bin folder. If Kansa is run with the -Pushbin flag, it will 
+attempt to copy autorunsc.exe from the Modules\bin path to the ADMIN$ share 
+of each remote host. If your required binaries are already present on
+each target and in the path where the modules expect them to be, you can 
+omit the -Pushbin flag and save the step of copying binaries.
 .PARAMETER Transcribe
-An optional parameter that causes Start-Transcript to run at the start
+An optional flag that causes Start-Transcript to run at the start
 of the script, writing to $OutputPath\yyyyMMddhhmmss.log
 .INPUTS
 None
@@ -111,6 +126,8 @@ Param(
     [Parameter(Mandatory=$False,Position=4)]
         [PSCredential]$Credential=$Null,
     [Parameter(Mandatory=$False,Position=5)]
+        [Switch]$Pushbin,
+    [Parameter(Mandatory=$False,Position=5)]
         [Switch]$Transcribe
 )
 
@@ -163,7 +180,7 @@ Param(
     Try {
         $ModConf = $ModulePath + "\" + "Modules.conf"
         if (Test-Path($Modconf)) {
-            Write-Verbose "Found ${ModulePath}\Modules.conf."
+            Write-Verbose "Found ${ModulePath}Modules.conf."
             $Modules = Get-Content $ModulePath\Modules.conf -ErrorAction Stop | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
             foreach ($Module in $Modules) {
                 $Modpath = $ModulePath + "\" + $Module
@@ -177,7 +194,7 @@ Param(
         } else {
             $Modules = ls -r $ModulePath\Get-*.ps1 -ErrorAction Stop
         }
-        Write-Verbose "Available modules: $($Modules | Select-Object -ExpandProperty BaseName)"
+        Write-Verbose "Running modules: $($Modules | Select-Object -ExpandProperty BaseName)"
         $Modules
     } Catch [Exception] {
         $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
@@ -323,35 +340,37 @@ Param(
 function Push-Bindep {
 <#
 .SYNOPSIS
-Attempts to copy required binary, $bindep to $Target.
+Attempts to copy required binaries to targets.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
-        [String]$Bindep,
+        [Array]$Targets,
     [Parameter(Mandatory=$True,Position=1)]
-        [System.Management.Automation.Runspace.PSSession]$PSSession,
-    [Parameter(Mandatory=$True,Position=2)]
-        [String]$Target
+        [Array]$Modules
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
-    Write-Verbose "Attempting push to ${$Target}..."
     Try {
-        $BindepShare = $False
-        $RemoteShares = Invoke-Command { net share } -Session $PSSession -ErrorAction Stop
-        if ($RemoteShares -match "ADMIN\$") {
-            Write-Verbose "Found ADMIN`$ share on ${Target}."
-            $BindepShare = Invoke-Command { $env:SystemRoot } -session $PSSession -ErrorAction Stop
-            Copy-Item "$ModulePath\bin\$bindep" "\\$Target\ADMIN$\$bindep" -ErrorAction Stop
-        } else {
-            Write-Verbose "No ADMIN`$ share on ${Target}. Can't push ${Bindep} to ${Target}."
-            # Todo: add support for alternate, default shares.
-            $BindepShare = $False
-        }            
+        foreach($Module in $Modules) {
+            $ModuleName = $Module | Select-Object -ExpandProperty BaseName
+            $bindepline = Get-Content $Module -TotalCount 2 | Select-Object -Skip 1
+            if ($bindepline -match '#\sBINDEP\s(.*)') {
+                $Bindep = $($Matches[1])
+                Write-Verbose "${ModuleName} has dependency on ${Bindep}."
+                if (-not (Test-Path("$ModulePath\bin\$Bindep"))) {
+                    Write-Verbose "${Bindep} not found in ${ModulePath}\bin, skipping."
+                    "${Bindep} not found in ${ModulePath}\bin, skipping." | Add-Content -Encoding Ascii $ErrorLog
+                    Continue
+                }
+                Write-Verbose "Attempting to copy ${Bindep} to targets..."
+                foreach($Target in $Targets) {
+                    Copy-Item "$ModulePath\bin\$Bindep" "\\$Target\ADMIN$\$Bindep" -ErrorAction Continue
+                }
+            }
+        }
     } Catch [Exception] {
         $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
         $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
     }
-    $BindepShare
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
 
@@ -405,12 +424,17 @@ Write-Debug "`$ServerList is ${TargetList}."
 if (!$TargetList) {
     Write-Verbose "No TargetList specified. Building one requires RAST and will take some time."
     Load-AD
-    Get-Targets -TargetCount $TargetCount
+    $Targets = Get-Targets -TargetCount $TargetCount
 } else {
     $Targets = Get-Targets -TargetList $TargetList -TargetCount $TargetCount
 }
 
 $Modules = Get-Modules -ModulePath $ModulePath
+
+if ($PushBin) {
+    Push-Bindep -Targets $Targets -Modules $Modules
+}
+
 
 Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential
 

@@ -4,6 +4,11 @@
 Acquires handle data using sysinternals handle.exe
 
 !!THIS SCRIPT ASSUMES HANDLE.EXE WILL BE IN $ENV:SYSTEMROOT!!
+
+If you have handle.exe in your Modules\bin\ path and run the script with the -Pushbin
+flag, Kansa will attempt to copy the binary to the ADMIN$. Binaries are not removed, so
+subsequent runs won't require -Pushbin.
+
 #>
 
 

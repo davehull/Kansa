@@ -4,6 +4,7 @@ Add support for binary dependencies (i.e. copy-item autorunsc.exe, etc.)
 Modules:
 Objectify output where it makes sense to do so
 Can non-log related GUIDs be resolved to human readable values for Get-SvcTrigs.ps1
+Browser cache/history collector
 
 Analysis:
 Get-ProcessByAge.ps1

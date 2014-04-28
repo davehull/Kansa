@@ -15,46 +15,53 @@ from the query...
 
 !! YOU WILL LIKELY WANT TO ADJUST THIS QUERY !!
 
-ToDo: 
-Add check for logparser.exe in path
-Add check for *netstat.tsv in current path
+This script exepcts files matching the pattern 
+*netstat.tsv to be in the current working
+directory
 #>
 
-$lpquery = @"
-SELECT
-    COUNT(Protocol,
-    LocalAddress,
-    ForeignAddress,
-    State,
-    ConPId,
-    Component,
-    Process) as ct,
-    Protocol,
-    LocalAddress,
-    ForeignAddress,
-    State,
-    ConPid,
-    Component,
-    Process
-FROM
-    *netstat.tsv
-WHERE
-    ConPid not in ('0'; '4') and
-    ForeignAddress not like '10.%' and
-    ForeignAddress not like '169.254%' and
-    ForeignAddress not in ('*'; '0.0.0.0'; 
-        '127.0.0.1'; '[::]'; '[::1]')
-GROUP BY
-    Protocol,
-    LocalAddress,
-    ForeignAddress,
-    State,
-    ConPid,
-    Component,
-    Process
-ORDER BY
-    Process,
-    ct desc
+if (Get-Command logparser.exe) {
+
+    $lpquery = @"
+    SELECT
+        COUNT(Protocol,
+        LocalAddress,
+        ForeignAddress,
+        State,
+        ConPId,
+        Component,
+        Process) as ct,
+        Protocol,
+        LocalAddress,
+        ForeignAddress,
+        State,
+        ConPid,
+        Component,
+        Process
+    FROM
+        *netstat.tsv
+    WHERE
+        ConPid not in ('0'; '4') and
+        ForeignAddress not like '10.%' and
+        ForeignAddress not like '169.254%' and
+        ForeignAddress not in ('*'; '0.0.0.0'; 
+            '127.0.0.1'; '[::]'; '[::1]')
+    GROUP BY
+        Protocol,
+        LocalAddress,
+        ForeignAddress,
+        State,
+        ConPid,
+        Component,
+        Process
+    ORDER BY
+        Process,
+        ct desc
 "@
 
-& logparser -i:tsv -fixedsep:on -dtlines:0 -rtp:50 $lpquery
+    & logparser -i:tsv -fixedsep:on -dtlines:0 -rtp:50 $lpquery
+
+} else {
+    $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)
+    "${ScriptName} requires logparser.exe in the path."
+}

@@ -18,6 +18,7 @@ if (Get-Command logparser.exe) {
     FROM
         *autorunsc.txt
     WHERE
+        Publisher not like '(Verified)%' and
         ([Image Path] not like 'File not found%')
     GROUP BY
         [Image Path],

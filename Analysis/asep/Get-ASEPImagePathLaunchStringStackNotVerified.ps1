@@ -3,26 +3,25 @@ Get-ASEPImagePathLaunchStringStack.ps1
 Requires logparser.exe in path
 Pulls frequency of autoruns based on [Image Path] and [Launch String] tuple
 
-This script expects files matching the *autorunsc.txt pattern to be in the
+This script expects files matching the pattern *autorunsc.txt to be in the
 current working directory.
 #>
 
-
 if (Get-Command logparser.exe) {
+
     $lpquery = @"
     SELECT
-        COUNT([Image Path], [Launch String], MD5) as ct,
+        COUNT([Image Path], [Launch String]) as ct,
         [Image Path],
-        [Launch String],
-        MD5
+        [Launch String]
     FROM
         *autorunsc.txt
     WHERE
+        Publisher not like '(Verified)%' and
         ([Image Path] not like 'File not found%')
     GROUP BY
         [Image Path],
-        [Launch String],
-        MD5
+        [Launch String]
     ORDER BY
         ct ASC
 "@

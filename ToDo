@@ -1,5 +1,5 @@
 Kansa core:
-No outstanding tasks
+Log an error when a host is unreachable
 
 Modules:
 Objectify output where it makes sense to do so

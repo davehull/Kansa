@@ -17,21 +17,23 @@ if (Get-Command logparser.exe) {
         COUNT(ImagePath, LaunchString, MD5) as ct,
         ImagePath,
         LaunchString,
-        MD5
+        MD5,
+        Publisher
     FROM
-        *autorunsc.txt
+        *autorunsc.tsv
     WHERE
         Publisher not like '(Verified)%' and
         (ImagePath not like 'File not found%')
     GROUP BY
         ImagePath,
         LaunchString,
-        MD5
+        MD5,
+        Publisher
     ORDER BY
         ct ASC
 "@
 
-    & logparser -i:tsv -dtlines:0 -rtp:50 "$lpquery"
+    & logparser -i:tsv -dtlines:0 -fixedsep:on -rtp:50 "$lpquery"
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

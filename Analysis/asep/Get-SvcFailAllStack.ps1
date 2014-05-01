@@ -1,8 +1,7 @@
 ﻿<#
 Get-SvcFailStack.ps1
 Requires logparser.exe in path
-Pulls stack rank of Service Failures from acquired Service Failure data
-where CmdLine is not 'customScript.cmd' nor NULL
+Pulls stack rank of all Service Failures from acquired Service Failure data
 
 This script expects files matching the pattern *SvcFail.tsv to be in 
 the current working directory.
@@ -23,10 +22,7 @@ if (Get-Command logparser.exe) {
         FailAction2,
         FailAction3
     FROM
-        *SvcFail.tsv
-    WHERE
-        CmdLine <> 'customScript.cmd' AND
-        CmdLine is not NULL
+        *SvcFail.tsv 
     GROUP BY
         ServiceName, 
         CmdLine,

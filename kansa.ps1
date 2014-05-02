@@ -322,6 +322,10 @@ Param(
                         $Outfile = $Outfile + ".bin"
                         $Recpt | Set-Content -Encoding Byte $Outfile
                     }
+                    "*zip" {
+                        $Outfile = $Outfile + ".zip"
+                        $Recpt | Set-Content -Encoding Byte $Outfile
+                    }
                     default {
                         $Outfile = $Outfile + ".txt"
                         $Recpt | Set-Content -Encoding Ascii $Outfile

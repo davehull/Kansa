@@ -11,18 +11,20 @@ if (Get-Command logparser.exe) {
 
     $lpquery = @"
     SELECT
-        COUNT(Condition, Value) as ct, 
+        COUNT(Type, Subtype, Data) as ct, 
         ServiceName, 
         Action, 
-        Condition, 
-        Value 
+        Type,
+        Subtype, 
+        Data 
     FROM
         *svctrigs.tsv 
     GROUP BY
         ServiceName, 
         Action, 
-        Condition, 
-        Value 
+        Type,
+        Subtype, 
+        Data 
     ORDER BY
         ct ASC
 "@

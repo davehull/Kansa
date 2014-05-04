@@ -1,22 +1,26 @@
 ﻿<#
-Get-DNSCacheStack.ps1
-Requires logparser.exe in path
-Pulls frequency of DNSCache entries
+Get-HandleProcessOnwerStack.ps1
 
-This script expects files matching the *DNSCache.tsv pattern to be in the
-current working directory.
+Pulls frequency from Get-Handle data based on ProcessName and Owner
+
+Requirements:
+logparser.exe in path
+Handle data matching *Handle.tsv in pwd
 #>
 
 
 if (Get-Command logparser.exe) {
     $lpquery = @"
     SELECT
-        COUNT(FQDN) as ct,
-        FQDN
+        COUNT(ProcessName,
+        Owner) as ct,
+        ProcessName,
+        Owner
     FROM
-        *DNSCache.tsv
+        *Handle.tsv
     GROUP BY
-        FQDN
+        ProcessName,
+        Owner
     ORDER BY
         ct ASC
 "@

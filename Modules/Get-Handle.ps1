@@ -43,9 +43,9 @@ if (Test-Path "$env:SystemRoot\handle.exe") {
                     }
                 }
                 if ($Name -ne $null) {
-                    $o = "" | Select-Object ProcessName, ProcId, Owner, Type, Perms, Name
-                    $o.ProcessName, $o.ProcId, $o.Owner, $o.Type, $o.Perms, $o.name = `
-                        $ProcessName,$ProcId,$Owner,$Type,$Perms,$Name
+                    $o = "" | Select-Object ProcessName, ProcId, HandleId, Owner, Type, Perms, Name
+                    $o.ProcessName, $o.ProcId, $o.HandleId, $o.Owner, $o.Type, $o.Perms, $o.name = `
+                        $ProcessName,$ProcId,("0x" + $HandleId),$Owner,$Type,$Perms,$Name
                     $o
                 }
             }

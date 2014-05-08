@@ -1,4 +1,4 @@
-﻿# OUTPUT xml
+﻿# OUTPUT tsv
 <#
 Get-ProcsWMI.ps1
 Acquires command line arguments for running processes

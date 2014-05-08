@@ -38,9 +38,6 @@ You can search for RSAT at:
 http://www.microsoft.com/en-us/download/default.aspx
 .PARAMETER ModulePath
 An optional parameter that specifies the path to the collector modules.
-.PARAMETER OutputPath
-An optional parameter that specifies the main output path. Each host's 
-output will be written to subdirectories beneath the main output path.
 .PARAMETER TargetList
 An optional list of servers from the current forest to collect data from.
 In the absence of this parameter, collection will be attempted against 
@@ -100,7 +97,7 @@ will query Acitve Directory for a complete list of hosts and will attempt to
 target all of them. As of this writing, failures are silently ignored.
 
 .EXAMPLE
-Kansa.ps1 -ModulePath .\Kansas -OutputPath .\AtlantaDataCenter\
+Kansa.ps1 -ModulePath .\Kansas 
 In the above example the user has specified the module path and a path
 for the tool's output. Note that error logging and transcriptions (if
 specified using -transcribe) are written to the output path. Kansa will
@@ -118,14 +115,12 @@ Param(
     [Parameter(Mandatory=$False,Position=0)]
         [String]$ModulePath="Modules\",
     [Parameter(Mandatory=$False,Position=1)]
-        [String]$OutputPath="Output\",
-    [Parameter(Mandatory=$False,Position=2)]
         [String]$TargetList=$Null,
-    [Parameter(Mandatory=$False,Position=3)]
+    [Parameter(Mandatory=$False,Position=2)]
         [int]$TargetCount=0,
-    [Parameter(Mandatory=$False,Position=4)]
+    [Parameter(Mandatory=$False,Position=3)]
         [PSCredential]$Credential=$Null,
-    [Parameter(Mandatory=$False,Position=5)]
+    [Parameter(Mandatory=$False,Position=4)]
         [Switch]$Pushbin,
     [Parameter(Mandatory=$False,Position=5)]
         [Switch]$Transcribe
@@ -301,7 +296,7 @@ Param(
             $OutputMethod = Get-Content $Module -TotalCount 1
             $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ErrorAction SilentlyContinue -AsJob
             Write-Verbose "Waiting for $ModuleName to complete."
-            Wait-Job $Job -ErrorAction SilentlyContinue
+            $Suppress = Wait-Job $Job -ErrorAction SilentlyContinue
             foreach($ChildJob in $Job.ChildJobs) { 
                 $Recpt = Receive-Job $ChildJob -ErrorAction SilentlyContinue
                 $Outfile = $OutputPath + $GetlessMod + "\" + $ChildJob.Location + "-" + $GetlessMod
@@ -385,15 +380,6 @@ if (-not (Test-Path($ModulePath))) {
     Write-Error -Category InvalidArgument -Message "User supplied ModulePath, $ModulePath, was not found."
     $Exit = $True
 }
-if (-not (Test-Path($OutputPath))) {
-    Write-Error -Category InvalidArgument -Message "User supplied OutputPath, $OutputPath, was not found."
-    $Exit = $True
-} else {
-    if (-not $OutputPath.EndsWith("\")) {
-        $OutputPath = $OutputPath + "\"
-        $OutputPath
-    }
-}
 if ($TargetList -and -not (Test-Path($TargetList))) {
     Write-Error -Category InvalidArgument -Message "User supplied TargetList, $TargetList, was not found."
     $Exit = $True
@@ -409,6 +395,11 @@ if ($Exit) {
 }
 Write-Debug "Parameter sanity check complete."
 # End paramter sanity check
+
+$Runtime = ([String] (Get-Date -Format yyyyMMddHHmm))
+$OutputPath = ".\Output_$Runtime\"
+New-Item -Name $OutputPath -ItemType Directory -Force -ErrorAction Stop
+
 
 If ($Transcribe) {
     $TransFile = $OutputPath + ([string] (Get-Date -Format yyyyMMddHHmmss)) + ".log"
@@ -438,7 +429,6 @@ $Modules = Get-Modules -ModulePath $ModulePath
 if ($PushBin) {
     Push-Bindep -Targets $Targets -Modules $Modules
 }
-
 
 Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential
 

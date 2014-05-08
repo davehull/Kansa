@@ -1,12 +1,17 @@
 Kansa core:
 Log an error when a host is unreachable
+Log a more verbose error when pushbin fails to copy a binary to a remote host
 
 Modules:
 Objectify output where it makes sense to do so
 Can non-log related GUIDs be resolved to human readable values for Get-SvcTrigs.ps1
 Browser cache/history collector
+ipconfig /all
+route print
+
 
 Analysis:
 Get-ProcessByAge.ps1
 Get-ProcessStack.ps1
 Get-NetstatProcessStack.ps1
+recurse through wmi data getting parent processes

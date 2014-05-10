@@ -397,6 +397,18 @@ if ($Exit) {
 Write-Debug "Parameter sanity check complete."
 # End paramter sanity check
 
+# Update the path to inlcude Kansa analysis script paths, if they aren't already
+$found = $False
+foreach($path in ($env:path -split ";")) {
+    if ([regex]::escape($pwd) -match [regex]::escape($path)) {
+        $found = $True
+    }
+}
+if (-not($found)) {
+    $env:path = $env:path + ";$pwd\Analysis\asep;$pwd\Analysis\meta;$pwd\Analysis\network;`
+    $pwd\Analysis\process;"
+}
+
 $Runtime = ([String] (Get-Date -Format yyyyMMddHHmm))
 $OutputPath = ".\Output_$Runtime\"
 $Suppress = New-Item -Name $OutputPath -ItemType Directory -Force -ErrorAction Stop

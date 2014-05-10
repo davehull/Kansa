@@ -7,7 +7,14 @@ Get listing of prefetch files
 $pfconf = (Get-ItemProperty "hklm:\system\currentcontrolset\control\session manager\memory management\prefetchparameters").EnablePrefetcher 
 Switch -Regex ($pfconf) {
     "[1-3]" {
-        ls $env:windir\Prefetch\*.pf | Select-Object FullName, CreationTimeUtc, LastAccesstimeUtc, LastWriteTimeUtc
+        $o = "" | Select-Object FullName, CreationTimeUtc, LastAccessTimeUtc, LastWriteTimeUtc
+        ls $env:windir\Prefetch\*.pf | % {
+            $o.FullName = $_.FullName;
+            $o.CreationTimeUtc = Get-Date($_.CreationTimeUtc) -format o;
+            $o.LastAccesstimeUtc = Get-Date($_.LastAccessTimeUtc) -format o;
+            $o.LastWriteTimeUtc = Get-Date($_.LastWriteTimeUtc) -format o;
+            $o
+        }
     }
     default {
         Write-Output "Prefetch not enabled on ${env:COMPUTERNAME}."

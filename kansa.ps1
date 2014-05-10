@@ -304,11 +304,11 @@ Param(
                 switch -Wildcard ($OutputMethod) {
                     "*csv" {
                         $Outfile = $Outfile + ".csv"
-                        $Recpt | ConvertTo-Csv -NoTypeInformation | % { $_ -replace "`"" } | Set-Content -Encoding Ascii $Outfile
+                        $Recpt | ConvertTo-Csv -NoTypeInformation | % { $_ -replace "`"" } | Set-Content -Encoding Unicode $Outfile
                     }
                     "*tsv" {
                         $Outfile = $Outfile + ".tsv"
-                        $Recpt | ConvertTo-Csv -NoTypeInformation -Delimiter "`t" | % { $_ -replace "`"" } | Set-Content -Encoding Ascii $Outfile
+                        $Recpt | ConvertTo-Csv -NoTypeInformation -Delimiter "`t" | % { $_ -replace "`"" } | Set-Content -Encoding Unicode $Outfile
                     }
                     "*xml" {
                         $Outfile = $Outfile + ".xml"
@@ -324,7 +324,7 @@ Param(
                     }
                     default {
                         $Outfile = $Outfile + ".txt"
-                        $Recpt | Set-Content -Encoding Ascii $Outfile
+                        $Recpt | Set-Content -Encoding Unicode $Outfile
                     }
                 }
             }

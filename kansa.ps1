@@ -63,6 +63,9 @@ attempt to copy autorunsc.exe from the Modules\bin path to the ADMIN$ share
 of each remote host. If your required binaries are already present on
 each target and in the path where the modules expect them to be, you can 
 omit the -Pushbin flag and save the step of copying binaries.
+.PARAMETER Ascii
+An optional switch that tells Kansa you want all text output (i.e. txt,
+csv and tsv) and errors be written as Ascii. Unicode is the default.
 .PARAMETER Transcribe
 An optional flag that causes Start-Transcript to run at the start
 of the script, writing to $OutputPath\yyyyMMddhhmmss.log
@@ -124,6 +127,8 @@ Param(
     [Parameter(Mandatory=$False,Position=4)]
         [Switch]$Pushbin,
     [Parameter(Mandatory=$False,Position=5)]
+        [Switch]$Ascii,
+    [Parameter(Mandatory=$False,Position=6)]
         [Switch]$Transcribe
 )
 
@@ -140,8 +145,8 @@ Param(
     Try {
         <# code goes here #>
     } Catch [Exception] {
-        $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
-        $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
+        $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
+        $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
@@ -193,8 +198,8 @@ Param(
         Write-Verbose "Running modules: $($Modules | Select-Object -ExpandProperty BaseName)"
         $Modules
     } Catch [Exception] {
-        $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
-        $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
+        $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
+        $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
 }
@@ -257,8 +262,8 @@ Param(
         Write-Verbose "`$Targets are ${Targets}."
         return $Targets
     } Catch [Exception] {
-        $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
-        $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
+        $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
+        $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
         Write-Error "Get-Targets failed. See $Errorlog for details. Quitting."
         Exit-Script
     }
@@ -284,7 +289,6 @@ Param(
         if ($Credential) {
             $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile) `
                 -Credential $Credential -ErrorAction Continue
-                "Made it here"
         } else {
             $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile) `
                 -ErrorAction SilentlyContinue
@@ -304,15 +308,15 @@ Param(
                 switch -Wildcard ($OutputMethod) {
                     "*csv" {
                         $Outfile = $Outfile + ".csv"
-                        $Recpt | ConvertTo-Csv -NoTypeInformation | % { $_ -replace "`"" } | Set-Content -Encoding Unicode $Outfile
+                        $Recpt | ConvertTo-Csv -NoTypeInformation | % { $_ -replace "`"" } | Set-Content -Encoding $Encoding $Outfile
                     }
                     "*tsv" {
                         $Outfile = $Outfile + ".tsv"
-                        $Recpt | ConvertTo-Csv -NoTypeInformation -Delimiter "`t" | % { $_ -replace "`"" } | Set-Content -Encoding Unicode $Outfile
+                        $Recpt | ConvertTo-Csv -NoTypeInformation -Delimiter "`t" | % { $_ -replace "`"" } | Set-Content -Encoding $Encoding $Outfile
                     }
                     "*xml" {
                         $Outfile = $Outfile + ".xml"
-                        $Recpt | Export-Clixml $Outfile
+                        $Recpt | Export-Clixml $Outfile -Encoding $Encoding
                     }
                     "*bin" {
                         $Outfile = $Outfile + ".bin"
@@ -324,15 +328,15 @@ Param(
                     }
                     default {
                         $Outfile = $Outfile + ".txt"
-                        $Recpt | Set-Content -Encoding Unicode $Outfile
+                        $Recpt | Set-Content -Encoding $Encoding $Outfile
                     }
                 }
             }
         }
         Remove-PSSession $PSSessions -ErrorAction SilentlyContinue
     } Catch [Exception] {
-        $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
-        $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
+        $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
+        $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
@@ -358,7 +362,7 @@ Param(
                 Write-Verbose "${ModuleName} has dependency on ${Bindep}."
                 if (-not (Test-Path("$ModulePath\bin\$Bindep"))) {
                     Write-Verbose "${Bindep} not found in ${ModulePath}\bin, skipping."
-                    "${Bindep} not found in ${ModulePath}\bin, skipping." | Add-Content -Encoding Ascii $ErrorLog
+                    "${Bindep} not found in ${ModulePath}\bin, skipping." | Add-Content -Encoding $Encoding $ErrorLog
                     Continue
                 }
                 Write-Verbose "Attempting to copy ${Bindep} to targets..."
@@ -368,8 +372,8 @@ Param(
             }
         }
     } Catch [Exception] {
-        $_.Exception.GetType().FullName | Add-Content -Encoding Ascii $ErrorLog
-        $_.Exception.Message | Add-Content -Encoding Ascii $ErrorLog
+        $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
+        $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
@@ -396,6 +400,13 @@ if ($Exit) {
 }
 Write-Debug "Parameter sanity check complete."
 # End paramter sanity check
+
+# Set the output encoding if the $Ascii switch was thrown
+if ($Ascii) {
+    Set-Variable -Name Encoding -Value "Ascii" -Scope Script
+} else {
+    Set-Variable -Name Encoding -Value "Unicode" -Scope Script
+}
 
 # Update the path to inlcude Kansa analysis script paths, if they aren't already
 $found = $False

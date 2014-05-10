@@ -31,11 +31,12 @@ http://trustedsignal.blogspot.com/2014/04/kansa-modular-live-response-tool-for.h
 The script assumes you will have administrator level privileges on
 target hosts, though such privileges may not be required by all modules.
 
-The script requires Remote Server Administration Tools (RSAT). These
-are available from Microsoft's Download Center for Windows 7 and 8.
-You can search for RSAT at:
+If you run this script without the -TargetList argument, Remote Server
+Administration Tools (RSAT), is required. These are available from Microsoft's 
+Download Center for Windows 7 and 8. You can search for RSAT at:
 
 http://www.microsoft.com/en-us/download/default.aspx
+
 .PARAMETER ModulePath
 An optional parameter that specifies the path to the collector modules.
 .PARAMETER TargetList
@@ -296,7 +297,7 @@ Param(
             $OutputMethod = Get-Content $Module -TotalCount 1
             $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ErrorAction SilentlyContinue -AsJob
             Write-Verbose "Waiting for $ModuleName to complete."
-            $Suppress = Wait-Job $Job -ErrorAction SilentlyContinue
+            Wait-Job $Job -ErrorAction SilentlyContinue
             foreach($ChildJob in $Job.ChildJobs) { 
                 $Recpt = Receive-Job $ChildJob -ErrorAction SilentlyContinue
                 $Outfile = $OutputPath + $GetlessMod + "\" + $ChildJob.Location + "-" + $GetlessMod
@@ -398,7 +399,7 @@ Write-Debug "Parameter sanity check complete."
 
 $Runtime = ([String] (Get-Date -Format yyyyMMddHHmm))
 $OutputPath = ".\Output_$Runtime\"
-New-Item -Name $OutputPath -ItemType Directory -Force -ErrorAction Stop
+$Suppress = New-Item -Name $OutputPath -ItemType Directory -Force -ErrorAction Stop
 
 
 If ($Transcribe) {

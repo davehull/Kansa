@@ -10,7 +10,7 @@ ipconfig /all
 route print
 Update the old Get-DNSCache method using ipconfig /displaydns to mimic Get-DNSClientCache output
 Should rename the tlist modules, since they don't actually call tslist
-
+Get-PSProfiles
 
 Analysis:
 Get-ProcessByAge.ps1

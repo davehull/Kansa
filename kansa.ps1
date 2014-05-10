@@ -173,9 +173,11 @@ Exit the script somewhat gracefully, closing any open transcript.
     if ($Transcribe) {
         $Suppress = Stop-Transcript
     }
+    $Error | Add-Content -Encoding $Encoding $ErrorLog
     if (Test-Path($ErrorLog)) {
         Write-Output "Script completed with errors. See ${ErrorLog} for details."
     }
+    $Error.Clear()
     Exit
 }
 
@@ -195,7 +197,7 @@ Param(
         $ModConf = $ModulePath + "\" + "Modules.conf"
         if (Test-Path($Modconf)) {
             Write-Verbose "Found ${ModulePath}Modules.conf."
-            $Modules = Get-Content $ModulePath\Modules.conf -ErrorAction Stop | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
+            $Modules = Get-Content $ModulePath\Modules.conf | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
             foreach ($Module in $Modules) {
                 $Modpath = $ModulePath + "\" + $Module
                 if (!(Test-Path($Modpath))) {
@@ -206,7 +208,7 @@ Param(
             }
             $Modules = $FoundModules
         } else {
-            $Modules = ls -r $ModulePath\Get-*.ps1 -ErrorAction Stop
+            $Modules = ls -r $ModulePath\Get-*.ps1
         }
         Write-Verbose "Running modules: $($Modules | Select-Object -ExpandProperty BaseName)"
         $Modules
@@ -221,7 +223,7 @@ function Load-AD {
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     if (Get-Module -ListAvailable | ? { $_.Name -match "ActiveDirectory" }){
         try {
-            Import-Module ActiveDirectory -ErrorAction Stop #| Out-Null
+            Import-Module ActiveDirectory
         } catch {
             Write-Error "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting."
             Exit-Script
@@ -236,7 +238,7 @@ function Load-AD {
 function Get-Forest {
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     try {
-        $Forest = (Get-ADForest -ErrorAction Stop).Name
+        $Forest = (Get-ADForest).Name
         Write-Verbose "Forest is ${forest}."
         $Forest
     } catch {
@@ -266,11 +268,9 @@ Param(
     Try {
         Write-Verbose "`$TargetCount is ${TargetCount}."
         if ($TargetCount -eq 0 -or $TargetCount -eq $Null) {
-            $Targets = Get-ADComputer -Filter * -ErrorAction Stop | `
-                Select-Object -ExpandProperty Name 
+            $Targets = Get-ADComputer -Filter * | Select-Object -ExpandProperty Name 
         } else {
-            $Targets = Get-ADComputer -Filter * -ResultSetSize $TargetCount -ErrorAction Stop | `
-                Select-Object -ExpandProperty Name
+            $Targets = Get-ADComputer -Filter * -ResultSetSize $TargetCount | Select-Object -ExpandProperty Name
         }
         Write-Verbose "`$Targets are ${Targets}."
         return $Targets
@@ -300,23 +300,21 @@ Param(
 
     Try {
         if ($Credential) {
-            $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile) `
-                -Credential $Credential -ErrorAction Continue
+            $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile) -Credential $Credential
         } else {
-            $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile) `
-                -ErrorAction SilentlyContinue
+            $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile)
         }
 
         foreach($Module in $Modules) {
             $ModuleName = $Module | Select-Object -ExpandProperty BaseName
             $GetlessMod = $($ModuleName -replace "Get-")
-            $Suppress = New-Item -Path $OutputPath -name $GetlessMod -ItemType Directory -ErrorAction SilentlyContinue
+            $Suppress = New-Item -Path $OutputPath -name $GetlessMod -ItemType Directory
             $OutputMethod = Get-Content $Module -TotalCount 1
-            $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ErrorAction SilentlyContinue -AsJob
+            $Job = Invoke-Command -Session $PSSessions -FilePath $Module -AsJob
             Write-Verbose "Waiting for $ModuleName to complete."
-            Wait-Job $Job -ErrorAction SilentlyContinue
+            Wait-Job $Job
             foreach($ChildJob in $Job.ChildJobs) { 
-                $Recpt = Receive-Job $ChildJob -ErrorAction SilentlyContinue
+                $Recpt = Receive-Job $ChildJob
                 $Outfile = $OutputPath + $GetlessMod + "\" + $ChildJob.Location + "-" + $GetlessMod
                 switch -Wildcard ($OutputMethod) {
                     "*csv" {
@@ -346,7 +344,7 @@ Param(
                 }
             }
         }
-        Remove-PSSession $PSSessions -ErrorAction SilentlyContinue
+        Remove-PSSession $PSSessions
     } Catch [Exception] {
         $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
         $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
@@ -366,27 +364,28 @@ Param(
         [Array]$Modules
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
-    Try {
-        foreach($Module in $Modules) {
-            $ModuleName = $Module | Select-Object -ExpandProperty BaseName
-            $bindepline = Get-Content $Module -TotalCount 2 | Select-Object -Skip 1
-            if ($bindepline -match '#\sBINDEP\s(.*)') {
-                $Bindep = $($Matches[1])
-                Write-Verbose "${ModuleName} has dependency on ${Bindep}."
-                if (-not (Test-Path("$ModulePath\bin\$Bindep"))) {
-                    Write-Verbose "${Bindep} not found in ${ModulePath}\bin, skipping."
-                    "${Bindep} not found in ${ModulePath}\bin, skipping." | Add-Content -Encoding $Encoding $ErrorLog
-                    Continue
-                }
-                Write-Verbose "Attempting to copy ${Bindep} to targets..."
-                foreach($Target in $Targets) {
-                    Copy-Item "$ModulePath\bin\$Bindep" "\\$Target\ADMIN$\$Bindep" -ErrorAction Continue
+    foreach($Module in $Modules) {
+        $ModuleName = $Module | Select-Object -ExpandProperty BaseName
+        $bindepline = Get-Content $Module -TotalCount 2 | Select-Object -Skip 1
+        if ($bindepline -match '#\sBINDEP\s(.*)') {
+            $Bindep = $($Matches[1])
+            Write-Verbose "${ModuleName} has dependency on ${Bindep}."
+            if (-not (Test-Path("$ModulePath\bin\$Bindep"))) {
+                Write-Verbose "${Bindep} not found in ${ModulePath}\bin, skipping."
+                "${Bindep} not found in ${ModulePath}\bin, skipping." | Add-Content -Encoding $Encoding $ErrorLog
+                Continue
+            }
+            Write-Verbose "Attempting to copy ${Bindep} to targets..."
+            foreach($Target in $Targets) {
+                Try {
+                    Copy-Item "$ModulePath\bin\$Bindep" "\\$Target\ADMIN$\$Bindep"
+                } Catch [Exception] {
+                    "Failed to copy ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
+                    $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
+                    $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
                 }
             }
         }
-    } Catch [Exception] {
-        $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
-        $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
@@ -404,6 +403,12 @@ function Set-KansaPath {
         $pwd\Analysis\process;"
     }
 }
+
+#########################################################
+# Let's not stop or report errors as a matter of course #
+$Error.Clear()
+$ErrorActionPreference = "SilentlyContinue"
+#########################################################
 
 
 ###########################
@@ -454,13 +459,13 @@ if ($Ascii) {
 ##################################
 $Runtime = ([String] (Get-Date -Format yyyyMMddHHmm))
 $OutputPath = ".\Output_$Runtime\"
-$Suppress = New-Item -Name $OutputPath -ItemType Directory -Force -ErrorAction Stop
+$Suppress = New-Item -Name $OutputPath -ItemType Directory -Force 
 
 If ($Transcribe) {
     $TransFile = $OutputPath + ([string] (Get-Date -Format yyyyMMddHHmmss)) + ".log"
     $Suppress = Start-Transcript -Path $TransFile
 }
-$ErrorLog = $OutputPath + "Error.Log"
+Set-Variable -Name ErrorLog -Value ($OutputPath + "Error.Log") -Scope Script
 
 if (Test-Path($ErrorLog)) {
     Remove-Item -Path $ErrorLog

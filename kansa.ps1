@@ -66,6 +66,15 @@ omit the -Pushbin flag and save the step of copying binaries.
 .PARAMETER Ascii
 An optional switch that tells Kansa you want all text output (i.e. txt,
 csv and tsv) and errors be written as Ascii. Unicode is the default.
+.PARAMETER UpdatePath
+An option switch that adds Analysis script paths to the user's path and
+then exits. Kansa will automatically add Analysis script paths to the 
+user's path when run normally, this switch is just for convenience when
+coming back to the data for analysis.
+.PARAMETER ListModules
+An optional switch that lists the available modules. Useful for
+constructing a modules.conf file. Script exits after listing.
+You'll likely want to sort the according to the order of volatility.
 .PARAMETER Transcribe
 An optional flag that causes Start-Transcript to run at the start
 of the script, writing to $OutputPath\yyyyMMddhhmmss.log
@@ -129,6 +138,10 @@ Param(
     [Parameter(Mandatory=$False,Position=5)]
         [Switch]$Ascii,
     [Parameter(Mandatory=$False,Position=6)]
+        [Switch]$UpdatePath,
+    [Parameter(Mandatory=$False,Position=7)]
+        [Switch]$ListModules,
+    [Parameter(Mandatory=$False,Position=8)]
         [Switch]$Transcribe
 )
 
@@ -378,7 +391,24 @@ Param(
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
 
-# Sanity check parameters
+function Set-KansaPath {
+    # Update the path to inlcude Kansa analysis script paths, if they aren't already
+    $found = $False
+    foreach($path in ($env:path -split ";")) {
+        if ([regex]::escape($pwd) -match [regex]::escape($path)) {
+            $found = $True
+        }
+    }
+    if (-not($found)) {
+        $env:path = $env:path + ";$pwd\Analysis\asep;$pwd\Analysis\meta;$pwd\Analysis\network;`
+        $pwd\Analysis\process;"
+    }
+}
+
+
+###########################
+# Sanity check parameters #
+###########################
 Write-Debug "Sanity checking parameters"
 $Exit = $False
 if (-not (Test-Path($ModulePath))) {
@@ -399,31 +429,32 @@ if ($Exit) {
     Exit-Script
 }
 Write-Debug "Parameter sanity check complete."
-# End paramter sanity check
+##############################
+# End paramter sanity checks #
+##############################
 
-# Set the output encoding if the $Ascii switch was thrown
+
+###########################
+# Set the output encoding #
+###########################
 if ($Ascii) {
     Set-Variable -Name Encoding -Value "Ascii" -Scope Script
 } else {
     Set-Variable -Name Encoding -Value "Unicode" -Scope Script
 }
+###########################
+# End set output encoding #
+###########################
 
-# Update the path to inlcude Kansa analysis script paths, if they aren't already
-$found = $False
-foreach($path in ($env:path -split ";")) {
-    if ([regex]::escape($pwd) -match [regex]::escape($path)) {
-        $found = $True
-    }
-}
-if (-not($found)) {
-    $env:path = $env:path + ";$pwd\Analysis\asep;$pwd\Analysis\meta;$pwd\Analysis\network;`
-    $pwd\Analysis\process;"
-}
 
+##################################
+# Create timestamped output path #
+# Write transcript and error log #
+# to output path.                #
+##################################
 $Runtime = ([String] (Get-Date -Format yyyyMMddHHmm))
 $OutputPath = ".\Output_$Runtime\"
 $Suppress = New-Item -Name $OutputPath -ItemType Directory -Force -ErrorAction Stop
-
 
 If ($Transcribe) {
     $TransFile = $OutputPath + ([string] (Get-Date -Format yyyyMMddHHmmss)) + ".log"
@@ -434,26 +465,90 @@ $ErrorLog = $OutputPath + "Error.Log"
 if (Test-Path($ErrorLog)) {
     Remove-Item -Path $ErrorLog
 }
+###########################
+# Done setting up output. #
+###########################
 
+
+#####################################################
+# Update the user's path with Kansa Analysis paths. #
+# Exit if that's all they wanted us to do.          #
+#####################################################
+Set-KansaPath
+if ($UpdatePath) {
+    # User provided UpdatePath switch so
+    # exit after updating the path
+    Exit-Script
+}
+###########################
+# Done updating the path. #
+###########################
+
+
+########################################
+# If we're -Debug, show some settings. #
+########################################
 Write-Debug "`$ModulePath is ${ModulePath}."
 Write-Debug "`$OutputPath is ${OutputPath}."
 Write-Debug "`$ServerList is ${TargetList}."
 
 
+###################
+# Get our modules #
+###################
+if ($ListModules) {
+    # User provided ListModules switch so exit
+    # after returning the full list of modules
+    ls $ModulePath\Get-*.ps1 | Select-Object Name
+    Exit-Script
+}
+# Get-Modules reads the modules.conf file, if
+# it exists, otherwise will have same data as
+# ls command above.
+$Modules = Get-Modules -ModulePath $ModulePath
+########################
+# Done getting modules #
+########################
+
+
+####################
+# Get our targets. #
+####################
 if (!$TargetList) {
     Write-Verbose "No TargetList specified. Building one requires RAST and will take some time."
-    Load-AD
-    $Targets = Get-Targets -TargetCount $TargetCount
+    $suppress = Load-AD
+    $Targets  = Get-Targets -TargetCount $TargetCount
 } else {
     $Targets = Get-Targets -TargetList $TargetList -TargetCount $TargetCount
 }
+########################
+# Done getting targets #
+########################
 
-$Modules = Get-Modules -ModulePath $ModulePath
 
+#########################################
+# Copy binaries to targets if requested #
+#########################################
 if ($PushBin) {
     Push-Bindep -Targets $Targets -Modules $Modules
 }
+#####################
+# Done pushing bins #
+#####################
 
+
+####################################
+# Finally, let's gather some data. #
+####################################
 Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential
+########################
+# Done gathering data. #
+########################
 
+
+############
+# Clean up #
 Exit-Script
+###############
+# We're done. #
+###############

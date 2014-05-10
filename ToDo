@@ -1,6 +1,4 @@
 Kansa core:
-Log an error when a host is unreachable
-Log a more verbose error when pushbin fails to copy a binary to a remote host
 
 Modules:
 Objectify output where it makes sense to do so

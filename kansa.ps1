@@ -158,8 +158,10 @@ Param(
     Try {
         <# code goes here #>
     } Catch [Exception] {
-        $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
-        $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
+        $Error | Add-Content -Encoding $Encoding $ErrorLog
+        # $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
+        # $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
+        $Error.Clear()
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
@@ -173,7 +175,7 @@ Exit the script somewhat gracefully, closing any open transcript.
     if ($Transcribe) {
         $Suppress = Stop-Transcript
     }
-    $Error | Add-Content -Encoding $Encoding $ErrorLog
+    # $Error | Add-Content -Encoding $Encoding $ErrorLog
     if (Test-Path($ErrorLog)) {
         Write-Output "Script completed with errors. See ${ErrorLog} for details."
     }
@@ -184,7 +186,11 @@ Exit the script somewhat gracefully, closing any open transcript.
 function Get-Modules {
 <#
 .SYNOPSIS
-Returns a listing of availble modules from $ModulePath
+Looks for modules.conf in the $Modulepath, default is Modules.
+If found, returns the list of uncommented modules in the order
+they are listed in the file. If no modules.conf is found, returns
+a list of all modules found in $Modulepath, where a module is a
+.ps1 script starting with Get-.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
@@ -197,52 +203,60 @@ Param(
         $ModConf = $ModulePath + "\" + "Modules.conf"
         if (Test-Path($Modconf)) {
             Write-Verbose "Found ${ModulePath}Modules.conf."
+            # ignore blank and commented lines, trim misc. white space
             $Modules = Get-Content $ModulePath\Modules.conf | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
             foreach ($Module in $Modules) {
+                # verify listed modules exist
                 $Modpath = $ModulePath + "\" + $Module
                 if (!(Test-Path($Modpath))) {
-                    Write-Error "Could not find module specified in ${ModulePath}\Modules.conf: $Module. Quitting."
+                    "Could not find module specified in ${ModulePath}\Modules.conf: $Module. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
                     Exit-Script
                 }
+                # module found add it to the list
                 $FoundModules += ls $ModPath   
             }
             $Modules = $FoundModules
         } else {
+            # we had no modules.conf
             $Modules = ls -r $ModulePath\Get-*.ps1
         }
         Write-Verbose "Running modules: $($Modules | Select-Object -ExpandProperty BaseName)"
         $Modules
     } Catch [Exception] {
-        $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
-        $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
+        $Error | Add-Content -Encoding $Encoding $ErrorLog
+        # $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
+        # $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
+        $Error.Clear()
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
 }
 
 function Load-AD {
+    # no targets provided so we'll query AD to build it, need to load the AD module
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     if (Get-Module -ListAvailable | ? { $_.Name -match "ActiveDirectory" }){
         try {
-            Import-Module ActiveDirectory
+            $suppress = Import-Module ActiveDirectory
         } catch {
-            Write-Error "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting."
+            "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
             Exit-Script
         }
     } else {
-        Write-Error "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting."
+        "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
         Exit-Script
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
 }
 
 function Get-Forest {
+    # what forest are we in?
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     try {
         $Forest = (Get-ADForest).Name
         Write-Verbose "Forest is ${forest}."
         $Forest
     } catch {
-        Write-Error "Get-Forest could not find current forest."
+        "Get-Forest could not find current forest." | Add-Content -Encoding $Encoding $ErrorLog
         Exit-Script
     }
 }
@@ -256,6 +270,7 @@ Param(
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     if ($TargetList) {
+        # user provided a list of targets
         if ($TargetCount -eq 0) {
             $Targets = Get-Content $TargetList | % { $_.Trim() } | Where-Object { $_.Length -gt 0 }
         } else {
@@ -266,6 +281,7 @@ Param(
     } 
         
     Try {
+        # no target list provided, we'll query AD for it
         Write-Verbose "`$TargetCount is ${TargetCount}."
         if ($TargetCount -eq 0 -or $TargetCount -eq $Null) {
             $Targets = Get-ADComputer -Filter * | Select-Object -ExpandProperty Name 
@@ -275,9 +291,11 @@ Param(
         Write-Verbose "`$Targets are ${Targets}."
         return $Targets
     } Catch [Exception] {
-        $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
-        $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
-        Write-Error "Get-Targets failed. See $Errorlog for details. Quitting."
+        "Get-Targets failed. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
+        $Error | Add-Content -Encoding $Encoding $ErrorLog
+        # $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
+        # $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
+        $Error.Clear()
         Exit-Script
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
@@ -286,7 +304,7 @@ Param(
 function Get-TargetData {
 <#
 .SYNOPSIS
-Runs each specified module against each specified target.
+Runs each module against each target. Writes out the returned data to host where Kansa is run from.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
@@ -299,23 +317,33 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
 
     Try {
+        # Create our sessions with targets
         if ($Credential) {
             $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile) -Credential $Credential
+            $Error | Add-Content -Encoding $Encoding $ErrorLog
+            $Error.Clear()
         } else {
             $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile)
+            $Error | Add-Content -Encoding $Encoding $ErrorLog
+            $Error.Clear()
         }
 
         foreach($Module in $Modules) {
             $ModuleName = $Module | Select-Object -ExpandProperty BaseName
-            $GetlessMod = $($ModuleName -replace "Get-")
+            # we'll use $GetlessMod for the output folder
+            $GetlessMod = $($ModuleName -replace "Get-") 
             $Suppress = New-Item -Path $OutputPath -name $GetlessMod -ItemType Directory
-            $OutputMethod = Get-Content $Module -TotalCount 1
+            # First line of each modules can specify how output should be handled
+            $OutputMethod = Get-Content $Module -TotalCount 1 
+            # run the module on the targets
             $Job = Invoke-Command -Session $PSSessions -FilePath $Module -AsJob
             Write-Verbose "Waiting for $ModuleName to complete."
+            # Wait-Job does return data to stdout, add $suppress = to start of next line, if needed
             Wait-Job $Job
             foreach($ChildJob in $Job.ChildJobs) { 
                 $Recpt = Receive-Job $ChildJob
                 $Outfile = $OutputPath + $GetlessMod + "\" + $ChildJob.Location + "-" + $GetlessMod
+                # save the data
                 switch -Wildcard ($OutputMethod) {
                     "*csv" {
                         $Outfile = $Outfile + ".csv"
@@ -346,8 +374,10 @@ Param(
         }
         Remove-PSSession $PSSessions
     } Catch [Exception] {
-        $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
-        $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
+        $Error | Add-Content -Encoding $Encoding $ErrorLog
+        # $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
+        # $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
+        $Error.Clear()
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
@@ -366,6 +396,7 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     foreach($Module in $Modules) {
         $ModuleName = $Module | Select-Object -ExpandProperty BaseName
+        # read the second line to determine binary dependency, not required
         $bindepline = Get-Content $Module -TotalCount 2 | Select-Object -Skip 1
         if ($bindepline -match '#\sBINDEP\s(.*)') {
             $Bindep = $($Matches[1])
@@ -381,8 +412,10 @@ Param(
                     Copy-Item "$ModulePath\bin\$Bindep" "\\$Target\ADMIN$\$Bindep"
                 } Catch [Exception] {
                     "Failed to copy ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
-                    $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
-                    $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
+                    $Error | Add-Content -Encoding $Encoding $ErrorLog
+                    # $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
+                    # $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
+                    $Error.Clear()
                 }
             }
         }
@@ -417,20 +450,20 @@ $ErrorActionPreference = "SilentlyContinue"
 Write-Debug "Sanity checking parameters"
 $Exit = $False
 if (-not (Test-Path($ModulePath))) {
-    Write-Error -Category InvalidArgument -Message "User supplied ModulePath, $ModulePath, was not found."
+    "User supplied ModulePath, $ModulePath, was not found." | Add-Content -Encoding $Encoding $ErrorLog
     $Exit = $True
 }
 if ($TargetList -and -not (Test-Path($TargetList))) {
-    Write-Error -Category InvalidArgument -Message "User supplied TargetList, $TargetList, was not found."
+    "User supplied TargetList, $TargetList, was not found." | Add-Content -Encoding $Encoding $ErrorLog
     $Exit = $True
 }
 if ($TargetCount -lt 0) {
-    Write-Error -Category InvalidArgument -Message "User supplied TargetCount, $TargetCount, was negative."
+    "User supplied TargetCount, $TargetCount, was negative." | Add-Content -Encoding $Encoding $ErrorLog
     $Exit = $True
 }
 #TKTK Add test for $Credential
 if ($Exit) {
-    Write-Output "One or more errors were encountered with user supplied arguments. Exiting."
+    "One or more errors were encountered with user supplied arguments. Exiting." | Add-Content -Encoding $Encoding $ErrorLog
     Exit-Script
 }
 Write-Debug "Parameter sanity check complete."

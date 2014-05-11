@@ -1,7 +1,6 @@
 Kansa core:
 
 Modules:
-Objectify output where it makes sense to do so
 Can non-log related GUIDs be resolved to human readable values for Get-SvcTrigs.ps1
 Browser cache/history collector
 ipconfig /all
@@ -9,6 +8,7 @@ route print
 Update the old Get-DNSCache method using ipconfig /displaydns to mimic Get-DNSClientCache output
 Should rename the tlist modules, since they don't actually call tslist
 Get-PSProfiles
+Get rid of xml output wherever possible
 
 Analysis:
 Get-ProcessByAge.ps1

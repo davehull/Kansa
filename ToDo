@@ -14,4 +14,3 @@ Analysis:
 Get-ProcessByAge.ps1
 Get-ProcessStack.ps1
 Get-NetstatProcessStack.ps1
-recurse through wmi data getting parent processes

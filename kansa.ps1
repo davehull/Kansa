@@ -159,8 +159,6 @@ Param(
         <# code goes here #>
     } Catch [Exception] {
         $Error | Add-Content -Encoding $Encoding $ErrorLog
-        # $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
-        # $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
@@ -224,8 +222,6 @@ Param(
         $Modules
     } Catch [Exception] {
         $Error | Add-Content -Encoding $Encoding $ErrorLog
-        # $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
-        # $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
@@ -293,8 +289,6 @@ Param(
     } Catch [Exception] {
         "Get-Targets failed. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
         $Error | Add-Content -Encoding $Encoding $ErrorLog
-        # $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
-        # $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()
         Exit-Script
     }
@@ -375,8 +369,6 @@ Param(
         Remove-PSSession $PSSessions
     } Catch [Exception] {
         $Error | Add-Content -Encoding $Encoding $ErrorLog
-        # $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
-        # $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
@@ -413,8 +405,6 @@ Param(
                 } Catch [Exception] {
                     "Failed to copy ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
                     $Error | Add-Content -Encoding $Encoding $ErrorLog
-                    # $_.Exception.GetType().FullName | Add-Content -Encoding $Encoding $ErrorLog
-                    # $_.Exception.Message | Add-Content -Encoding $Encoding $ErrorLog
                     $Error.Clear()
                 }
             }

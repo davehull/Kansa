@@ -26,16 +26,24 @@ function add-zip
 
 $zipfile = (($env:TEMP) + "\" + ($env:COMPUTERNAME) + "-PSProfiles.zip")
 if (Test-Path $zipfile) { rm $zipfile -Force }
-$alluserprofile = ($env:windir + "\System32\WindowsPowershell\v1.0\Microsoft.Powershell_profile.ps1")
-if (Test-Path $alluserprofile) {
-    ls $alluserprofile | add-zip $zipfile
-}
 
 foreach($path in (Get-WmiObject win32_userprofile | select -ExpandProperty LocalPath)) {
     $prfile = ($path + "\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1")
     if (Test-Path $prfile) {
-        ls $prfile | add-zip $zipfile
+        $thisProfile = ((Split-Path -Leaf $path) + "_" + "Microsoft.Powershell_profile.ps1")
+        $suppress = Copy-Item $prfile $env:TEMP\$thisProfile
+        ls $env:TEMP\$thisprofile | add-zip $zipfile
+        Remove-Item $env:TEMP\$thisProfile -Force
     }
+}
+
+$alluserprofile = ($env:windir + "\System32\WindowsPowershell\v1.0\Microsoft.Powershell_profile.ps1")
+if (Test-Path $alluserprofile) {
+"passed the test"
+    $thisProfile = "Default_Microsoft.Powershell_profile.ps1"
+    $suppress = Copy-Item $alluserprofile $env:TEMP\$thisProfile
+    ls $env:TEMP\$thisprofile | add-zip $zipfile
+    Remove-Item $env:TEMP\$thisProfile -Force
 }
 
 Get-Content -Encoding Byte -Raw $zipfile

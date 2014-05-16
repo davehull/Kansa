@@ -356,6 +356,9 @@ Param(
                         $Recpt | Set-Content -Encoding Byte $Outfile
                     }
                     "*zip" {
+                        # Compression should be done in the collector
+                        # Default collector template has a function
+                        # for compressing data as an example
                         $Outfile = $Outfile + ".zip"
                         $Recpt | Set-Content -Encoding Byte $Outfile
                     }

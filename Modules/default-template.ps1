@@ -32,3 +32,24 @@ Get-Netstat.ps1, for example. Interestingly, Get-Netstat.ps1 will run
 without admin privs, but it won't provide the output that the analyst 
 wanted.
 #>
+
+# Zip function, in case your collector needs it. It's currently used
+# by Get-PrefetchFiles.ps1 and Get-PSProfiles.ps1, both collect 
+# multiple files
+function add-zip
+{
+    param([string]$zipfilename)
+
+    if (-not (Test-Path($zipfilename))) {
+        Set-Content $zipfilename ("PK" + [char]5 + [char]6 + ("$([char]0)" * 18))
+        (dir $zipfilename).IsReadOnly = $false
+    }
+
+    $shellApplication = New-Object -com shell.application
+    $zipPackage = $shellApplication.NameSpace($zipfilename)
+
+    foreach($file in $input) {
+        $zipPackage.CopyHere($file.FullName)
+        Start-Sleep -milliseconds 100
+    }
+}

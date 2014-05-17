@@ -430,7 +430,9 @@ function Set-KansaPath {
 }
 
 #########################################################
-# Let's not stop or report errors as a matter of course #
+# Do not stop or report errors as a matter of course.   #
+# Instead write them out the error.log file and report  #
+# that there were errors at the end, if there were any. #
 $Error.Clear()
 $ErrorActionPreference = "SilentlyContinue"
 #########################################################

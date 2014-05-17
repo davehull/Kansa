@@ -53,3 +53,12 @@ function add-zip
         Start-Sleep -milliseconds 100
     }
 }
+
+# Expand-Zip does what the name implies, here for reference, used by Get-FlsBodyfile.ps1
+Function Expand-Zip ($zipfile, $destination) {
+    $shell = New-Object -ComObject shell.application
+    $zip = $shell.Namespace($zipfile)
+    foreach($item in $zip.items()) {
+        $shell.Namespace($destination).copyhere($item)
+    }
+}    

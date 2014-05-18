@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-Kansa is Powershell incident response framework for Windows environments.
+Kansa is a Powershell based incident response framework for Windows environments.
 .DESCRIPTION
 In this modular version of Mal-Seine, Kansa looks for a modules.conf
 file in the -Modules directory. If one is found, it will control which 

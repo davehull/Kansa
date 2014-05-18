@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-Kansa is the ame for the modular rewrite of Mal-Seine.
+Kansa is Powershell incident response framework for Windows environments.
 .DESCRIPTION
 In this modular version of Mal-Seine, Kansa looks for a modules.conf
 file in the -Modules directory. If one is found, it will control which 

@@ -39,9 +39,16 @@ foreach($path in (Get-WmiObject win32_userprofile | select -ExpandProperty Local
 
 $alluserprofile = ($env:windir + "\System32\WindowsPowershell\v1.0\Microsoft.Powershell_profile.ps1")
 if (Test-Path $alluserprofile) {
-"passed the test"
     $thisProfile = "Default_Microsoft.Powershell_profile.ps1"
     $suppress = Copy-Item $alluserprofile $env:TEMP\$thisProfile
+    ls $env:TEMP\$thisprofile | add-zip $zipfile
+    Remove-Item $env:TEMP\$thisProfile -Force
+}
+
+$alluserprofilex86 = ($env:windir + "\SysWOW64\WindowsPowershell\v1.0\Microsoft.Powershell_profile.ps1")
+if (Test-Path $alluserprofilex86) {
+    $thisProfile = "SysWow64Default_Microsoft.Powershell_profile.ps1"
+    $suppress = Copy-Item $alluserprofilex86 $env:TEMP\$thisProfile
     ls $env:TEMP\$thisprofile | add-zip $zipfile
     Remove-Item $env:TEMP\$thisProfile -Force
 }

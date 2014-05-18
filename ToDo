@@ -1,4 +1,5 @@
 Kansa core:
+Consider restructuring Modules path, breaking up modules into subfolders based on type of data collected
 
 Modules:
 Can non-log related GUIDs be resolved to human readable values for Get-SvcTrigs.ps1

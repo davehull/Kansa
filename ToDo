@@ -7,6 +7,7 @@ Browser cache/history collector
 Update the old Get-DNSCache method using ipconfig /displaydns to mimic Get-DNSClientCache output <- this is not easy, but in progress
 Collector for common temp directory listings
 Get rid of xml output wherever possible
+Get-Sigcheck -- multiple things to look for here
 
 Analysis:
 Get-ProcessByAge.ps1

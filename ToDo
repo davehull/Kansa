@@ -14,3 +14,5 @@ Analysis:
 Get-ProcessByAge.ps1
 Get-ProcessStack.ps1
 Get-NetstatProcessStack.ps1
+AM-HealthStatus query
+AM-Infectionstatus query

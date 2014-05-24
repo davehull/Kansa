@@ -531,7 +531,14 @@ Write-Debug "`$ServerList is ${TargetList}."
 if ($ListModules) {
     # User provided ListModules switch so exit
     # after returning the full list of modules
-    ls $ModulePath\Get-*.ps1 | Select-Object Name
+    foreach ($dir in (ls $ModulePath)) {
+        if ($dir.PSIsContainer -and $dir.name -ne "bin") {
+            foreach($file in (ls $ModulePath\$dir\Get-*)) {
+                $($dir.Name + "\" + (split-path -leaf $file))
+            }
+        }
+    }
+#    ls -r $ModulePath\Get-*.ps1
     Exit-Script
 }
 # Get-Modules reads the modules.conf file, if

@@ -4,12 +4,22 @@
 Default module template
 
 Q. How does a module tell the caller how to handle its output?
-A. By placing a comment on the FIRST line of the module like one of the 
-following:
+A. Iff a module returns objects, the module can tell Kansa how to handle the output
+by placing a comment on the FIRST line of the module like one of the following:
 # OUTPUT csv
 # OUTPUT tsv
 # OUTPUT txt
 # OUTPUT xml
+Kansa.ps1 will then treat the objects accordingly.
+
+Two exceptions:
+# OUTPUT bin
+# OUTPUT zip
+
+Some modules may need to return binary data, Get-ProcDump.ps1 for example. Others may
+return multiple files, these have to be zipped up and returned as zip files, Get-
+PrefetchFiles.ps1 is an example. Those two output specifiers cause the data to be
+handled as binary data.
 
 Q. Can't I place the OUTPUT directive on line two?
 A. Not if you want it to work correctly. OUTPUT directives shall only

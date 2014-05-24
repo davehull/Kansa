@@ -1,6 +1,8 @@
 ﻿# OUTPUT txt
+# BINDEP .\Modules\bin\binaryName
+# See below for notes about the lines above
+
 <#
-.SYNOPSIS
 Default module template
 
 Q. How does a module tell the caller how to handle its output?
@@ -30,11 +32,25 @@ Q. What if a module doesn't specify its output?
 A. The caller will assume the output is text and pipe it to a text file.
 
 Q. Are there naming requirements for modules?
-A. Yes. because modules are intended only to gather data, they must be 
+A. Yes. Because modules are intended only to gather data, they must be 
 named according to Powershell's verb-noun convention. Examples:
 Get-PrefetchListing.ps1
 Get-DNSCache.ps1
 Get-Prox.ps1
+
+Modules that don't start with Get- will be ignored. Note that there are cases where
+having a module that makes changes to remote hosts is desireable, during tactical
+remediation, for example. In such cases, you may choose to name such a module, 
+Get-Remediation.ps1.
+
+Q. I have an idea for a module, but it requires an executable that doesn't ship with
+Windows. Any way to do that?
+A. Yes. The SECOND LINE of your module can be used to specify the binary the module
+depends on. See the example at the top of this file. Note the path to the binary, 
+relative to Kansa.ps1's location must follow the # BINDEP directive. You will also
+have to run Kansa with the -Pushbin argument. -Pushbin will cause Kansa.ps1 to try and
+copy required binaries to remote hosts' ADMIN$ shares. When the modules run, they should
+look for the binary in the $env:windir path, which is what ADMIN$ resolves to.
 
 Q. Any other requirements?
 A. Many modules assume they will be run with administrator privileges,

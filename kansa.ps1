@@ -197,6 +197,10 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     Write-Debug "`$ModulePath is ${ModulePath}."
     $Modules = $FoundModules = @()
+    if (!(ls $ModulePath -ErrorAction SilentlyContinue).PSIsContainer) {
+        "`$ModulePath argument, ${ModulePath}, must be a directory." | Add-Content -Encoding $Encoding $ErrorLog
+        Exit-Script
+    }
     Try {
         $ModConf = $ModulePath + "\" + "Modules.conf"
         if (Test-Path($Modconf)) {

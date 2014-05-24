@@ -1,10 +1,5 @@
 ﻿# OUTPUT zip
-<#
-.SYNOPSIS
-Get-PowershellProfiles.ps1
-Grabs copies of Powershell profiles, both users specific and default
-#>
-
+# Grabs copies of Powershell profiles, both users specific and default
 function add-zip
 {
     param([string]$zipfilename)

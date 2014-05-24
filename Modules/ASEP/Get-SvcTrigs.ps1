@@ -1,7 +1,6 @@
 ﻿# OUTPUT tsv
-<#
-Acquires service triggers
-#>
+# Acquires service triggers
+
 $svctrigs = $($(foreach ($svc in (& $env:windir\system32\sc.exe query)) { 
     if ($svc -match "SERVICE_NAME:\s(.*)") {
         & $env:windir\system32\sc qtriggerinfo $($matches[1])

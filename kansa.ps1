@@ -381,6 +381,18 @@ function Push-Bindep {
 <#
 .SYNOPSIS
 Attempts to copy required binaries to targets.
+If a module depends on an external binary, the binary should be copied to
+.\Modules\bin\ and the module should reference the binary on it's second line
+through the use of a comment such as the following:
+# BINDEP .\Modules\bin\autorunsc.exe
+
+Some Modules may require multiple binary files, say an executable and required
+dlls. See the .\Modules\Disk\Get-FlsBodyFile.ps1 as an example. The # BINDEP
+line in that module references .\Modules\bin\fls.zip. Kansa will copy that zip
+file to the targets, but the module itself handles the unzipping of the fls.zip
+file.
+
+# BINDEP must include the path to the binary, relative to Kansa.ps1's path.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
@@ -396,7 +408,7 @@ Param(
         if ($bindepline -match '#\sBINDEP\s(.*)') {
             $Bindep = $($Matches[1])
             Write-Verbose "${ModuleName} has dependency on ${Bindep}."
-            if (-not (Test-Path("$ModulePath\bin\$Bindep"))) {
+            if (-not (Test-Path("$Bindep"))) {
                 Write-Verbose "${Bindep} not found in ${ModulePath}\bin, skipping."
                 "${Bindep} not found in ${ModulePath}\bin, skipping." | Add-Content -Encoding $Encoding $ErrorLog
                 Continue
@@ -404,7 +416,7 @@ Param(
             Write-Verbose "Attempting to copy ${Bindep} to targets..."
             foreach($Target in $Targets) {
                 Try {
-                    Copy-Item "$ModulePath\bin\$Bindep" "\\$Target\ADMIN$\$Bindep"
+                    Copy-Item "$Bindep" "\\$Target\ADMIN$\$Bindep"
                 } Catch [Exception] {
                     "Failed to copy ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
                     $Error | Add-Content -Encoding $Encoding $ErrorLog

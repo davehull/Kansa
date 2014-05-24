@@ -1,5 +1,5 @@
 ﻿# OUTPUT bin
-# BINDEP Procdump.exe
+# BINDEP .\Modules\bin\Procdump.exe
 <#
 Get-ProcDump
 Acquires a Sysinternal procdump of the specified process

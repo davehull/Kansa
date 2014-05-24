@@ -1,6 +1,6 @@
-﻿# OUTPUT xml
+﻿# OUTPUT TSV
 <#
 Acquire remote security event log
 #>
 
-Get-EventLog Security
+Get-WinEvent Security

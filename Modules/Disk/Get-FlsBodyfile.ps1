@@ -1,5 +1,5 @@
 ﻿# OUTPUT txt
-# BINDEP fls.zip
+# BINDEP .\Modules\bin\fls.zip
 <#
 .SYNOPSIS
 Get-FlsBodyfile.ps1

@@ -1,5 +1,5 @@
 ﻿# OUTPUT tsv
-# BINDEP Autorunsc.exe
+# BINDEP .\Modules\bin\Autorunsc.exe
 <#
 .SYNOPSIS
 Get-Autorunsc.ps1 depends on Sysinternals Autorunsc.exe, Kansa.ps1 should recognize this

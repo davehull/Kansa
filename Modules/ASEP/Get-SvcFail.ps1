@@ -5,7 +5,6 @@ $data = $($(foreach ($svc in (& $env:windir\system32\sc query)) {
         & $env:windir\system32\sc qfailure $($matches[1])}}))
 
 $ServiceName = $RstPeriod = $RebootMsg = $CmdLine = $FailAction1 = $FailAction2 = $FailAction3 = $False
-# ("ServiceName","ResetPeriod","RebootMessage","CommandLine", "FailureAction1", "FailureAction2", "FailureAction3") -join $Delimiter
 foreach($line in $data) {
     if ($line.StartsWith("[SC]")) {
         continue

@@ -1,8 +1,5 @@
 ﻿# OUTPUT tsv
-<#
-.SYNOPSIS
-Returns a list of local administrators
-#>
+# Returns a list of local administrators
 & net localgroup administrators | Select-Object -Skip 6 | ? {
     $_ -and $_ -notmatch "The command completed successfully" 
 } | % {

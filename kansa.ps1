@@ -538,7 +538,6 @@ if ($ListModules) {
             }
         }
     }
-#    ls -r $ModulePath\Get-*.ps1
     Exit-Script
 }
 # Get-Modules reads the modules.conf file, if

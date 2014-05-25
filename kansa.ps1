@@ -198,6 +198,7 @@ Param(
     Write-Debug "`$ModulePath is ${ModulePath}."
     $Modules = $FoundModules = @()
     if (!(ls $ModulePath -ErrorAction SilentlyContinue).PSIsContainer) {
+        # User may have provided full path to a .ps1 module, this is how you run a single module explicitly
         if (Test-Path($ModulePath)) {
             $Module = ls $ModulePath | Select-Object -ExpandProperty BaseName
             Write-Verbose "Running module: $Module"

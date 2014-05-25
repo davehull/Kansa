@@ -1,5 +1,4 @@
 Kansa core:
-Add a -Module option that allows for running a single module specified at the command line
 
 Modules:
 Can non-log related GUIDs be resolved to human readable values for Get-SvcTrigs.ps1

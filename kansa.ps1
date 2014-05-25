@@ -198,8 +198,11 @@ Param(
     Write-Debug "`$ModulePath is ${ModulePath}."
     $Modules = $FoundModules = @()
     if (!(ls $ModulePath -ErrorAction SilentlyContinue).PSIsContainer) {
-        "`$ModulePath argument, ${ModulePath}, must be a directory." | Add-Content -Encoding $Encoding $ErrorLog
-        Exit-Script
+        if (Test-Path($ModulePath)) {
+            $Module = ls $ModulePath | Select-Object -ExpandProperty BaseName
+            Write-Verbose "Running module: $Module"
+            Return $Module
+        }
     }
     Try {
         $ModConf = $ModulePath + "\" + "Modules.conf"

@@ -202,7 +202,7 @@ Param(
         if (Test-Path($ModulePath)) {
             $Module = ls $ModulePath | Select-Object -ExpandProperty BaseName
             Write-Verbose "Running module: $Module"
-            Return $Module
+            Return ls $ModulePath
         }
     }
     Try {

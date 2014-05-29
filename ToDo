@@ -5,6 +5,7 @@ Can non-log related GUIDs be resolved to human readable values for Get-SvcTrigs.
 Browser cache/history collector
 Update the old Get-DNSCache method using ipconfig /displaydns to mimic Get-DNSClientCache output <- this is not easy, but in progress
 Collector for common temp directory listings
+	NTUser.dat->Environment->TMP and NTUser.dat->Environment->Temp define user temp directories
 Get rid of xml output wherever possible
 Get-Sigcheck -- multiple things to look for here
 

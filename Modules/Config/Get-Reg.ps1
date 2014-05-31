@@ -32,16 +32,24 @@ Param(
 
 
 
-if ($pathToReg = Get-Command Reg.exe | Select-Object -ExpandProperty path) { 
-    foreach ($userpath in (Get-WmiObject win32_userprofile | Select-Object localpath)) {
-    <# TKTK if $userpath contains an ntuser.dat
-    reg load "hku\$userpath" "$userpath\ntuser.dat"
-    set-location registry::\hkey_users
-    get-itemproperty .\$userpath\path\to\key\value
-    
-
-    
+if ($regexe = Get-Command Reg.exe | Select-Object -ExpandProperty path) { 
+    foreach ($userpath in (Get-WmiObject win32_userprofile | Select-Object -ExpandProperty localpath)) {
+        if (Test-Path($userpath + "\ntuser.dat")) {
+            $regload = & $regexe load "hku\KansaTempHive" ($userpath + "\ntuser.dat")
+            if ($regload -notmatch "ERROR") {
+                $userpath
+                Set-Location "Registry::HKEY_USERS\KansaTempHive\Software\Microsoft\Windows\CurrentVersion\Explorer\"
+                if (Test-Path("UserAssist")) {
+                    "UserAssist found."
+                    foreach ($uavalue in (ls "UserAssist" -Recurse | select -expandproperty property)) {
+                        $uavalue
+                        rot13 $uavalue
+                    }
+                }
+                Set-Location $env:SystemDrive
+                [gc]::collect()
+                reg unload "hku\KansaTempHive"
+            }
+        }
     }
 }
-
-#>

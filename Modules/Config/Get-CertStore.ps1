@@ -13,7 +13,7 @@ share of targets and run without the -Pushbin argument.
 #>
 
 if (Test-Path "$env:SystemRoot\sigcheck.exe") {
-    & $env:SystemRoot\sigcheck.exe -q -t '*'
+    & $env:SystemRoot\sigcheck.exe /accepteula -q -t '*'
 } else {
     "sigcheck.exe not found on $env:COMPUTERNAME"
 }    

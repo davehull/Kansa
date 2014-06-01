@@ -432,7 +432,7 @@ Param(
             Write-Verbose "Attempting to copy ${Bindep} to targets..."
             foreach($Target in $Targets) {
                 Try {
-                    Copy-Item "$Bindep" "\\$Target\ADMIN$\$Bindep"
+                    Copy-Item "$Bindep" "\\$Target\ADMIN$\"
                 } Catch [Exception] {
                     "Failed to copy ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
                     $Error | Add-Content -Encoding $Encoding $ErrorLog

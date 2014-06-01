@@ -42,8 +42,16 @@ if ($regexe = Get-Command Reg.exe | Select-Object -ExpandProperty path) {
                 if (Test-Path("UserAssist")) {
                     "UserAssist found."
                     foreach ($uavalue in (ls "UserAssist" -Recurse | select -expandproperty property)) {
-                        $uavalue
-                        rot13 $uavalue
+                        if ($uavalue -match '.*({[-A-Za-z0-9]*}).*') {
+                            $GUID = $($matches[1])
+                            $uavalue
+                            $uavalue = $uavalue -replace $GUID
+                            $rot13uav = rot13 $uavalue
+                            $GUID + $rot13uav
+                        } else {
+                            $rot13uav = rot13 $uavalue
+                            $rot13uav
+                        }
                     }
                 }
                 Set-Location $env:SystemDrive

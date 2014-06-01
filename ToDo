@@ -1,4 +1,5 @@
 Kansa core:
+Add a -Target argument that takes a single host as its target
 
 Modules:
 Can non-log related GUIDs be resolved to human readable values for Get-SvcTrigs.ps1
@@ -8,6 +9,7 @@ Collector for common temp directory listings
 	NTUser.dat->Environment->TMP and NTUser.dat->Environment->Temp define user temp directories
 Get rid of xml output wherever possible
 Get-Sigcheck -- multiple things to look for here
+Get-File -- a module to acquire arbitrary files
 
 Analysis:
 Get-ProcessByAge.ps1

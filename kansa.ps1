@@ -40,11 +40,17 @@ http://www.microsoft.com/en-us/download/default.aspx
 .PARAMETER ModulePath
 An optional parameter that specifies the path to the collector modules.
 .PARAMETER TargetList
-An optional list of servers from the current forest to collect data from.
-In the absence of this parameter, collection will be attempted against 
-all hosts in the current forest.
+An optional argument, the name of a file containing a list of servers 
+from the current forest to collect data from.
+PARAMETER Target
+An optional argument, the name of a single system to collect data from.
 .PARAMETER TargetCount
 An optional parameter that specifies the maximum number of targets.
+
+In the absence of the TargetList and / or Target arguments, Kansa will use
+Remote System Administration Tools (a separate installed package) to query
+Active Directory and will build a list of hosts to target automatically.
+
 .PARAMETER Credential
 An optional credential that the script will use for execution. Use the
 $Credential = Get-Credential convention to populate a suitable variable.
@@ -132,16 +138,18 @@ Param(
     [Parameter(Mandatory=$False,Position=2)]
         [int]$TargetCount=0,
     [Parameter(Mandatory=$False,Position=3)]
-        [PSCredential]$Credential=$Null,
+        [String]$Target=$Null,
     [Parameter(Mandatory=$False,Position=4)]
-        [Switch]$Pushbin,
+        [PSCredential]$Credential=$Null,
     [Parameter(Mandatory=$False,Position=5)]
-        [Switch]$Ascii,
+        [Switch]$Pushbin,
     [Parameter(Mandatory=$False,Position=6)]
-        [Switch]$UpdatePath,
+        [Switch]$Ascii,
     [Parameter(Mandatory=$False,Position=7)]
-        [Switch]$ListModules,
+        [Switch]$UpdatePath,
     [Parameter(Mandatory=$False,Position=8)]
+        [Switch]$ListModules,
+    [Parameter(Mandatory=$False,Position=9)]
         [Switch]$Transcribe
 )
 
@@ -572,12 +580,14 @@ $Modules = Get-Modules -ModulePath $ModulePath
 ####################
 # Get our targets. #
 ####################
-if (!$TargetList) {
-    Write-Verbose "No TargetList specified. Building one requires RAST and will take some time."
+if ($TargetList) {
+    $Targets = Get-Targets -TargetList $TargetList -TargetCount $TargetCount
+} elseif ($Target) {
+    $Targets = $Target
+} else {
+    Write-Verbose "No Targets specified. Building one requires RAST and will take some time."
     $suppress = Load-AD
     $Targets  = Get-Targets -TargetCount $TargetCount
-} else {
-    $Targets = Get-Targets -TargetList $TargetList -TargetCount $TargetCount
 }
 ########################
 # Done getting targets #

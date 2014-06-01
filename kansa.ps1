@@ -136,9 +136,9 @@ Param(
     [Parameter(Mandatory=$False,Position=1)]
         [String]$TargetList=$Null,
     [Parameter(Mandatory=$False,Position=2)]
-        [int]$TargetCount=0,
-    [Parameter(Mandatory=$False,Position=3)]
         [String]$Target=$Null,
+    [Parameter(Mandatory=$False,Position=3)]
+        [int]$TargetCount=0,
     [Parameter(Mandatory=$False,Position=4)]
         [PSCredential]$Credential=$Null,
     [Parameter(Mandatory=$False,Position=5)]
@@ -425,7 +425,7 @@ Param(
             $Bindep = $($Matches[1])
             Write-Verbose "${ModuleName} has dependency on ${Bindep}."
             if (-not (Test-Path("$Bindep"))) {
-                Write-Verbose "${Bindep} not found in ${ModulePath}\bin, skipping."
+                Write-Verbose "${Bindep} not found in ${ModulePath}bin, skipping."
                 "${Bindep} not found in ${ModulePath}\bin, skipping." | Add-Content -Encoding $Encoding $ErrorLog
                 Continue
             }

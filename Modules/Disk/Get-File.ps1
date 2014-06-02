@@ -7,4 +7,4 @@ $targetFile = "C:\Users\mosecsvc\ntuser.dat"
 
 if (Test-Path($targetFile)) {
     Get-Content -ReadCount 0 -Raw -Encoding Byte $targetFile
-}
+}  

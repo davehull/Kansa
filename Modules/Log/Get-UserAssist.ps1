@@ -1,6 +1,14 @@
 ﻿# OUTPUT TXT
-# Get-UserAssist.pl
-# Loads NTUSER.DAT files and parses them for userassist data
+# Get-UserAssist.ps1 retrieves UserAssist data from ntuser.dat hives
+# Doesn't current retrieve the count, but I'm working on that
+# Doesn't currently work against locked hives, but there may be a work-around for this
+
+foreach($userpath in (Get-WmiObject win32_userprofile | Select-Object -ExpandProperty localpath)) { 
+    $sb = {
+Param(
+[Parameter(Mandatory=$True,Position=0)]
+    [String]$userpath
+)
 
 <#
 The next section of code was found in Microsoft's TechNet Gallery at:
@@ -78,36 +86,6 @@ Update-TypeData -TypeName Microsoft.Win32.RegistryKey -MemberType ScriptProperty
         [datetime]::FromFileTime($LastWriteTime)
     }
 }
-
-Update-TypeData -TypeName Microsoft.Win32.RegistryKey -MemberType ScriptProperty -MemberName ClassName -Value {
-
-    $ClassLength = 255 # Buffer size (class name is rarely used, and when it is, I've never seen 
-                        # it more than 8 characters. Buffer can be increased here, though. 
-    $ClassName = New-Object System.Text.StringBuilder $ClassLength  # Will hold the class name
-            
-    $Return = [CustomNameSpace.advapi32]::RegQueryInfoKey(
-        $this.Handle,
-        $ClassName,
-        [ref] $ClassLength,
-        $null,  # Reserved
-        [ref] $null, # SubKeyCount
-        [ref] $null, # MaxSubKeyNameLength
-        [ref] $null, # MaxClassLength
-        [ref] $null, # ValueCount
-        [ref] $null, # MaxValueNameLength 
-        [ref] $null, # MaxValueValueLength 
-        [ref] $null, # SecurityDescriptorSize
-        [ref] $null  # LastWriteTime
-    )
-
-    if ($Return -ne 0) {
-        "[ERROR]"
-    }
-    else {
-        # Return class name
-        $ClassName.ToString()
-    }
-}
 <# End MS Limited Public Licensed code #>
 
 function rot13 {
@@ -118,7 +96,6 @@ Param(
     [string]$value
 )
     $newvalue = @()
-
     for ($i = 0; $i -lt $value.length; $i++) {
         $charnum = [int]$value[$i]
         if ($charnum -ge [int][char]'a' -and $charnum -le [int][char]'z') {
@@ -140,26 +117,35 @@ Param(
 }
 
 if ($regexe = Get-Command Reg.exe | Select-Object -ExpandProperty path) { 
-    foreach ($userpath in (Get-WmiObject win32_userprofile | Select-Object -ExpandProperty localpath)) {
-        if (Test-Path($userpath + "\ntuser.dat")) {
-            $regload = & $regexe load "hku\KansaTempHive" ($userpath + "\ntuser.dat")
-            if ($regload -notmatch "ERROR") {
-                "$userpath loaded."
-                Set-Location "Registry::HKEY_USERS\KansaTempHive\Software\Microsoft\Windows\CurrentVersion\Explorer\"
-                if (Test-Path("UserAssist")) {
-                    "UserAssist found."
-                    foreach ($line in (ls "UserAssist" -Recurse)) {
-                        $uavalue = $line | select -ExpandProperty property 
-                        $lastwrt = $line | select -ExpandProperty LastWriteTime
+    if (Test-Path($userpath + "\ntuser.dat")) {
+        "$userpath has an ntuser.dat file... attempting to load"
+        $regload = & $regexe load "hku\KansaTempHive" "$userpath\ntuser.dat"
+        if ($regload -notmatch "ERROR") {
+            "$userpath loaded."
+            Set-Location "Registry::HKEY_USERS\KansaTempHive\Software\Microsoft\Windows\CurrentVersion\Explorer\"
+            if (Test-Path("UserAssist")) {
+                "UserAssist found."
+                foreach ($line in (ls "UserAssist" -Recurse)) {
+                    $uavalue = ($line | select -ExpandProperty property | out-string)
+                    $lastwrt = $line | select -ExpandProperty LastWriteTime
+                    $count   = $line | select -ExpandProperty Count
+                    if (!($uavalue -match "Version")) {
                         $rot13uav = rot13 $uavalue
-                        $lastwrt
-                        $rot13uav
                     }
+                    $lastwrt
+                    $rot13uav + "`t" + $count
                 }
-                Set-Location $env:SystemDrive
-                [gc]::collect()
-                reg unload "hku\KansaTempHive"
+            } else {
+                "No UserAssist found for $userpath."
             }
+        } else {
+            "Could not load $userpath."
         }
     }
+}
+}
+
+    Invoke-Command -ComputerName localhost -ScriptBlock $sb -ArgumentList $userpath
+    $ErrorActionPreference = "SilentlyContinue"
+    & reg.exe unload "hku\KansaTempHive" 2>&1 
 }

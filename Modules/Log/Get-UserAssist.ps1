@@ -128,12 +128,11 @@ if ($regexe = Get-Command Reg.exe | Select-Object -ExpandProperty path) {
                 foreach ($line in (ls "UserAssist" -Recurse)) {
                     $uavalue = ($line | select -ExpandProperty property | out-string)
                     $lastwrt = $line | select -ExpandProperty LastWriteTime
-                    $count   = $line | select -ExpandProperty Count
                     if (!($uavalue -match "Version")) {
                         $rot13uav = rot13 $uavalue
                     }
                     $lastwrt
-                    $rot13uav + "`t" + $count
+                    $rot13uav
                 }
             } else {
                 "No UserAssist found for $userpath."
@@ -145,7 +144,10 @@ if ($regexe = Get-Command Reg.exe | Select-Object -ExpandProperty path) {
 }
 }
 
-    Invoke-Command -ComputerName localhost -ScriptBlock $sb -ArgumentList $userpath
+    $Job = Start-Job -ScriptBlock $sb -ArgumentList $userpath
+    $suppress = Wait-Job $Job 
+    $Recpt = Receive-Job $Job
+    $Recpt
     $ErrorActionPreference = "SilentlyContinue"
     & reg.exe unload "hku\KansaTempHive" 2>&1 
 }

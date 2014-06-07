@@ -414,7 +414,10 @@ Param(
     [Parameter(Mandatory=$True,Position=0)]
         [Array]$Targets,
     [Parameter(Mandatory=$True,Position=1)]
-        [Array]$Modules
+        [Array]$Modules,
+    [Parameter(Mandatory=$False,Position=2)]
+        [PSCredential]$Credential
+        
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     foreach($Module in $Modules) {
@@ -432,7 +435,15 @@ Param(
             Write-Verbose "Attempting to copy ${Bindep} to targets..."
             foreach($Target in $Targets) {
                 Try {
-                    Copy-Item "$Bindep" "\\$Target\ADMIN$\"
+                    if ($Credential) {
+                        $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
+                        Copy-Item "$Bindep" "KansaDrive:"
+                        $suppress = Remove-PSDrive -Name "KansaDrive"
+                    } else {
+                        $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
+                        Copy-Item "$Bindep" "KansaDrive:"
+                        $suppress = Remove-PSDrive -Name "KansaDrive"
+                    }
                 } Catch [Exception] {
                     "Failed to copy ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
                     $Error | Add-Content -Encoding $Encoding $ErrorLog
@@ -598,7 +609,7 @@ if ($TargetList) {
 # Copy binaries to targets if requested #
 #########################################
 if ($PushBin) {
-    Push-Bindep -Targets $Targets -Modules $Modules
+    Push-Bindep -Targets $Targets -Modules $Modules -Credential $Credential
 }
 #####################
 # Done pushing bins #

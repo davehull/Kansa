@@ -144,12 +144,14 @@ Param(
     [Parameter(Mandatory=$False,Position=5)]
         [Switch]$Pushbin,
     [Parameter(Mandatory=$False,Position=6)]
-        [Switch]$Ascii,
+        [Int]$ThrottleLimit,
     [Parameter(Mandatory=$False,Position=7)]
-        [Switch]$UpdatePath,
+        [Switch]$Ascii,
     [Parameter(Mandatory=$False,Position=8)]
-        [Switch]$ListModules,
+        [Switch]$UpdatePath,
     [Parameter(Mandatory=$False,Position=9)]
+        [Switch]$ListModules,
+    [Parameter(Mandatory=$False,Position=10)]
         [Switch]$Transcribe
 )
 
@@ -322,7 +324,9 @@ Param(
     [Parameter(Mandatory=$True,Position=1)]
         [Array]$Modules,
     [Parameter(Mandatory=$False,Position=2)]
-        [PSCredential]$Credential=$False
+        [PSCredential]$Credential=$False,
+    [Parameter(Mandatory=$False,Position=3)]
+        [Int]$ThrottleLimit
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
 
@@ -346,7 +350,7 @@ Param(
             # First line of each modules can specify how output should be handled
             $OutputMethod = Get-Content $Module -TotalCount 1 
             # run the module on the targets
-            $Job = Invoke-Command -Session $PSSessions -FilePath $Module -AsJob
+            $Job = Invoke-Command -Session $PSSessions -FilePath $Module -AsJob -ThrottleLimit $ThrottleLimit
             Write-Verbose "Waiting for $ModuleName to complete."
             # Wait-Job does return data to stdout, add $suppress = to start of next line, if needed
             Wait-Job $Job
@@ -619,7 +623,7 @@ if ($PushBin) {
 ####################################
 # Finally, let's gather some data. #
 ####################################
-Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential
+Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential -ThrottleLimit $ThrottleLimit
 ########################
 # Done gathering data. #
 ########################

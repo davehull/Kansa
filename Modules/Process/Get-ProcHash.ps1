@@ -1,6 +1,9 @@
 ﻿# OUTPUT tsv
 <#
 Get-ProcsHash.ps1
+This same functionality is included with Get-ProcsWMI, so this module will be 
+deprecated.
+
 Acquires hash, set to MD5 by default, for each unique ExecutablePath returned by
 Get-WmiObject -Query "Select * from win32_process"
 

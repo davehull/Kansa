@@ -22,7 +22,7 @@ if (Get-Command logparser.exe) {
         LastWriteTimeUtc Desc
 "@
 
-    & logparser -i:tsv -fixedsep:on -dtlines:0 -rtp:50 $lpquery
+    & logparser -i:tsv -fixedsep:on -dtlines:0 -rtp:-1 $lpquery
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

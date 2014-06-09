@@ -1,9 +1,7 @@
 ﻿<#
-Get-ProcsWMICLIStack.ps1
+Get-ProcsWMISortByStartTime.ps1
 
-Returns frequency of "CommandLine," which is
-ExecutablePath and command line arguments and hash
-of file on disk
+Returns process CreationDate, ProcessId, ParentProcessId, CommandLine
 
 Requires:
 Process data matching *ProcWMI.tsv in pwd
@@ -12,17 +10,18 @@ logparser.exe in path
 
 if (Get-Command logparser.exe) {
     $lpquery = @"
-    SELECT
-        COUNT(CommandLine) as Cnt,
+    SELECT DISTINCT
+        CreationDate,
+        ProcessId,
+        ParentProcessId,
         CommandLine,
-        Hash
+        PSComputerName
     FROM
         *ProcsWMI.tsv
-    GROUP BY
-        CommandLine,
-        Hash
     ORDER BY
-        Cnt ASC
+        PSComputerName,
+        CreationDate,
+        ProcessId ASC
 "@
 
     & logparser -i:tsv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"

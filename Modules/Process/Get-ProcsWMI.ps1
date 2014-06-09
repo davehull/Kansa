@@ -60,6 +60,7 @@ foreach($item in (Get-WmiObject -Query "Select * from win32_process")) {
     } else {
         $hash = "Get-WmiObject query returned no executable path."
     }
-    $item | Add-Member -Type NoteProperty -Name $hashtype -Value $hash
+    $item | Add-Member -Type NoteProperty -Name "Hash" -Value $hash
+    $item.CommandLine = $item.CommandLine -Replace "`n", " " -replace '\s\s*', ' '
     $item
 }

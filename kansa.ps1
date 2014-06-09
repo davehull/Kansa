@@ -144,7 +144,7 @@ Param(
     [Parameter(Mandatory=$False,Position=5)]
         [Switch]$Pushbin,
     [Parameter(Mandatory=$False,Position=6)]
-        [Int]$ThrottleLimit,
+        [Int]$ThrottleLimit=0,
     [Parameter(Mandatory=$False,Position=7)]
         [Switch]$Ascii,
     [Parameter(Mandatory=$False,Position=8)]

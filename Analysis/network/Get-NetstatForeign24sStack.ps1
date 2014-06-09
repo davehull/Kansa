@@ -2,8 +2,8 @@
 Get-NetstatForeign24sStack.ps1
 Requires logparser.exe in path
 Pulls stack rank of Netstat connections aggregating 
-on Protocol, first two octets of ForeignAddress, State,
-Component and Process
+on Protocol, first three octets of ForeignAddress, 
+State, Component and Process
 
 You may want to customize this a bit for
 your environment. If you're running web 

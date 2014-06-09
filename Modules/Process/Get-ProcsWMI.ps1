@@ -63,5 +63,3 @@ foreach($item in (Get-WmiObject -Query "Select * from win32_process")) {
     $item | Add-Member -Type NoteProperty -Name $hashtype -Value $hash
     $item
 }
-
-Get-WmiObject -Query "Select * from win32_process"

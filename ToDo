@@ -22,3 +22,5 @@ CBSlog query
 Registry notes (keys of interest):
 \SOFTWARE\Microsoft\Microsoft Management Console\Recent File List
 \SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders
+
+No network access -- checkout rammap as a collector

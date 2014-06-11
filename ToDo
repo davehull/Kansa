@@ -11,6 +11,7 @@ Get rid of xml output wherever possible
 Get-Sigcheck -- multiple things to look for here
 Get-File -- a module to acquire arbitrary files
 
+
 Analysis:
 Get-ProcessByAge.ps1
 Get-ProcessStack.ps1
@@ -23,4 +24,7 @@ Registry notes (keys of interest):
 \SOFTWARE\Microsoft\Microsoft Management Console\Recent File List
 \SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders
 
-No network access -- checkout rammap as a collector
+Items below added while working offline with no network access, open them as issues when back online
+Kansa Modules: rammap as a collector
+	Need Aaron Margosis' book on Sysinternals tools to figure out how to make sense of the data and exactly what rammap does
+Kansa Modules: Investigate possibility of putting command line arguments for modules in the modules.conf file

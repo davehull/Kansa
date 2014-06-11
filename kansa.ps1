@@ -155,6 +155,9 @@ Param(
         [Switch]$Transcribe
 )
 
+# Opening with a Try so the Finally block at the bottom will always call
+# the Exit-Script function and clean up things as needed.
+Try {
 
 function FuncTemplate {
 <#
@@ -254,11 +257,11 @@ function Load-AD {
         if ($Error) {
             "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
             $Error.Clear()
-            Exit-Script
+            Exit
         }
     } else {
         "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
-        Exit-Script
+        Exit
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
 }
@@ -272,7 +275,7 @@ function Get-Forest {
         $Forest
     } catch {
         "Get-Forest could not find current forest." | Add-Content -Encoding $Encoding $ErrorLog
-        Exit-Script
+        Exit
     }
 }
 
@@ -309,7 +312,7 @@ Param(
         "Get-Targets failed. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
         $Error | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()
-        Exit-Script
+        Exit
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
 }
@@ -538,7 +541,7 @@ if ($TargetCount -lt 0) {
 #TKTK Add test for $Credential
 if ($Exit) {
     "One or more errors were encountered with user supplied arguments. Exiting." | Add-Content -Encoding $Encoding $ErrorLog
-    Exit-Script
+    Exit
 }
 Write-Debug "Parameter sanity check complete."
 ##############################
@@ -554,7 +557,7 @@ Set-KansaPath
 if ($UpdatePath) {
     # User provided UpdatePath switch so
     # exit after updating the path
-    Exit-Script
+    Exit
 }
 ###########################
 # Done updating the path. #
@@ -586,7 +589,7 @@ if ($ListModules) {
             }
         }
     }
-    Exit-Script
+    Exit
 }
 # Get-Modules reads the modules.conf file, if
 # it exists, otherwise will have same data as
@@ -636,7 +639,11 @@ Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential -Thro
 
 ############
 # Clean up #
-Exit-Script
+Exit
 ###############
 # We're done. #
 ###############
+
+} Finally {
+    Exit-Script
+}

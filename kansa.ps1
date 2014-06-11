@@ -167,6 +167,7 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     Try {
         <# code goes here #>
+        <# Only terminating error code needs to go in a try/catch #>
     } Catch [Exception] {
         $Error | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()
@@ -183,9 +184,13 @@ Exit the script somewhat gracefully, closing any open transcript.
     if ($Transcribe) {
         $Suppress = Stop-Transcript
     }
-    # $Error | Add-Content -Encoding $Encoding $ErrorLog
     if (Test-Path($ErrorLog)) {
         Write-Output "Script completed with errors. See ${ErrorLog} for details."
+    }
+    if (!(Get-ChildItem $OutputPath)) {
+        # $OutputPath is empty, nuke it
+        "Output path was created, but Kansa finished with no hits, no runs and no errors. Nuking the folder."
+        $suppress = Remove-Item $OutputPath -Force
     }
     $Error.Clear()
     Exit

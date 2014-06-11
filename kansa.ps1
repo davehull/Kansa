@@ -215,33 +215,27 @@ Param(
             Return ls $ModulePath
         }
     }
-    Try {
-        $ModConf = $ModulePath + "\" + "Modules.conf"
-        if (Test-Path($Modconf)) {
-            Write-Verbose "Found ${ModulePath}Modules.conf."
-            # ignore blank and commented lines, trim misc. white space
-            $Modules = Get-Content $ModulePath\Modules.conf | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
-            foreach ($Module in $Modules) {
-                # verify listed modules exist
-                $Modpath = $ModulePath + "\" + $Module
-                if (!(Test-Path($Modpath))) {
-                    "Could not find module specified in ${ModulePath}\Modules.conf: $Module. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
-                    Exit-Script
-                }
-                # module found add it to the list
-                $FoundModules += ls $ModPath   
+    $ModConf = $ModulePath + "\" + "Modules.conf"
+    if (Test-Path($Modconf)) {
+        Write-Verbose "Found ${ModulePath}\Modules.conf."
+        # ignore blank and commented lines, trim misc. white space
+        $Modules = Get-Content $ModulePath\Modules.conf | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
+        foreach ($Module in $Modules) {
+            # verify listed modules exist
+            $Modpath = $ModulePath + "\" + $Module
+            if (!(Test-Path($Modpath))) {
+                "Could not find module specified in ${ModulePath}\Modules.conf: $Module. Skipping." | Add-Content -Encoding $Encoding $ErrorLog
             }
-            $Modules = $FoundModules
-        } else {
-            # we had no modules.conf
-            $Modules = ls -r $ModulePath\Get-*.ps1
+            # module found add it to the list
+            $FoundModules += ls $ModPath   
         }
-        Write-Verbose "Running modules: $($Modules | Select-Object -ExpandProperty BaseName)"
-        $Modules
-    } Catch [Exception] {
-        $Error | Add-Content -Encoding $Encoding $ErrorLog
-        $Error.Clear()
+        $Modules = $FoundModules
+    } else {
+        # we had no modules.conf
+        $Modules = ls -r $ModulePath\Get-*.ps1
     }
+    Write-Verbose "Running modules: $(($Modules | Select-Object -ExpandProperty BaseName) -join "`n")"
+    $Modules
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
 }
 
@@ -481,9 +475,45 @@ $ErrorActionPreference = "SilentlyContinue"
 #########################################################
 
 
+##################################################################
+# Create timestamped output path. Write transcript and error log #
+# to output path. Keep this first in the script so we can catch  #
+# errors in the error log of the output directory. We may create #
+##################################################################
+$Runtime = ([String] (Get-Date -Format yyyyMMddHHmm))
+$OutputPath = ".\Output_$Runtime\"
+$Suppress = New-Item -Name $OutputPath -ItemType Directory -Force 
+
+If ($Transcribe) {
+    $TransFile = $OutputPath + ([string] (Get-Date -Format yyyyMMddHHmmss)) + ".log"
+    $Suppress = Start-Transcript -Path $TransFile
+}
+Set-Variable -Name ErrorLog -Value ($OutputPath + "Error.Log") -Scope Script
+
+if (Test-Path($ErrorLog)) {
+    Remove-Item -Path $ErrorLog
+}
 ###########################
-# Sanity check parameters #
+# Done setting up output. #
 ###########################
+
+
+###########################
+# Set the output encoding #
+###########################
+if ($Ascii) {
+    Set-Variable -Name Encoding -Value "Ascii" -Scope Script
+} else {
+    Set-Variable -Name Encoding -Value "Unicode" -Scope Script
+}
+###########################
+# End set output encoding #
+###########################
+
+
+################################
+# Sanity check some parameters #
+################################
 Write-Debug "Sanity checking parameters"
 $Exit = $False
 if (-not (Test-Path($ModulePath))) {
@@ -507,42 +537,6 @@ Write-Debug "Parameter sanity check complete."
 ##############################
 # End paramter sanity checks #
 ##############################
-
-
-###########################
-# Set the output encoding #
-###########################
-if ($Ascii) {
-    Set-Variable -Name Encoding -Value "Ascii" -Scope Script
-} else {
-    Set-Variable -Name Encoding -Value "Unicode" -Scope Script
-}
-###########################
-# End set output encoding #
-###########################
-
-
-##################################
-# Create timestamped output path #
-# Write transcript and error log #
-# to output path.                #
-##################################
-$Runtime = ([String] (Get-Date -Format yyyyMMddHHmm))
-$OutputPath = ".\Output_$Runtime\"
-$Suppress = New-Item -Name $OutputPath -ItemType Directory -Force 
-
-If ($Transcribe) {
-    $TransFile = $OutputPath + ([string] (Get-Date -Format yyyyMMddHHmmss)) + ".log"
-    $Suppress = Start-Transcript -Path $TransFile
-}
-Set-Variable -Name ErrorLog -Value ($OutputPath + "Error.Log") -Scope Script
-
-if (Test-Path($ErrorLog)) {
-    Remove-Item -Path $ErrorLog
-}
-###########################
-# Done setting up output. #
-###########################
 
 
 #####################################################
@@ -578,6 +572,10 @@ if ($ListModules) {
         if ($dir.PSIsContainer -and $dir.name -ne "bin") {
             foreach($file in (ls $ModulePath\$dir\Get-*)) {
                 $($dir.Name + "\" + (split-path -leaf $file))
+            }
+        } else {
+            foreach($file in (ls $ModulePath\Get-*)) {
+                $file.Name
             }
         }
     }

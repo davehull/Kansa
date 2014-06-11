@@ -169,8 +169,15 @@ Param(
         [String]$ParamTemplate=$Null
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
+    $Error.Clear()
+    # Non-terminating errors can be checked via
+    if ($Error) {
+        # Write the $Error to the $Errorlog
+        $Error | Add-Content -Encoding $Encoding $ErrorLog
+        $Error.Clear()
+    }
+
     Try {
-        <# code goes here #>
         <# Only terminating error code needs to go in a try/catch #>
     } Catch [Exception] {
         $Error | Add-Content -Encoding $Encoding $ErrorLog

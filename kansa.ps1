@@ -155,6 +155,7 @@ Param(
         [Switch]$Transcribe
 )
 
+
 function FuncTemplate {
 <#
 .SYNOPSIS
@@ -247,11 +248,12 @@ Param(
 function Load-AD {
     # no targets provided so we'll query AD to build it, need to load the AD module
     Write-Debug "Entering $($MyInvocation.MyCommand)"
-    if (Get-Module -ListAvailable | ? { $_.Name -match "ActiveDirectory" }){
-        try {
-            $suppress = Import-Module ActiveDirectory
-        } catch {
+    if (Get-Module -ListAvailable | ? { $_.Name -match "ActiveDirectory" }) {
+        $Error.Clear()
+        Import-Module ActiveDirectory
+        if ($Error) {
             "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
+            $Error.Clear()
             Exit-Script
         }
     } else {

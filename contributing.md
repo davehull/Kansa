@@ -39,17 +39,17 @@ You aren't expected to fix other people's bugs, but you can if you want.
 * **Do** allow your modules to return error messages, unless you've 
 written code to handle them specifically. In general, if something 
 goes wrong, user's want to know about it.
-* **Do** try to avoid XML as an output, it greatly complicates
-analysis and is slow. (http://www.joelonsoftware.com/articles/fog0000000319.html)
+* **Do** try to avoid XML as an output, it greatly [complicates
+analysis and is slow.] (http://www.joelonsoftware.com/articles/fog0000000319.html)
 
 #### Analysis Scripts
 * **Nothing here yet**
 
 #### Issues
 * **Do** follow the convention of titling new issues based on where the issue is
-"Kansa Core: Issue description" -- the issue is in Kansa.ps1
-"Kansa Module: <ModuleName> issue description" -- the issue is in ModuleName
-"Kansa Analysis: <AnalysisScript> issue description" -- issue is in AnalysisScript
+* "Kansa Core: Issue description" -- the issue is in Kansa.ps1
+* "Kansa Module: <ModuleName> issue description" -- the issue is in ModuleName
+* "Kansa Analysis: <AnalysisScript> issue description" -- issue is in AnalysisScript
 
 **Thank you** for your interest in Kansa and for reading to this point in the doc.
 You're well on your way to making awesome contributions to the project!

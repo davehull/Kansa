@@ -116,7 +116,8 @@ Param(
     $newvalue -join ""
 }
 
-if ($regexe = Get-Command Reg.exe | Select-Object -ExpandProperty path) { 
+if (Get-Command Reg.exe -ErrorAction SilentlyContinue ) { 
+	$regexe = Reg.exe | Select-Object -ExpandProperty path
     if (Test-Path($userpath + "\ntuser.dat")) {
         "$userpath has an ntuser.dat file... attempting to load"
         $regload = & $regexe load "hku\KansaTempHive" "$userpath\ntuser.dat"

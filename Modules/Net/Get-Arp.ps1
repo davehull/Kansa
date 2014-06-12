@@ -3,7 +3,7 @@
 Get-ARP.ps1 acquires arp table
 #>
 
-if (Get-Command Get-NetNeighbor) {
+if (Get-Command Get-NetNeighbor -ErrorAction SilentlyContinue) {
     Get-NetNeighbor
 } else {
     $IpPattern = "\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"

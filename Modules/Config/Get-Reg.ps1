@@ -32,7 +32,8 @@ Param(
 
 
 
-if ($regexe = Get-Command Reg.exe | Select-Object -ExpandProperty path) { 
+if (Get-Command Reg.exe -ErrorAction SilentlyContinue) { 
+	$regexe = Reg.exe | Select-Object -ExpandProperty path
     foreach ($userpath in (Get-WmiObject win32_userprofile | Select-Object -ExpandProperty localpath)) {
         if (Test-Path($userpath + "\ntuser.dat")) {
             $regload = & $regexe load "hku\KansaTempHive" ($userpath + "\ntuser.dat")

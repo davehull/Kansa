@@ -4,7 +4,7 @@
 Get-DNSCache.ps1 acquires DNS cache entries from the target host.
 #>
 
-if (Get-Command Get-DnsClientCache  2>&1 > $null) {
+if (Get-Command Get-DnsClientCache -ErrorAction SilentlyContinue) {
     Get-DnsClientCache
 } else {
     & ipconfig /displaydns | Select-String 'Record Name' | ForEach-Object { $_.ToString().Split(' ')[-1] } | `

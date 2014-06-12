@@ -28,7 +28,10 @@ request easier.
 code faster.
 
 #### Coding Style
-* **Do** error on the side of verbosity rather than compactness, avoid aliases.
+* **Do** error on the side of verbosity rather than compactness, avoid 
+aliases.
+* **Do** fix bugs in (your) existing code, before writing anything new.
+You aren't expected to fix other people's bugs, but you can if you want.
 
 #### New Modules
 * **Do** try to make your module return Powershell objects.

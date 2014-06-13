@@ -4,20 +4,19 @@
 Get-DNSCache.ps1 acquires DNS cache entries from the target host.
 #>
 
-<#
-if (Get-Command Get-DnsClientCache) {
-    Get-DnsClientCache
+if (Get-Command Get-DnsClientCache -ErrorAction SilentlyContinue) {
+    Get-DnsClientCache | Select-Object TimeToLIve, Caption, Description, 
+        ElementName, InstanceId, Data, DataLength, Entry, Name, Section, 
+        Status, Type
 } else {
-#>
     $(& ipconfig /displaydns | % {
         $_ = $_.Trim()
         if ($_ -and $_ -notmatch "-------") { 
             $_ 
         }
     }) | Select-Object -Skip 1 | % { 
-        $o = "" | Select-Object TTL, Caption, Description, ElementName,
-        InstanceID, Data, DataLength, Entry, Name, Section, Status, 
-        TimeToLive, Type
+        $o = "" | Select-Object TimeToLive, Caption, Description, ElementName,
+        InstanceID, Data, DataLength, Entry, Name, Section, Status, Type
         switch -Regex ($_) {
             "Record Name[\s|\.]+:\s(?<RecordName>.*$)" {
                 $Name = ($matches['RecordName'])
@@ -41,7 +40,7 @@ if (Get-Command Get-DnsClientCache) {
                 $Entry = $_
             }
         }
-        $o.TTL         = $TTL
+        $o.TimeToLive  = $TTL
         $o.Caption     = ""
         $o.Description = ""
         $o.ElementName = ""
@@ -52,19 +51,13 @@ if (Get-Command Get-DnsClientCache) {
         $o.Name        = $Name
         $o.Section     = $Section
         $o.Status      = ""
-        $o.TimeToLive  = $TTL
         $o.Type        = $Type
         $o
     }
-<#    }
 }
 
-
-        $_.ToString().Split(' ')[-1] } | `
-      Select-Object -Unique | sort | % {
-        $o = "" | Select-Object FQDN
-        $o.FQDN = $_
-        $o
-    }
-}
+<#
+    Get-WmiObject -query "Select * from MSFT_DNSClientCache" -Namespace "root\standardcimv2" | Select-Object TimeToLive,
+        PSComputerName, Caption, Description, ElementName, InstanceId, Data, 
+        DataLength, Entry, Name, Section, Status, Type
 #>

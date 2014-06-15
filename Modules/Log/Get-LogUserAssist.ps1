@@ -4,6 +4,10 @@
 # Doesn't currently work against locked hives, but there may be a work-around for this
 
 foreach($userpath in (Get-WmiObject win32_userprofile | Select-Object -ExpandProperty localpath)) { 
+    # Begin massive ScriptBlock
+    # In order to unload loaded hives using reg.exe, we have to spin up a separate process for reg load
+    # do our processing and then exit that process, then the calling process, this script, can call 
+    # reg unload successfully
     $sb = {
 Param(
 [Parameter(Mandatory=$True,Position=0)]
@@ -142,7 +146,7 @@ if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object 
         }
     }
 }
-}
+} # End big ScriptBlock
 
     $Job = Start-Job -ScriptBlock $sb -ArgumentList $userpath
     $suppress = Wait-Job $Job 

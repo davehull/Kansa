@@ -11,12 +11,12 @@ current working directory.
 if (Get-Command logparser.exe) {
     $lpquery = @"
     SELECT
-        COUNT(FQDN) as ct,
-        FQDN
+        COUNT(Entry) as ct,
+        Entry
     FROM
         *DNSCache.tsv
     GROUP BY
-        FQDN
+        Entry
     ORDER BY
         ct ASC
 "@

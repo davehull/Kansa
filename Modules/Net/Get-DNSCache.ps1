@@ -4,17 +4,14 @@
 Get-DNSCache.ps1 acquires DNS cache entries from the target host.
 #>
 
-<#if (Get-Command Get-DnsClientCache -ErrorAction SilentlyContinue) {
+if (Get-Command Get-DnsClientCache -ErrorAction SilentlyContinue) {
     Get-DnsClientCache | Select-Object TimeToLIve, Caption, Description, 
         ElementName, InstanceId, Data, DataLength, Entry, Name, Section, 
         Status, Type
 } else {
-#>
-
-$o = "" | Select-Object TimeToLive, Caption, Description, ElementName,
-    InstanceID, Data, DataLength, Entry, Name, Section, Status, Type
-$EndRecord = 0
-
+    $o = "" | Select-Object TimeToLive, Caption, Description, ElementName,
+        InstanceID, Data, DataLength, Entry, Name, Section, Status, Type
+    
     $(& ipconfig /displaydns | Select-Object -Skip 3 | % { $_.Trim() }) | % { 
         switch -Regex ($_) {
             "-----------" {
@@ -59,11 +56,11 @@ $EndRecord = 0
             }
         }
     }
-<#    }
-<#
 }
 
-<#
+<# From what I've seen root\standardcimv2 is not available on older Windows OSes so below is not
+# a good substitute for ipconfig /displaydns
+
     Get-WmiObject -query "Select * from MSFT_DNSClientCache" -Namespace "root\standardcimv2" | Select-Object TimeToLive,
         PSComputerName, Caption, Description, ElementName, InstanceId, Data, 
         DataLength, Entry, Name, Section, Status, Type

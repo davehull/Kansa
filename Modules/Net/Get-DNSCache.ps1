@@ -4,20 +4,21 @@
 Get-DNSCache.ps1 acquires DNS cache entries from the target host.
 #>
 
-if (Get-Command Get-DnsClientCache -ErrorAction SilentlyContinue) {
+<#if (Get-Command Get-DnsClientCache -ErrorAction SilentlyContinue) {
     Get-DnsClientCache | Select-Object TimeToLIve, Caption, Description, 
         ElementName, InstanceId, Data, DataLength, Entry, Name, Section, 
         Status, Type
 } else {
-    $(& ipconfig /displaydns | % {
-        $_ = $_.Trim()
-        if ($_ -and $_ -notmatch "-------") { 
-            $_ 
-        }
-    }) | Select-Object -Skip 1 | % { 
-        $o = "" | Select-Object TimeToLive, Caption, Description, ElementName,
-        InstanceID, Data, DataLength, Entry, Name, Section, Status, Type
+#>
+
+$o = "" | Select-Object TimeToLive, Caption, Description, ElementName,
+    InstanceID, Data, DataLength, Entry, Name, Section, Status, Type
+$EndRecord = 0
+
+    $(& ipconfig /displaydns | Select-Object -Skip 3 | % { $_.Trim() }) | % { 
         switch -Regex ($_) {
+            "-----------" {
+            }
             "Record Name[\s|\.]+:\s(?<RecordName>.*$)" {
                 $Name = ($matches['RecordName'])
             } 
@@ -33,27 +34,33 @@ if (Get-Command Get-DnsClientCache -ErrorAction SilentlyContinue) {
             "Section[\s|\.]+:\s(?<Section>.*$)" {
                 $Section = ($matches['Section'])
             }
-            "(?<Type>[A-Za-z]+)\s.*Record[\s|\.]+:\s(?<Data>.*$)" {
+            "(?<Type>[A-Za-z()\s]+)\s.*Record[\s|\.]+:\s(?<Data>.*$)" {
                 $Type,$Data = ($matches['Type'],$matches['Data'])
+                $o.TimeToLive  = $TTL
+                $o.Caption     = ""
+                $o.Description = ""
+                $o.ElementName = ""
+                $o.InstanceId  = ""
+                $o.Data        = $Data
+                $o.DataLength  = $DataLength
+                $o.Entry       = $Entry
+                $o.Name        = $Name
+                $o.Section     = $Section
+                $o.Status      = ""
+                $o.Type        = $Type
+                $o
+            }
+            "^$" {
+                $o = "" | Select-Object TimeToLive, Caption, Description, ElementName,
+                InstanceID, Data, DataLength, Entry, Name, Section, Status, Type
             }
             default {
                 $Entry = $_
             }
         }
-        $o.TimeToLive  = $TTL
-        $o.Caption     = ""
-        $o.Description = ""
-        $o.ElementName = ""
-        $o.InstanceId  = ""
-        $o.Data        = $Data
-        $o.DataLength  = $DataLength
-        $o.Entry       = $Entry
-        $o.Name        = $Name
-        $o.Section     = $Section
-        $o.Status      = ""
-        $o.Type        = $Type
-        $o
     }
+<#    }
+<#
 }
 
 <#

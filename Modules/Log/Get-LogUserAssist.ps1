@@ -120,6 +120,28 @@ Param(
     $newvalue -join ""
 }
 
+function Get-UA {
+Param(
+[Parameter(Mandatory=$True,Position=0)]
+    [String]$path
+)
+    Set-Location $path
+    if (Test-Path("UserAssist")) {
+        "UserAssist found."
+        foreach ($line in (ls "UserAssist" -Recurse)) {
+            $uavalue = ($line | select -ExpandProperty property | out-string)
+            $lastwrt = $line | select -ExpandProperty LastWriteTime
+            if (!($uavalue -match "Version")) {
+                $rot13uav = rot13 $uavalue
+            }
+            $lastwrt
+            $rot13uav
+        }
+    } else {
+        "No UserAssist found for $userpath."
+    }
+}
+
 if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path) {
     "Checking $userpath for ntuser.dat." 
     if (Test-Path($userpath + "\ntuser.dat") -ErrorAction SilentlyContinue) {
@@ -127,21 +149,7 @@ if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object 
         $regload = & $regexe load "hku\KansaTempHive" "$userpath\ntuser.dat"
         if ($regload -notmatch "ERROR") {
             "$userpath loaded."
-            Set-Location "Registry::HKEY_USERS\KansaTempHive\Software\Microsoft\Windows\CurrentVersion\Explorer\"
-            if (Test-Path("UserAssist")) {
-                "UserAssist found."
-                foreach ($line in (ls "UserAssist" -Recurse)) {
-                    $uavalue = ($line | select -ExpandProperty property | out-string)
-                    $lastwrt = $line | select -ExpandProperty LastWriteTime
-                    if (!($uavalue -match "Version")) {
-                        $rot13uav = rot13 $uavalue
-                    }
-                    $lastwrt
-                    $rot13uav
-                }
-            } else {
-                "No UserAssist found for $userpath."
-            }
+            Get-UA "Registry::HKEY_USERS\KansaTempHive\Software\Microsoft\Windows\CurrentVersion\Explorer\"
         } else {
             # Could not load $userpath, probably because the user is logged in.
             # There's more than one way to skin the cat, cat doesn't like any of them.
@@ -152,7 +160,8 @@ if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object 
                     $objSID = New-Object System.Security.Principal.SecurityIdentifier($SID)
                     $objUser = $objSID.Translate([System.Security.Principal.NTAccount])
                     if ($objUser -match $user) {
-                        "$objuser hive loaded."
+                        $uapath = "Registry::HKEY_USERS\$SID\Software\Microsoft\Windows\CurrentVersion\Explorer\"
+                        Get-UA $uapath
                     }
                 }
             }

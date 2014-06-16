@@ -71,7 +71,7 @@ Update-TypeData -TypeName Microsoft.Win32.RegistryKey -MemberType ScriptProperty
         $this.Handle,
         $null,       # ClassName
         [ref] 0,     # ClassNameLength
-        $null,  # Reserved
+        $null,       # Reserved
         [ref] $null, # SubKeyCount
         [ref] $null, # MaxSubKeyNameLength
         [ref] $null, # MaxClassLength
@@ -120,8 +120,9 @@ Param(
     $newvalue -join ""
 }
 
-if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path) { 
-    if (Test-Path($userpath + "\ntuser.dat")) {
+if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path) {
+    "Checking $userpath for ntuser.dat." 
+    if (Test-Path($userpath + "\ntuser.dat") -ErrorAction SilentlyContinue) {
         "$userpath has an ntuser.dat file... attempting to load"
         $regload = & $regexe load "hku\KansaTempHive" "$userpath\ntuser.dat"
         if ($regload -notmatch "ERROR") {
@@ -142,15 +143,27 @@ if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object 
                 "No UserAssist found for $userpath."
             }
         } else {
-            "Could not load $userpath."
+            # Could not load $userpath, probably because the user is logged in.
+            # There's more than one way to skin the cat, cat doesn't like any of them.
+            $user = $userpath.substring($userpath.LastIndexOf("\") + 1)
+            foreach($SID in (ls Registry::HKU | Select-Object -ExpandProperty Name)) {
+                if ($SID -match "_Classes") {
+                    $SID = (($SID -split "HKEY_USERS\\") -split "_Classes") | ? { $_ }
+                    $objSID = New-Object System.Security.Principal.SecurityIdentifier($SID)
+                    $objUser = $objSID.Translate([System.Security.Principal.NTAccount])
+                    if ($objUser -match $user) {
+                        "$objuser hive loaded."
+                    }
+                }
+            }
         }
     }
 }
 } # End big ScriptBlock
 
     $Job = Start-Job -ScriptBlock $sb -ArgumentList $userpath
-    $suppress = Wait-Job $Job 
-    $Recpt = Receive-Job $Job
+    $suppress = Wait-Job $Job  
+    $Recpt = Receive-Job $Job -ErrorAction SilentlyContinue
     $Recpt
     $ErrorActionPreference = "SilentlyContinue"
     & reg.exe unload "hku\KansaTempHive" 2>&1 

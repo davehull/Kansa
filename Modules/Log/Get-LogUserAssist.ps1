@@ -120,6 +120,50 @@ Param(
     $newvalue -join ""
 }
 
+function Get-RegKeyValueNData {
+# Returns values and data for Registry keys
+# http://blogs.technet.com/b/heyscriptingguy/archive/2012/05/11/use-powershell-to-enumerate-registry-property-values.aspx
+Param(
+    [Parameter(Mandatory=$True)]
+        [String]$Path
+)
+    Push-Location
+    Set-Location -Path $Path
+    Get-Item . | Select-Object -ExpandProperty Property | 
+    Foreach-Object {
+        New-Object RKVDObject -Property @{
+            "Value" = $_ 
+            "Data" = (Get-ItemProperty -Path . -Name $_).$_
+        }
+    }
+    Pop-Location
+}
+
+# In Next
+function Get-UAnext {
+Param(
+[Parameter(Mandatory=$True,Position=0)]
+    [String]$path
+)
+    Set-Location $path
+    if (Test-Path("UserAssist")) {
+        "UserAssist found."
+        foreach ($line in (ls -Recurse "UserAssist")) {
+            $line
+            $uavalue = ($line | select -ExpandProperty property | out-string)
+            $lastwrt = $line | select -ExpandProperty LastWriteTime
+            if (!($uavalue -match "Version")) {
+                $rot13uav = rot13 $uavalue
+            }
+            $lastwrt
+            $rot13uav
+        }
+    } else {
+        "No UserAssist found for $userpath."
+    }
+}
+
+# Released to Kansa
 function Get-UA {
 Param(
 [Parameter(Mandatory=$True,Position=0)]
@@ -149,7 +193,7 @@ if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object 
         $regload = & $regexe load "hku\KansaTempHive" "$userpath\ntuser.dat"
         if ($regload -notmatch "ERROR") {
             "$userpath loaded."
-            Get-UA "Registry::HKEY_USERS\KansaTempHive\Software\Microsoft\Windows\CurrentVersion\Explorer\"
+            Get-UAnext "Registry::HKEY_USERS\KansaTempHive\Software\Microsoft\Windows\CurrentVersion\Explorer\"
         } else {
             # Could not load $userpath, probably because the user is logged in.
             # There's more than one way to skin the cat, cat doesn't like any of them.
@@ -161,7 +205,7 @@ if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object 
                     $objUser = $objSID.Translate([System.Security.Principal.NTAccount])
                     if ($objUser -match $user) {
                         $uapath = "Registry::HKEY_USERS\$SID\Software\Microsoft\Windows\CurrentVersion\Explorer\"
-                        Get-UA $uapath
+                        Get-UAnext $uapath
                     }
                 }
             }

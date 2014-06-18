@@ -146,8 +146,7 @@ Param(
     Get-ChildItem "Registry::$Path" | Select-Object -ExpandProperty LastWriteTime
 }
 
-# In Next
-function Get-UAnext {
+function Get-UserAssist {
 Param(
 [Parameter(Mandatory=$True,Position=0)]
     [String]$path,
@@ -184,7 +183,7 @@ if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object 
     if (Test-Path($userpath + "\ntuser.dat") -ErrorAction SilentlyContinue) {
         $regload = & $regexe load "hku\KansaTempHive" "$userpath\ntuser.dat"
         if ($regload -notmatch "ERROR") {
-            Get-UAnext "Registry::HKEY_USERS\KansaTempHive\Software\Microsoft\Windows\CurrentVersion\Explorer\" $user
+            Get-UserAssist "Registry::HKEY_USERS\KansaTempHive\Software\Microsoft\Windows\CurrentVersion\Explorer\" $user
         } else {
             # Could not load $userpath, probably because the user is logged in.
             # There's more than one way to skin the cat, cat doesn't like any of them.
@@ -195,7 +194,7 @@ if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object 
                     $objUser = $objSID.Translate([System.Security.Principal.NTAccount])
                     if ($objUser -match $user) {
                         $uapath = "Registry::HKEY_USERS\$SID\Software\Microsoft\Windows\CurrentVersion\Explorer\"
-                        Get-UAnext $uapath $user
+                        Get-UserAssist $uapath $user
                     }
                 }
             }

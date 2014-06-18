@@ -1,7 +1,7 @@
-﻿# OUTPUT TXT
-# Get-UserAssist.ps1 retrieves UserAssist data from ntuser.dat hives
-# Doesn't current retrieve the count, but I'm working on that
-# Doesn't currently work against locked hives, but there may be a work-around for this
+﻿# OUTPUT TSV
+# Get-LogUserAssist.ps1 retrieves UserAssist data from ntuser.dat hives
+# Retrieves "count" from value data, but on my Win8.1 system count does not appear to be incremented consistently
+# Retrieves data from locked hives for logged on users, by finding their hives in HKEY_USERS
 
 foreach($userpath in (Get-WmiObject win32_userprofile | Select-Object -ExpandProperty localpath)) { 
     # Begin massive ScriptBlock
@@ -131,9 +131,8 @@ Param(
     Set-Location -Path "Registry::$Path"
     Get-Item . | Select-Object -ExpandProperty Property | 
     Foreach-Object {
-        New-Object RKVDObject -Property @{
-            "Value" = $_ 
-            "Data" = (Get-ItemProperty -Path . -Name $_).$_
+        New-Object psobject -Property @{"property" = $_;
+            "value" = (Get-ItemProperty -Path . -Name $_).$_
         }
     }
     Pop-Location
@@ -151,69 +150,44 @@ Param(
 function Get-UAnext {
 Param(
 [Parameter(Mandatory=$True,Position=0)]
-    [String]$path
+    [String]$path,
+[Parameter(Mandatory=$True,Position=1)]
+    [String]$user
 )
-$ErrorActionPreference = "Continue"
     Set-Location $path
     if (Test-Path("UserAssist")) {
-        "UserAssist found."
         foreach ($key in (Get-ChildItem "UserAssist")) {
-            Get-RegKeyLastWriteTime $key
-            $key.Name
+            $o = "" | Select-Object User, Subkey, KeyLastWriteTime, Value, Count
+            $o.User = $user
+            $o.KeyLastWriteTime = Get-RegKeyLastWriteTime $key
             $subkey = ($key.Name + "\Count")
-            Get-RegKeyLastWriteTime $subkey
-            $subkey
+            $o.Subkey = ("SOFTWARE" + ($subkey -split "SOFTWARE")[1])
             foreach($item in (Get-RegKeyValueNData -Path $subkey)) {
-                $item.property
+                # Run count, little endian bytes 4-7
+                [byte[]] $bytearray = (($item.value)[4..4])
+                [System.Array]::Reverse($bytearray)
+                $o.Count = $($bytearray)
+                $o.Value = (rot13 $item.property)
+                if ($o.Value.StartsWith("UEME_")) {
+                    # Don't return the UEME values
+                    continue
+                } else {
+                    $o
+                }
             }
-            $uavalue = ($line | select -ExpandProperty property | out-string)
-            $lastwrt = $line | select -ExpandProperty LastWriteTime
-            if (!($uavalue -match "Version")) {
-                $rot13uav = rot13 $uavalue
-            }
-            $lastwrt
-            $rot13uav
         }
-    } else {
-        "No UserAssist found for $userpath."
-    }
-}
-
-# Released to Kansa
-function Get-UA {
-Param(
-[Parameter(Mandatory=$True,Position=0)]
-    [String]$path
-)
-    Set-Location $path
-    if (Test-Path("UserAssist")) {
-        "UserAssist found."
-        foreach ($line in (ls "UserAssist" -Recurse)) {
-            $uavalue = ($line | select -ExpandProperty property | out-string)
-            $lastwrt = $line | select -ExpandProperty LastWriteTime
-            if (!($uavalue -match "Version")) {
-                $rot13uav = rot13 $uavalue
-            }
-            $lastwrt
-            $rot13uav
-        }
-    } else {
-        "No UserAssist found for $userpath."
     }
 }
 
 if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path) {
-    "Checking $userpath for ntuser.dat." 
+    $user = $userpath.Substring($userpath.LastIndexOf("\") + 1)
     if (Test-Path($userpath + "\ntuser.dat") -ErrorAction SilentlyContinue) {
-        "$userpath has an ntuser.dat file... attempting to load"
         $regload = & $regexe load "hku\KansaTempHive" "$userpath\ntuser.dat"
         if ($regload -notmatch "ERROR") {
-            "$userpath loaded."
-            Get-UAnext "Registry::HKEY_USERS\KansaTempHive\Software\Microsoft\Windows\CurrentVersion\Explorer\"
+            Get-UAnext "Registry::HKEY_USERS\KansaTempHive\Software\Microsoft\Windows\CurrentVersion\Explorer\" $user
         } else {
             # Could not load $userpath, probably because the user is logged in.
             # There's more than one way to skin the cat, cat doesn't like any of them.
-            $user = $userpath.substring($userpath.LastIndexOf("\") + 1)
             foreach($SID in (ls Registry::HKU | Select-Object -ExpandProperty Name)) {
                 if ($SID -match "_Classes") {
                     $SID = (($SID -split "HKEY_USERS\\") -split "_Classes") | ? { $_ }
@@ -221,7 +195,7 @@ if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object 
                     $objUser = $objSID.Translate([System.Security.Principal.NTAccount])
                     if ($objUser -match $user) {
                         $uapath = "Registry::HKEY_USERS\$SID\Software\Microsoft\Windows\CurrentVersion\Explorer\"
-                        Get-UAnext $uapath
+                        Get-UAnext $uapath $user
                     }
                 }
             }
@@ -235,5 +209,5 @@ if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object 
     $Recpt = Receive-Job $Job -ErrorAction SilentlyContinue
     $Recpt
     $ErrorActionPreference = "SilentlyContinue"
-    & reg.exe unload "hku\KansaTempHive" 2>&1 
+    $suppress = & reg.exe unload "hku\KansaTempHive" 2>&1 
 }

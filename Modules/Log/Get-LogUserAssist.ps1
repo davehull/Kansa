@@ -124,11 +124,11 @@ function Get-RegKeyValueNData {
 # Returns values and data for Registry keys
 # http://blogs.technet.com/b/heyscriptingguy/archive/2012/05/11/use-powershell-to-enumerate-registry-property-values.aspx
 Param(
-    [Parameter(Mandatory=$True)]
+    [Parameter(Mandatory=$True,Position=0)]
         [String]$Path
 )
     Push-Location
-    Set-Location -Path $Path
+    Set-Location -Path "Registry::$Path"
     Get-Item . | Select-Object -ExpandProperty Property | 
     Foreach-Object {
         New-Object RKVDObject -Property @{
@@ -139,17 +139,33 @@ Param(
     Pop-Location
 }
 
+function Get-RegKeyLastWriteTime {
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [String]$Path
+)
+    Get-ChildItem "Registry::$Path" | Select-Object -ExpandProperty LastWriteTime
+}
+
 # In Next
 function Get-UAnext {
 Param(
 [Parameter(Mandatory=$True,Position=0)]
     [String]$path
 )
+$ErrorActionPreference = "Continue"
     Set-Location $path
     if (Test-Path("UserAssist")) {
         "UserAssist found."
-        foreach ($line in (ls -Recurse "UserAssist")) {
-            $line
+        foreach ($key in (Get-ChildItem "UserAssist")) {
+            Get-RegKeyLastWriteTime $key
+            $key.Name
+            $subkey = ($key.Name + "\Count")
+            Get-RegKeyLastWriteTime $subkey
+            $subkey
+            foreach($item in (Get-RegKeyValueNData -Path $subkey)) {
+                $item.property
+            }
             $uavalue = ($line | select -ExpandProperty property | out-string)
             $lastwrt = $line | select -ExpandProperty LastWriteTime
             if (!($uavalue -match "Version")) {

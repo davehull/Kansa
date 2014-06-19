@@ -15,7 +15,8 @@ Param(
 )
 
 <#
-The next section of code was found in Microsoft's TechNet Gallery at:
+The next section of code makes Key LastWriteTime property accessible to Powershell and 
+was found in Microsoft's TechNet Gallery at:
 http://gallery.technet.microsoft.com/scriptcenter/Get-Last-Write-Time-and-06dcf3fb#content
 Contributed by Rohn Edwards
 
@@ -94,6 +95,7 @@ Update-TypeData -TypeName Microsoft.Win32.RegistryKey -MemberType ScriptProperty
 
 function rot13 {
 # Returns a Rot13 string of the input $value
+# UserAssist keys are Rot13 encoded
 # May not be the most efficient way to do this
 Param(
 [Parameter(Mandatory=$True,Position=0)]

@@ -13,7 +13,7 @@ environmental baseline.
 
 ##How do you use it?
 Here's a very simple command line example you can run on your own local host.  
-0. After downloading the project and unzipping it, you'll likely need to "unblock" the ps1 files. The easiest  
+####0. After downloading the project and unzipping it, you'll likely need to "unblock" the ps1 files. The easiest  
 way to do this if you're using Powershell v3 or later is to cd to the directory where Kansa resides and do:  
 ```Powershell
 ls -r *.ps1 | Unblock-File

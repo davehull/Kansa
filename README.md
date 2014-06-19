@@ -13,6 +13,16 @@ environmental baseline.
 
 ##How do you use it?
 Here's a very simple command line example you can run on your own local host.  
+0. After downloading the project and unzipping it, you'll likely need to "unblock" the ps1 files. The easiest  
+way to do this if you're using Powershell v3 or later is to cd to the directory where Kansa resides and do:  
+```Powershell
+ls -r *.ps1 | Unblock-File
+```
+If you're not running PS v3 or later, Sysinternal's Streams utility can be used to removed the alternate data  
+streams that Powershell uses to determine if files came from the Internet. Once you've removed those ADSes,  
+you'll be able to run the scripts without issue.
+I've not run into any issues running the downloaded scripts via Windows Remote Management / Powershell Remoting  
+through Kansa, so you shouldn't have to do anything if you want to run the scripts via remoting.
 1. Open an elevated Powershell Prompt (Right-click Run As Administrator)  
 2. At the command prompt, enter: .\kansa.ps1 -Target localhost -ModulePath .\Modules -Verbose  
 The script should start collecting data or you may see an error about not having Windows Remote Management enabled.  

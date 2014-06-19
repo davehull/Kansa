@@ -41,7 +41,7 @@ have to do anything if you want to run the scripts via remoting.
 The script should start collecting data or you may see an error about  
 not having Windows Remote Management enabled. If so, do a little  
 searching online, it's easy to turn on. Turn it on and try again. When  
-it finishes running, you'll have a new Output_<timestamp> subdirectory,  
+it finishes running, you'll have a new Output_timestamp subdirectory,  
 with subdirectories for data collected by each module. You can cd into  
 those subdirectories and checkout the data. There are some analysis  
 scripts in the Analysis directory, but many of those won't make sense  

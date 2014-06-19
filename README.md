@@ -62,7 +62,7 @@ Powershell objects in an easy to read, easy to analyze format. You can
 easily convert its output to CSV, TSV or XML using normal Powershell  
 cmdlets. Here's an example:  
 ```Powershell
-.\Get-Netstat.ps1 | ConvertTo-CSV -Delimiter "`t" -NoTypeInformation | % { $_ -replace "`" } | Set-Content netstat.tsv
+.\Get-Netstat.ps1 | ConvertTo-CSV -Delimiter "`t" -NoTypeInformation | % { $_ -replace "`"" } | Set-Content netstat.tsv
 ```
 
 ##Caveats:

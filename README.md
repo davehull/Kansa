@@ -63,6 +63,7 @@ easily convert its output to CSV, TSV or XML using normal Powershell
 cmdlets. Here's an example:  
 ```Powershell
 .\Get-Netstat.ps1 | ConvertTo-CSV -Delimiter "`t" -NoTypeInformation | % { $_ -replace "`" } | Set-Content netstat.tsv
+```
 
 ##Caveats:
 Powershell relies on the Windows API. Your adversary may use subterfuge.*

@@ -64,6 +64,8 @@ cmdlets. Here's an example:
 ```Powershell
 .\Get-Netstat.ps1 | ConvertTo-CSV -Delimiter "`t" -NoTypeInformation | % { $_ -replace "`"" } | Set-Content netstat.tsv
 ```
+the result of the above will be a file called netstat.tsv containing  
+unquoted, tab separate values for netstat -naob's ouput.
 
 ##Caveats:
 Powershell relies on the Windows API. Your adversary may use subterfuge.*

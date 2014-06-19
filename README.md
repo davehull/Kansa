@@ -23,8 +23,8 @@ and do:
 ```Powershell
 ls -r *.ps1 | Unblock-File
 ```
-If you're not running PS v3 or later, Sysinternal's Streams utility can 
-be used to removed the alternate data streams that Powershell uses to  
+If you're not running PS v3 or later, Sysinternal's Streams utility can  
+be used to remove the alternate data streams that Powershell uses to  
 determine if files came from the Internet. Once you've removed those  
 ADSes, you'll be able to run the scripts without issue.  
   

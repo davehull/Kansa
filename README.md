@@ -49,6 +49,21 @@ on a collection of data from a single host. Kansa was written for
 collection and analysis of data from dozens, hundreds, thousands, tens  
 of thousands of systems.  
 
+##Running Modules Standalone
+Kansa modules can be run as standalone utilities outside of the Kansa  
+framework. Why might you want to do this? Consider netstat -naob, the  
+output of the command line utility is ugly and doesn't easily lend  
+itself to analysis. Running  
+```Powershell
+Modules\Net\Get-Netstat.ps1
+```
+as a standalone script will call netstat -naob, but it will return  
+Powershell objects in an easy to read, easy to analyze format. You can  
+easily convert its output to CSV, TSV or XML using normal Powershell  
+cmdlets. Here's an example:  
+```Powershell
+.\Get-Netstat.ps1 | ConvertTo-CSV -Delimiter "`t" -NoTypeInformation | % { $_ -replace "`" } | Set-Content netstat.tsv
+
 ##Caveats:
 Powershell relies on the Windows API. Your adversary may use subterfuge.*
 

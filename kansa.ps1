@@ -472,14 +472,15 @@ Param(
 
 function Set-KansaPath {
     # Update the path to inlcude Kansa analysis script paths, if they aren't already
+    $kansapath = Split-Path -Path $MyInvocation.MyCommand.Definition
     $found = $False
     foreach($path in ($env:path -split ";")) {
-        if ([regex]::escape($pwd) -match [regex]::escape($path)) {
+        if ([regex]::escape($kansapath) -match [regex]::escape($path)) {
             $found = $True
         }
     }
     if (-not($found)) {
-        $env:path = $env:path + ";$pwd\Analysis\asep;$pwd\Analysis\meta;$pwd\Analysis\network;$pwd\Analysis\process;"
+        $env:path = $env:path + ";$pwd\Analysis\asep;$pwd\Analysis\meta;$pwd\Analysis\network;$pwd\Analysis\process;$pwd\Analysis\log;"
     }
 }
 

@@ -2,8 +2,14 @@
 # Get-LogUserAssist.ps1 retrieves UserAssist data from ntuser.dat hives
 # Retrieves "count" from value data, but on my Win8.1 system count does not appear to be incremented consistently
 # Retrieves data from locked hives for logged on users, by finding their hives in HKEY_USERS
+[CmdletBinding()]
+Param()
+foreach($user in (Get-WmiObject win32_userprofile)) { 
+    $userpath = $user.localpath
+    $usersid  = $user.SID
+    Write-Verbose "`$userpath : $userpath"
+    Write-Verbose "`$usersid  : $usersid"
 
-foreach($userpath in (Get-WmiObject win32_userprofile | Select-Object -ExpandProperty localpath)) { 
     # Begin massive ScriptBlock
     # In order to unload loaded hives using reg.exe, we have to spin up a separate process for reg load
     # do our processing and then exit that process, then the calling process, this script, can call 
@@ -11,8 +17,11 @@ foreach($userpath in (Get-WmiObject win32_userprofile | Select-Object -ExpandPro
     $sb = {
 Param(
 [Parameter(Mandatory=$True,Position=0)]
-    [String]$userpath
+    [String]$userpath,
+[Parameter(Mandatory=$True,Position=1)]
+    [String]$usersid
 )
+
 
 <#
 The next section of code makes Key LastWriteTime property accessible to Powershell and 
@@ -189,6 +198,10 @@ if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object 
         } else {
             # Could not load $userpath, probably because the user is logged in.
             # There's more than one way to skin the cat, cat doesn't like any of them.
+            $uapath = "Registry::HKEY_USERS\$usersid\Software\Microsoft\Windows\CurrentVersion\Explorer\"
+            Get-UserAssist $uapath $user
+
+<#
             foreach($SID in (ls Registry::HKU | Select-Object -ExpandProperty Name)) {
                 if ($SID -match "_Classes") {
                     $SID = (($SID -split "HKEY_USERS\\") -split "_Classes") | ? { $_ }
@@ -200,12 +213,13 @@ if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object 
                     }
                 }
             }
+#>
         }
     }
 }
 } # End big ScriptBlock
 
-    $Job = Start-Job -ScriptBlock $sb -ArgumentList $userpath
+    $Job = Start-Job -ScriptBlock $sb -ArgumentList $userpath, $usersid
     $suppress = Wait-Job $Job  
     $Recpt = Receive-Job $Job -ErrorAction SilentlyContinue
     $Recpt

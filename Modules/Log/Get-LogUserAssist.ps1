@@ -201,7 +201,7 @@ if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object 
             $uapath = "Registry::HKEY_USERS\$usersid\Software\Microsoft\Windows\CurrentVersion\Explorer\"
             Get-UserAssist $uapath $user
 
-<#
+<# Leaving this code in, as it may come in handy one day for something else, it was made obsolete by pulling $usersid
             foreach($SID in (ls Registry::HKU | Select-Object -ExpandProperty Name)) {
                 if ($SID -match "_Classes") {
                     $SID = (($SID -split "HKEY_USERS\\") -split "_Classes") | ? { $_ }

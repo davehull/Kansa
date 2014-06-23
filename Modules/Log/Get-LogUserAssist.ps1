@@ -160,15 +160,18 @@ Param(
 function Get-UserAssist {
 Param(
 [Parameter(Mandatory=$True,Position=0)]
-    [String]$path,
+    [String]$regpath,
 [Parameter(Mandatory=$True,Position=1)]
-    [String]$user
+    [String]$userpath,
+[Parameter(Mandatory=$True,Position=2)]
+    [String]$useracct
 )
-    Set-Location $path
+    Set-Location $regpath
     if (Test-Path("UserAssist")) {
         foreach ($key in (Get-ChildItem "UserAssist")) {
-            $o = "" | Select-Object User, Subkey, KeyLastWriteTime, Value, Count
-            $o.User = $user
+            $o = "" | Select-Object UserAcct, UserPath, Subkey, KeyLastWriteTime, Value, Count
+            $o.UserAcct = $useracct
+            $o.UserPath = $userpath
             $o.KeyLastWriteTime = Get-RegKeyLastWriteTime $key
             $subkey = ($key.Name + "\Count")
             $o.Subkey = ("SOFTWARE" + ($subkey -split "SOFTWARE")[1])
@@ -190,16 +193,19 @@ Param(
 }
 
 if ($regexe = Get-Command Reg.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path) {
-    $user = $userpath.Substring($userpath.LastIndexOf("\") + 1)
     if (Test-Path($userpath + "\ntuser.dat") -ErrorAction SilentlyContinue) {
+        # Get the account name
+        $objSID   = New-Object System.Security.Principal.SecurityIdentifier($usersid)
+        $useracct = $objSID.Translate([System.Security.Principal.NTAccount])
+
         $regload = & $regexe load "hku\KansaTempHive" "$userpath\ntuser.dat"
         if ($regload -notmatch "ERROR") {
-            Get-UserAssist "Registry::HKEY_USERS\KansaTempHive\Software\Microsoft\Windows\CurrentVersion\Explorer\" $user
+            Get-UserAssist "Registry::HKEY_USERS\KansaTempHive\Software\Microsoft\Windows\CurrentVersion\Explorer\" $userpath $useracct
         } else {
             # Could not load $userpath, probably because the user is logged in.
             # There's more than one way to skin the cat, cat doesn't like any of them.
-            $uapath = "Registry::HKEY_USERS\$usersid\Software\Microsoft\Windows\CurrentVersion\Explorer\"
-            Get-UserAssist $uapath $user
+            $uapath  = "Registry::HKEY_USERS\$usersid\Software\Microsoft\Windows\CurrentVersion\Explorer\"
+            Get-UserAssist $uapath $userpath $useracct
 
 <# Leaving this code in, as it may come in handy one day for something else, it was made obsolete by pulling $usersid
             foreach($SID in (ls Registry::HKU | Select-Object -ExpandProperty Name)) {

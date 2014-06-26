@@ -97,6 +97,7 @@ Update-TypeData -TypeName Microsoft.Win32.RegistryKey -MemberType ScriptProperty
     }
     else {
         # Return datetime object:
+        # modified by Dave Hull to return ISO formatted timestamp
         Get-Date([datetime]::FromFileTimeUtc($LastWriteTime)) -Format yyyyMMddThh:mm:ss
     }
 }

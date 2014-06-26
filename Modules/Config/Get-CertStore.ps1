@@ -1,5 +1,5 @@
 ﻿# OUTPUT txt
-# BINDEP sigcheck.exe
+# BINDEP .\Modules\bin\sigcheck.exe
 <#
 .SYNOPSIS
 Get-CertStore.ps1

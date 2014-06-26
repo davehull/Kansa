@@ -97,7 +97,7 @@ Update-TypeData -TypeName Microsoft.Win32.RegistryKey -MemberType ScriptProperty
     }
     else {
         # Return datetime object:
-        [datetime]::FromFileTime($LastWriteTime)
+        Get-Date([datetime]::FromFileTimeUtc($LastWriteTime)) -Format yyyyMMddThh:mm:ss
     }
 }
 <# End MS Limited Public Licensed code #>

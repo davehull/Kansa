@@ -488,6 +488,9 @@ Param(
     [Parameter(Mandatory=$True,Position=0)]
         [String]$ModulePath
 )
+    Write-Debug "Entering $($MyInvocation.MyCommand)"
+    $Error.Clear()
+
     foreach ($dir in (ls $ModulePath)) {
         if ($dir.PSIsContainer -and $dir.name -ne "bin") {
             foreach($file in (ls $ModulePath\$dir\Get-*)) {
@@ -499,6 +502,12 @@ Param(
             }
         }
     }
+    if ($Error) {
+        # Write the $Error to the $Errorlog
+        $Error | Add-Content -Encoding $Encoding $ErrorLog
+        $Error.Clear()
+    }
+    Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
 
 function Set-KansaPath {

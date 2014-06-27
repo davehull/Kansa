@@ -2,4 +2,5 @@
 hostlist*
 test
 Output*
+Schedule
 !.gitignore

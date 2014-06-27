@@ -79,8 +79,17 @@ user's path when run normally, this switch is just for convenience when
 coming back to the data for analysis.
 .PARAMETER ListModules
 An optional switch that lists the available modules. Useful for
-constructing a modules.conf file. Script exits after listing.
+constructing a modules.conf file. Kansa exits after listing.
 You'll likely want to sort the according to the order of volatility.
+.PARAMETER ListAnalysis
+An optional switch that lists the available analysis scripts. Useful for
+constructing an analysis.conf file. Kansa exits after listing. If you 
+use this switch to build an analysis.conf file, you'll likely want to
+edit the list so you're only running the analysis scripts you want to
+run.
+.PARAMETER Analysis
+An optional switch that causes Kansa to run automated analysis based on
+the contents of the Analysis\Analysis.conf file.
 .PARAMETER Transcribe
 An optional flag that causes Start-Transcript to run at the start
 of the script, writing to $OutputPath\yyyyMMddhhmmss.log
@@ -152,6 +161,10 @@ Param(
     [Parameter(Mandatory=$False,Position=9)]
         [Switch]$ListModules,
     [Parameter(Mandatory=$False,Position=10)]
+        [Switch]$ListAnalysis,
+    [Parameter(Mandatory=$False,Position=11)]
+        [Switch]$Analysis,
+    [Parameter(Mandatory=$False,Position=12)]
         [Switch]$Transcribe
 )
 
@@ -470,6 +483,24 @@ Param(
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
 
+function List-Modules {
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [String]$ModulePath
+)
+    foreach ($dir in (ls $ModulePath)) {
+        if ($dir.PSIsContainer -and $dir.name -ne "bin") {
+            foreach($file in (ls $ModulePath\$dir\Get-*)) {
+                $($dir.Name + "\" + (split-path -leaf $file))
+            }
+        } else {
+            foreach($file in (ls $ModulePath\Get-*)) {
+                $file.Name
+            }
+        }
+    }
+}
+
 function Set-KansaPath {
     # Update the path to inlcude Kansa analysis script paths, if they aren't already
     $kansapath = Split-Path -Path $MyInvocation.MyCommand.Definition
@@ -586,22 +617,12 @@ Write-Debug "`$ServerList is ${TargetList}."
 if ($ListModules) {
     # User provided ListModules switch so exit
     # after returning the full list of modules
-    foreach ($dir in (ls $ModulePath)) {
-        if ($dir.PSIsContainer -and $dir.name -ne "bin") {
-            foreach($file in (ls $ModulePath\$dir\Get-*)) {
-                $($dir.Name + "\" + (split-path -leaf $file))
-            }
-        } else {
-            foreach($file in (ls $ModulePath\Get-*)) {
-                $file.Name
-            }
-        }
-    }
+    List-Modules $ModulePath
     Exit
 }
 # Get-Modules reads the modules.conf file, if
 # it exists, otherwise will have same data as
-# ls command above.
+# List-Modules command above.
 $Modules = Get-Modules -ModulePath $ModulePath
 ########################
 # Done getting modules #

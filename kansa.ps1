@@ -555,6 +555,7 @@ Param(
             if (Test-Path "$OutputPath$DataDir") {
                 Push-Location
                 Set-Location "$OutputPath$DataDir"
+                Write-Verbose "Running analysis script: ${AnalysisScript}"
                 $AnalysisFile = ((((($AnalysisScript -split "\\")[1]) -split "Get-")[1]) -split ".ps1")[0]
                 & "$StartingPath\Analysis\${AnalysisScript}" | Set-Content -Encoding $Encoding ($AnalysisOutPath + $AnalysisFile)
                 Pop-Location

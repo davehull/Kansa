@@ -2,7 +2,7 @@
 <#
 Get-LogUserAssistValueByDate.ps1
 Requires logparser.exe in path
-Returns UserAssist data sorted by KeyLastWritetime ascending
+Returns UserAssist data sorted by KeyLastWritetime descending
 
 This script expects files matching the *LogUserAssist.tsv pattern to be in the
 current working directory.
@@ -12,7 +12,8 @@ current working directory.
 if (Get-Command logparser.exe) {
     $lpquery = @"
     SELECT
-        User,
+        UserAcct,
+        UserPath,
         Subkey,
         KeyLastWriteTime,
         Value,
@@ -21,7 +22,7 @@ if (Get-Command logparser.exe) {
     FROM
         *LogUserAssist.tsv
     ORDER BY
-        KeyLastWriteTime ASC
+        KeyLastWriteTime DESC
 "@
 
     & logparser -i:tsv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"

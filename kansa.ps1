@@ -205,6 +205,7 @@ function Exit-Script {
 .SYNOPSIS
 Exit the script somewhat gracefully, closing any open transcript.
 #>
+    Set-Location $StartingPath
     if ($Transcribe) {
         $Suppress = Stop-Transcript
     }
@@ -542,12 +543,27 @@ Param(
     $AnalysisScripts = @()
     $AnalysisScripts = Get-Content .\Analysis\Analysis.conf | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
 
-    $OutputPath = $OutputPath + "\AnalysisReports\"
-    $Suppress = New-Item -Name $OutputPath -ItemType Directory -Force
+    $AnalysisOut = $OutputPath + "\AnalysisReports\"
+    $Suppress = New-Item -Name $AnalysisOut -ItemType Directory -Force
 
     foreach($AnalysisScript in $AnalysisScripts) {
-        $AnalysisScript
-        $category, $ascript = ($AnalysisScript -split "\\")
+        $lineone = gc (".\Analysis\" + $AnalysisScript) -TotalCount 1
+        if ($lineone -match 'DATADIR (.*)$') {
+            $DataDir = $($matches[1])
+            Push-Location
+            "$OutputPath$DataDir"
+            if (Set-Location "$OutputPath$DataDir") {
+                & "..\..\Analysis\${AnalysisScript}" | Set-Content -Encoding $Encoding ("..\AnalysisReports\" + ($AnalysisScript -split ".ps1")[0])
+                Pop-Location
+            } else {
+                "Analysis: No data found for ${AnalysisScript}." | Add-Content -Encoding $Encoding $ErrorLog
+                Continue
+            }
+        } else {
+            "Analysis script, .\Analysis\${AnalysisScript}, missing # DATADIR directive, skipping analysis." | Add-Content -Encoding $Encoding $ErrorLog
+            Continue
+        }
+        
 
         # figure out where the data is for the given script
         # this will be hard, thinking of adding a comment
@@ -574,6 +590,7 @@ Param(
 # that there were errors at the end, if there were any. #
 $Error.Clear()
 $ErrorActionPreference = "SilentlyContinue"
+$StartingPath = Get-Location
 
 
 # Create timestamped output path. Write transcript and error log #

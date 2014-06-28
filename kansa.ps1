@@ -524,20 +524,16 @@ function Set-KansaPath {
     }
 }
 
-#########################################################
 # Do not stop or report errors as a matter of course.   #
 # Instead write them out the error.log file and report  #
 # that there were errors at the end, if there were any. #
 $Error.Clear()
 $ErrorActionPreference = "SilentlyContinue"
-#########################################################
 
 
-##################################################################
 # Create timestamped output path. Write transcript and error log #
 # to output path. Keep this first in the script so we can catch  #
 # errors in the error log of the output directory. We may create #
-##################################################################
 $Runtime = ([String] (Get-Date -Format yyyyMMddHHmm))
 $OutputPath = ".\Output_$Runtime\"
 $Suppress = New-Item -Name $OutputPath -ItemType Directory -Force 
@@ -551,27 +547,19 @@ Set-Variable -Name ErrorLog -Value ($OutputPath + "Error.Log") -Scope Script
 if (Test-Path($ErrorLog)) {
     Remove-Item -Path $ErrorLog
 }
-###########################
 # Done setting up output. #
-###########################
 
 
-###########################
 # Set the output encoding #
-###########################
 if ($Ascii) {
     Set-Variable -Name Encoding -Value "Ascii" -Scope Script
 } else {
     Set-Variable -Name Encoding -Value "Unicode" -Scope Script
 }
-###########################
 # End set output encoding #
-###########################
 
 
-################################
 # Sanity check some parameters #
-################################
 Write-Debug "Sanity checking parameters"
 $Exit = $False
 if (-not (Test-Path($ModulePath))) {
@@ -592,37 +580,27 @@ if ($Exit) {
     Exit
 }
 Write-Debug "Parameter sanity check complete."
-##############################
 # End paramter sanity checks #
-##############################
 
 
-#####################################################
 # Update the user's path with Kansa Analysis paths. #
 # Exit if that's all they wanted us to do.          #
-#####################################################
 Set-KansaPath
 if ($UpdatePath) {
     # User provided UpdatePath switch so
     # exit after updating the path
     Exit
 }
-###########################
 # Done updating the path. #
-###########################
 
 
-########################################
 # If we're -Debug, show some settings. #
-########################################
 Write-Debug "`$ModulePath is ${ModulePath}."
 Write-Debug "`$OutputPath is ${OutputPath}."
 Write-Debug "`$ServerList is ${TargetList}."
 
 
-###################
 # Get our modules #
-###################
 if ($ListModules) {
     # User provided ListModules switch so exit
     # after returning the full list of modules
@@ -633,14 +611,19 @@ if ($ListModules) {
 # it exists, otherwise will have same data as
 # List-Modules command above.
 $Modules = Get-Modules -ModulePath $ModulePath
-########################
 # Done getting modules #
-########################
 
 
-####################
+# Get our analysis scripts #
+if ($ListAnalysis) {
+    # User provided ListAnalysis switch so exit
+    # after returning a list of analysis scripts
+    List-Modules ".\Analysis\"
+    Exit
+}
+
+
 # Get our targets. #
-####################
 if ($TargetList) {
     $Targets = Get-Targets -TargetList $TargetList -TargetCount $TargetCount
 } elseif ($Target) {
@@ -650,37 +633,24 @@ if ($TargetList) {
     $suppress = Load-AD
     $Targets  = Get-Targets -TargetCount $TargetCount
 }
-########################
 # Done getting targets #
-########################
 
 
-#########################################
 # Copy binaries to targets if requested #
-#########################################
 if ($PushBin) {
     Push-Bindep -Targets $Targets -Modules $Modules -Credential $Credential
 }
-#####################
 # Done pushing bins #
-#####################
 
 
-####################################
 # Finally, let's gather some data. #
-####################################
 Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential -ThrottleLimit $ThrottleLimit
-########################
 # Done gathering data. #
-########################
 
 
-############
 # Clean up #
 Exit
-###############
 # We're done. #
-###############
 
 } Finally {
     Exit-Script

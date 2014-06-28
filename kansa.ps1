@@ -524,6 +524,33 @@ function Set-KansaPath {
     }
 }
 
+
+function Get-Analysis {
+<#
+.SYNOPSIS
+Runs analysis scripts as specified in .\Analyais\Analysis.conf
+Saves output to AnalysisReports folder under the output path
+Fails silently, but logs errors to Error.log file
+#>
+    Write-Debug "Entering $($MyInvocation.MyCommand)"
+    $Error.Clear()
+
+    $AnalysisScripts = @()
+    $AnalysisScripts = Get-Content .\Analysis\Analysis.conf | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
+
+    foreach($AnalysisScript in $AnalysisScripts) {
+        $AnalysisScript
+    }
+    # Non-terminating errors can be checked via
+    if ($Error) {
+        # Write the $Error to the $Errorlog
+        $Error | Add-Content -Encoding $Encoding $ErrorLog
+        $Error.Clear()
+    }
+    Write-Debug "Exiting $($MyInvocation.MyCommand)"    
+} # End Get-Analysis
+
+
 # Do not stop or report errors as a matter of course.   #
 # Instead write them out the error.log file and report  #
 # that there were errors at the end, if there were any. #
@@ -646,6 +673,12 @@ if ($PushBin) {
 # Finally, let's gather some data. #
 Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential -ThrottleLimit $ThrottleLimit
 # Done gathering data. #
+
+# Are we running analysis scripts? #
+if ($Analysis) {
+    Get-Analysis
+}
+# Done running analysis #
 
 
 # Clean up #

@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR LogUserAssist
+<#
 Get-LogUserAssistValueStack.ps1
 Requires logparser.exe in path
 Pulls frequency of UserAssist subkey values (i.e. an executable run by a user)

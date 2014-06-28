@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR Netstat
+<#
 Get-NetstatStackByProtoForeignIpStateComponentProcess.ps1
 Requires logparser.exe in path
 

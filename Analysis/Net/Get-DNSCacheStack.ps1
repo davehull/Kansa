@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR DNSCache
+<#
 Get-DNSCacheStack.ps1
 Requires logparser.exe in path
 Pulls frequency of DNSCache entries

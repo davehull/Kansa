@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR LogUserAssist
+<#
 Get-LogUserAssistValueByDate.ps1
 Requires logparser.exe in path
 Returns UserAssist data sorted by KeyLastWritetime ascending

@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR ProcsWMI
+<#
 Get-ProcsWMITempExePath.ps1
 
 Returns DISTINCT process CreationDate, ProcessId, ParentProcessId, CommandLine, 

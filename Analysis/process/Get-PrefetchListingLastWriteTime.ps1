@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR PrefetchListing
+<#
 Get-PrefetchListingLastWriteTime.ps1
 Requires logparser.exe in path
 Pulls PrefetchListing data sorted by LastWriteTimeUtc Descending

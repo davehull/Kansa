@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR Netstat
+<#
 Get-NetstatForeign16sStack.ps1
 Requires logparser.exe in path
 Pulls stack rank of Netstat connections aggregating 

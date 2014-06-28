@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR PrefetchListing
+<#
 Get-PrefetchListingStack.ps1
 Requires logparser.exe in path
 Pulls stack rank of prefetch files based

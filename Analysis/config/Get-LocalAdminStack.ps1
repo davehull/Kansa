@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR LocalAdmins
+<#
 Get-LocalAdminStack.ps1
 Requires logparser.exe in path
 Pulls frequency of local admin account entries

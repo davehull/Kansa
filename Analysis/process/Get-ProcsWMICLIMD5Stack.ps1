@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR ProcsWMI
+<#
 Get-ProcsWMICLIStack.ps1
 
 Returns frequency of "CommandLine," which is

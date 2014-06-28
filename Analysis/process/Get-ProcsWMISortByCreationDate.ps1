@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR ProcsWMI
+<#
 Get-ProcsWMISortByStartTime.ps1
 
 Returns process CreationDate, ProcessId, ParentProcessId, CommandLine

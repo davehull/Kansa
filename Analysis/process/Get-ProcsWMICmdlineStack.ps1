@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR ProcsWMI
+<#
 Get-ProcsWMICmdLineStack.ps1
 
 Pulls frequency of processes based on path CommandLine

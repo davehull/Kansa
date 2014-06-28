@@ -565,18 +565,7 @@ Param(
         } else {
             "Analysis script, .\Analysis\${AnalysisScript}, missing # DATADIR directive, skipping analysis." | Add-Content -Encoding $Encoding $ErrorLog
             Continue
-        }
-        
-
-        # figure out where the data is for the given script
-        # this will be hard, thinking of adding a comment
-        # to the top of each analysis script indicating
-        # the directory where the data will be, like a directive
-
-        # move to that directory
-        # execute the script and save the output to 
-        # output directory        
-        
+        }        
     }
     # Non-terminating errors can be checked via
     if ($Error) {

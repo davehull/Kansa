@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR SvcFail
+<#
 Get-SvcFailCmdLineStack.ps1
 Requires logparser.exe in path
 Pulls stack rank of Service Failure CmdLines from acquired Service Failure data

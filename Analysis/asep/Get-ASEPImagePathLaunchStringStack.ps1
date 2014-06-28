@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR Autorunsc
+<#
 Get-ASEPImagePathLaunchStringStack.ps1
 Requires logparser.exe in path
 Pulls frequency of autoruns based on ImagePath, LaunchString tuple

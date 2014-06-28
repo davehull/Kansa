@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR SvcTrigs
+<#
 Get-SvcTrigStack.ps1
 Requires logparser.exe in path
 Pulls stack rank of Service Triggers from acquired Service Trigger data

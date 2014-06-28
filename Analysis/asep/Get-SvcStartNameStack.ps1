@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR SvcAll
+<#
 Get-SvcStartNameStack.ps1
 A basic stack for services aggregating on Caption and StartName.
 StartName tells you what account the service runs under.

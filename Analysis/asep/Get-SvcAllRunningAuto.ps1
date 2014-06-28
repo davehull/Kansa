@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR SvcAll
+<#
 Get-SvcAllRunningAuto.ps1
 Parses through the Get-SvcAll.ps1 data and returns
 those items that are running or set to start automatically.

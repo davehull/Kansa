@@ -532,14 +532,32 @@ Runs analysis scripts as specified in .\Analyais\Analysis.conf
 Saves output to AnalysisReports folder under the output path
 Fails silently, but logs errors to Error.log file
 #>
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [String]$OutputPath
+)
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     $Error.Clear()
 
     $AnalysisScripts = @()
     $AnalysisScripts = Get-Content .\Analysis\Analysis.conf | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
 
+    $OutputPath = $OutputPath + "\AnalysisReports\"
+    $Suppress = New-Item -Name $OutputPath -ItemType Directory -Force
+
     foreach($AnalysisScript in $AnalysisScripts) {
         $AnalysisScript
+        $category, $ascript = ($AnalysisScript -split "\\")
+
+        # figure out where the data is for the given script
+        # this will be hard, thinking of adding a comment
+        # to the top of each analysis script indicating
+        # the directory where the data will be, like a directive
+
+        # move to that directory
+        # execute the script and save the output to 
+        # output directory        
+        
     }
     # Non-terminating errors can be checked via
     if ($Error) {
@@ -676,7 +694,7 @@ Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential -Thro
 
 # Are we running analysis scripts? #
 if ($Analysis) {
-    Get-Analysis
+    Get-Analysis $OutputPath
 }
 # Done running analysis #
 

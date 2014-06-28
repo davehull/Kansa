@@ -1,4 +1,5 @@
-﻿<#
+﻿# DATADIR SvcAll
+<#
 Get-SvcAllStack.ps1
 A basic stack for services aggregating on Caption and Pathname.
 Out put is fairly ugly, it is sorted by Name, rather than count.

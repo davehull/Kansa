@@ -535,25 +535,28 @@ Fails silently, but logs errors to Error.log file
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
-        [String]$OutputPath
+        [String]$OutputPath,
+    [Parameter(Mandatory=$True,Position=1)]
+        [String]$StartingPath
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     $Error.Clear()
 
     $AnalysisScripts = @()
-    $AnalysisScripts = Get-Content .\Analysis\Analysis.conf | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
+    $AnalysisScripts = Get-Content "$StartingPath\Analysis\Analysis.conf" | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
 
-    $AnalysisOut = $OutputPath + "\AnalysisReports\"
-    $Suppress = New-Item -Name $AnalysisOut -ItemType Directory -Force
+    $AnalysisOutPath = $OutputPath + "\AnalysisReports\"
+    $Suppress = New-Item -Path $AnalysisOutPath -ItemType Directory -Force
 
     foreach($AnalysisScript in $AnalysisScripts) {
-        $lineone = gc (".\Analysis\" + $AnalysisScript) -TotalCount 1
+        $lineone = gc ($StartingPath + "\Analysis\" + $AnalysisScript) -TotalCount 1
         if ($lineone -match 'DATADIR (.*)$') {
             $DataDir = $($matches[1])
-            Push-Location
-            "$OutputPath$DataDir"
-            if (Set-Location "$OutputPath$DataDir") {
-                & "..\..\Analysis\${AnalysisScript}" | Set-Content -Encoding $Encoding ("..\AnalysisReports\" + ($AnalysisScript -split ".ps1")[0])
+            if (Test-Path "$OutputPath$DataDir") {
+                Push-Location
+                Set-Location "$OutputPath$DataDir"
+                $AnalysisFile = ((((($AnalysisScript -split "\\")[1]) -split "Get-")[1]) -split ".ps1")[0]
+                & "$StartingPath\Analysis\${AnalysisScript}" | Set-Content -Encoding $Encoding ($AnalysisOutPath + $AnalysisFile)
                 Pop-Location
             } else {
                 "Analysis: No data found for ${AnalysisScript}." | Add-Content -Encoding $Encoding $ErrorLog
@@ -590,15 +593,14 @@ Param(
 # that there were errors at the end, if there were any. #
 $Error.Clear()
 $ErrorActionPreference = "SilentlyContinue"
-$StartingPath = Get-Location
-
+$StartingPath = Get-Location | Select-Object -ExpandProperty Path
 
 # Create timestamped output path. Write transcript and error log #
 # to output path. Keep this first in the script so we can catch  #
 # errors in the error log of the output directory. We may create #
 $Runtime = ([String] (Get-Date -Format yyyyMMddHHmm))
-$OutputPath = ".\Output_$Runtime\"
-$Suppress = New-Item -Name $OutputPath -ItemType Directory -Force 
+$OutputPath = $StartingPath + "\Output_$Runtime\"
+$Suppress = New-Item -Path $OutputPath -ItemType Directory -Force 
 
 If ($Transcribe) {
     $TransFile = $OutputPath + ([string] (Get-Date -Format yyyyMMddHHmmss)) + ".log"
@@ -711,7 +713,7 @@ Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential -Thro
 
 # Are we running analysis scripts? #
 if ($Analysis) {
-    Get-Analysis $OutputPath
+    Get-Analysis $OutputPath $StartingPath
 }
 # Done running analysis #
 

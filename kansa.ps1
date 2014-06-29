@@ -236,6 +236,10 @@ Param(
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     Write-Debug "`$ModulePath is ${ModulePath}."
+
+    $ModuleScript = ($ModulePath -split " ")[0]
+    $ModuleArgs   = ($ModulePath -split [regex]::escape($ModuleScript)).Trim()
+
     $Modules = $FoundModules = @()
     if (!(ls $ModulePath -ErrorAction SilentlyContinue).PSIsContainer) {
         # User may have provided full path to a .ps1 module, this is how you run a single module explicitly

@@ -3,7 +3,7 @@
 # How does the user specify the file? By editing
 # the $targetFile value below with a full path.
 
-$targetFile = "C:\Users\mosecsvc\ntuser.dat"
+$targetFile = "C:\Users\Administrator\ntuser.dat"
 
 if (Test-Path($targetFile)) {
     Get-Content -ReadCount 0 -Raw -Encoding Byte $targetFile

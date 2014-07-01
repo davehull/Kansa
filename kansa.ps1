@@ -237,18 +237,18 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     Write-Debug "`$ModulePath is ${ModulePath}."
 
-    $ModuleHash = @{}
-    $ModuleScript = ($ModulePath -split " ")[0]
-    $ModuleArgs   = ($ModulePath -split [regex]::escape($ModuleScript))[1].Trim()
-    $ModuleHash.Add($ModuleScript, $ModuleArgs)
-
     $Modules = $FoundModules = @()
+    $ModuleHash = @{}
     if (!(ls $ModulePath -ErrorAction SilentlyContinue).PSIsContainer) {
-        # User may have provided full path to a .ps1 module, this is how you run a single module explicitly
-        if (Test-Path($ModulePath)) {
-            $Module = ls $ModulePath | Select-Object -ExpandProperty BaseName
-            Write-Verbose "Running module: $Module"
-            Return ls $ModulePath
+        # User may have provided full path to a .ps1 module, which is how you run a single module explicitly
+        $ModuleScript = ($ModulePath -split " ")[0]
+        $ModuleArgs   = ($ModulePath -split [regex]::escape($ModuleScript))[1].Trim()
+        $ModuleHash.Add((ls $ModuleScript), $ModuleArgs)
+
+        if (Test-Path($ModuleScript)) {
+            $Module = ls $ModuleScript | Select-Object -ExpandProperty BaseName
+            Write-Verbose "Running module: `n$Module"
+            Return $ModuleHash
         }
     }
     $ModConf = $ModulePath + "\" + "Modules.conf"
@@ -258,19 +258,25 @@ Param(
         $Modules = Get-Content $ModulePath\Modules.conf | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
         foreach ($Module in $Modules) {
             # verify listed modules exist
-            $Modpath = $ModulePath + "\" + $Module
+            $ModuleScript = ($Module -split " ")[0]
+            $ModuleArgs   = ($Module -split [regex]::escape($ModuleScript))[1].Trim()
+            $Modpath = $ModulePath + "\" + $ModuleScript
             if (!(Test-Path($Modpath))) {
-                "Could not find module specified in ${ModulePath}\Modules.conf: $Module. Skipping." | Add-Content -Encoding $Encoding $ErrorLog
+                "Could not find module specified in ${ModulePath}\Modules.conf: $ModuleScript. Skipping." | Add-Content -Encoding $Encoding $ErrorLog
+            } else {
+                # module found add it and its arguments to the $ModuleHash
+                $ModuleHash.Add((ls $ModPath), $Moduleargs)
+                # $FoundModules += ls $ModPath # deprecated code, remove after testing
             }
-            # module found add it to the list
-            $FoundModules += ls $ModPath   
         }
-        $Modules = $FoundModules
+        # $Modules = $FoundModules # deprecated, remove after testing
     } else {
         # we had no modules.conf
-        $Modules = ls -r $ModulePath\Get-*.ps1
+        foreach($Module in (ls -r $ModulePath\Get-*.ps1)) {
+            $ModuleHash.Add($Module, $null)
+        }
     }
-    Write-Verbose "Running modules: $(($Modules | Select-Object -ExpandProperty BaseName) -join "`n")"
+    Write-Verbose "Running modules:`n$(($ModuleHash.Keys | Select-Object -ExpandProperty BaseName) -join "`n")"
     $Modules
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
 }
@@ -622,11 +628,6 @@ if ($Ascii) {
 # Sanity check some parameters #
 Write-Debug "Sanity checking parameters"
 $Exit = $False
-<# if (-not (Test-Path($ModulePath))) {
-    "User supplied ModulePath, $ModulePath, was not found." | Add-Content -Encoding $Encoding $ErrorLog
-    $Exit = $True
-}
-#>
 if ($TargetList -and -not (Test-Path($TargetList))) {
     "User supplied TargetList, $TargetList, was not found." | Add-Content -Encoding $Encoding $ErrorLog
     $Exit = $True
@@ -672,6 +673,9 @@ if ($ListModules) {
 # it exists, otherwise will have same data as
 # List-Modules command above.
 $Modules = Get-Modules -ModulePath $ModulePath
+$Modules
+exit
+
 # Done getting modules #
 
 

@@ -237,8 +237,10 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     Write-Debug "`$ModulePath is ${ModulePath}."
 
+    $ModuleHash = @{}
     $ModuleScript = ($ModulePath -split " ")[0]
-    $ModuleArgs   = ($ModulePath -split [regex]::escape($ModuleScript)).Trim()
+    $ModuleArgs   = ($ModulePath -split [regex]::escape($ModuleScript))[1].Trim()
+    $ModuleHash.Add($ModuleScript, $ModuleArgs)
 
     $Modules = $FoundModules = @()
     if (!(ls $ModulePath -ErrorAction SilentlyContinue).PSIsContainer) {
@@ -620,10 +622,11 @@ if ($Ascii) {
 # Sanity check some parameters #
 Write-Debug "Sanity checking parameters"
 $Exit = $False
-if (-not (Test-Path($ModulePath))) {
+<# if (-not (Test-Path($ModulePath))) {
     "User supplied ModulePath, $ModulePath, was not found." | Add-Content -Encoding $Encoding $ErrorLog
     $Exit = $True
 }
+#>
 if ($TargetList -and -not (Test-Path($TargetList))) {
     "User supplied TargetList, $TargetList, was not found." | Add-Content -Encoding $Encoding $ErrorLog
     $Exit = $True

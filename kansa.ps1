@@ -38,7 +38,11 @@ Download Center for Windows 7 and 8. You can search for RSAT at:
 http://www.microsoft.com/en-us/download/default.aspx
 
 .PARAMETER ModulePath
-An optional parameter that specifies the path to the collector modules.
+An optional parameter that specifies the path to the collector modules. Spaces
+in the path are not supported. However, ModulePath may point directly to a 
+specific module and if that module takes a parameter, you should have a space
+between the path to the script and its first argument, put the whole thing in
+quotes. See example.
 .PARAMETER TargetList
 An optional argument, the name of a file containing a list of servers 
 from the current forest to collect data from.
@@ -136,6 +140,11 @@ In this example the user has specified a module path, a list of hosts to
 target, a user credential under which to execute. The -Transcribe and 
 -Verbose flags are also supplied causing all script output to be written
 to a transcript and for the script to be more verbose.
+.EXAMPLE
+Kansa.ps1 -ModulePath ".\Modules\Disk\Get-File.ps1 C:\Windows\WindowsUpdate.log" -Target HHWWSQL01
+In this example -ModulePath refers to a specific module that takes a 
+positional parameter (only positional parameters are supported) and the
+script is being run against a single target.
 #>
 
 [CmdletBinding()]
@@ -237,12 +246,14 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     Write-Debug "`$ModulePath is ${ModulePath}."
 
+    $ModuleScript = ($ModulePath -split " ")[0]
+    $ModuleArgs   = ($ModulePath -split [regex]::escape($ModuleScript))[1].Trim()
+
     $Modules = $FoundModules = @()
-    $ModuleHash = @{}
-    if (!(ls $ModulePath -ErrorAction SilentlyContinue).PSIsContainer) {
+    $ModuleHash = New-Object System.Collections.Specialized.OrderedDictionary
+
+    if (!(ls $ModuleScript -ErrorAction SilentlyContinue).PSIsContainer) {
         # User may have provided full path to a .ps1 module, which is how you run a single module explicitly
-        $ModuleScript = ($ModulePath -split " ")[0]
-        $ModuleArgs   = ($ModulePath -split [regex]::escape($ModuleScript))[1].Trim()
         $ModuleHash.Add((ls $ModuleScript), $ModuleArgs)
 
         if (Test-Path($ModuleScript)) {
@@ -277,7 +288,7 @@ Param(
         }
     }
     Write-Verbose "Running modules:`n$(($ModuleHash.Keys | Select-Object -ExpandProperty BaseName) -join "`n")"
-    $Modules
+    $ModuleHash
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
 }
 
@@ -359,7 +370,7 @@ Param(
     [Parameter(Mandatory=$True,Position=0)]
         [Array]$Targets,
     [Parameter(Mandatory=$True,Position=1)]
-        [Array]$Modules,
+        [HashTable]$Modules,
     [Parameter(Mandatory=$False,Position=2)]
         [PSCredential]$Credential=$False,
     [Parameter(Mandatory=$False,Position=3)]
@@ -379,7 +390,7 @@ Param(
             $Error.Clear()
         }
 
-        foreach($Module in $Modules) {
+        foreach($Module in $Modules.Keys) {
             $ModuleName = $Module | Select-Object -ExpandProperty BaseName
             # we'll use $GetlessMod for the output folder
             $GetlessMod = $($ModuleName -replace "Get-") 
@@ -387,7 +398,9 @@ Param(
             # First line of each modules can specify how output should be handled
             $OutputMethod = Get-Content $Module -TotalCount 1 
             # run the module on the targets
-            $Job = Invoke-Command -Session $PSSessions -FilePath $Module -AsJob -ThrottleLimit $ThrottleLimit
+            $Argument = $($Modules.Get_Item($Module))
+            # "Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList `"$Argument`" -AsJob -ThrottleLimit $ThrottleLimit"
+            $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList "$Argument" -AsJob -ThrottleLimit $ThrottleLimit
             Write-Verbose "Waiting for $ModuleName to complete."
             # Wait-Job does return data to stdout, add $suppress = to start of next line, if needed
             Wait-Job $Job
@@ -418,6 +431,12 @@ Param(
                         # for compressing data as an example
                         $Outfile = $Outfile + ".zip"
                         $Recpt | Set-Content -Encoding Byte $Outfile
+                    }
+                    "*Default" {
+                        # Default here means we let PowerShell figure out the output encoding
+                        # Used by Get-File.ps1, which can grab arbitrary files
+                        $Outfile = $Outfile + ".default_encoding"
+                        $Recpt | Set-Content -Encoding Default $Outfile
                     }
                     default {
                         $Outfile = $Outfile + ".txt"
@@ -455,13 +474,13 @@ Param(
     [Parameter(Mandatory=$True,Position=0)]
         [Array]$Targets,
     [Parameter(Mandatory=$True,Position=1)]
-        [Array]$Modules,
+        [HashTable]$Modules,
     [Parameter(Mandatory=$False,Position=2)]
         [PSCredential]$Credential
         
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
-    foreach($Module in $Modules) {
+    foreach($Module in $Modules.Keys) {
         $ModuleName = $Module | Select-Object -ExpandProperty BaseName
         # read the second line to determine binary dependency, not required
         $bindepline = Get-Content $Module -TotalCount 2 | Select-Object -Skip 1
@@ -673,9 +692,6 @@ if ($ListModules) {
 # it exists, otherwise will have same data as
 # List-Modules command above.
 $Modules = Get-Modules -ModulePath $ModulePath
-$Modules
-exit
-
 # Done getting modules #
 
 

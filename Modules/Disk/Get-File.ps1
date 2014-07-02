@@ -1,10 +1,14 @@
-﻿# OUTPUT bin
+﻿# OUTPUT Default
 # Get-File.ps1 retrieves the user specified file.
 # How does the user specify the file? By editing
 # the $targetFile value below with a full path.
 
-$targetFile = "C:\Users\Administrator\ntuser.dat"
+[CmdletBinding()]
+Param(
+    [Parameter(Mandatory=$False,Position=0)]
+        [String]$File="C:\Users\Administrator\NTUser.dat"
+)
 
-if (Test-Path($targetFile)) {
-    Get-Content -ReadCount 0 -Raw -Encoding Byte $targetFile
+if (Test-Path($File)) {
+    Get-Content -ReadCount 0 -Raw $File
 }  

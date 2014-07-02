@@ -1,6 +1,8 @@
 ﻿# OUTPUT txt
 # BINDEP .\Modules\bin\binaryName
 # See below for notes about the lines above
+# Modules can be written to take parameters with arguments passed
+# via Modules\Modules.conf. Named parameters do not work.
 
 <#
 Default module template

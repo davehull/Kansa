@@ -378,9 +378,6 @@ Param(
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
 
-    $Modules
-    exit
-
     Try {
         # Create our sessions with targets
         if ($Credential) {

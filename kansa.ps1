@@ -370,13 +370,16 @@ Param(
     [Parameter(Mandatory=$True,Position=0)]
         [Array]$Targets,
     [Parameter(Mandatory=$True,Position=1)]
-        [HashTable]$Modules,
+        [System.Collections.Specialized.OrderedDictionary]$Modules,
     [Parameter(Mandatory=$False,Position=2)]
         [PSCredential]$Credential=$False,
     [Parameter(Mandatory=$False,Position=3)]
         [Int]$ThrottleLimit
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
+
+    $Modules
+    exit
 
     Try {
         # Create our sessions with targets

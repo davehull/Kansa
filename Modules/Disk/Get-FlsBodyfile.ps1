@@ -16,6 +16,12 @@ $env:SystemDrive (typically C:\). This can take a long time for large drives.
 !! This takes time for an entire drive !!
 #>
 
+[CmdletBinding()]
+Param(
+    [Parameter(Mandatory=$False,Position=0)]
+        [String]$Drive="$env:SystemDrive"
+)
+
 Function Expand-Zip ($zipfile, $destination) {
     $shell = New-Object -ComObject shell.application
     $zip = $shell.Namespace($zipfile)
@@ -31,8 +37,8 @@ if (Test-Path ($flspath)) {
     $flsdest = ($env:Temp + "\fls\")
     Expand-Zip $flspath $flsdest
     if (Test-Path($flsdest + "\fls.exe")) {
-        $sd = $env:SystemDrive
-        & $flsdest\fls.exe -r -m ($sd) \\.\$sd
+        # $sd = $env:SystemDrive
+        & $flsdest\fls.exe -r -m ($Drive) \\.\$Drive
         $suppress = Remove-Item $flsdest -Force -Recurse
     } else {
         "Fls.zip found, but not unzipped."

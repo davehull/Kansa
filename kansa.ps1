@@ -361,6 +361,21 @@ Param(
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
 }
 
+function Get-LegalFileName {
+<#
+.SYNOPSIS
+Returns argument with illegal filename characters removed.
+#>
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [String]$Argument
+)
+    Write-Debug "Entering ($MyInvocation.MyCommand)"
+    $Argument -replace [regex]::Escape("\") -replace [regex]::Escape("/") -replace [regex]::Escape(":") `
+        -replace [regex]::Escape("*") -replace [regex]::Escape("?") -replace "`"" -replace [regex]::Escape("<") `
+        -replace [regex]::Escape(">") -replace [regex]::Escape("|")
+}
+
 function Get-TargetData {
 <#
 .SYNOPSIS
@@ -370,7 +385,7 @@ Param(
     [Parameter(Mandatory=$True,Position=0)]
         [Array]$Targets,
     [Parameter(Mandatory=$True,Position=1)]
-        [HashTable]$Modules,
+        [System.Collections.Specialized.OrderedDictionary]$Modules,
     [Parameter(Mandatory=$False,Position=2)]
         [PSCredential]$Credential=$False,
     [Parameter(Mandatory=$False,Position=3)]
@@ -391,22 +406,25 @@ Param(
         }
 
         foreach($Module in $Modules.Keys) {
-            $ModuleName = $Module | Select-Object -ExpandProperty BaseName
+            $ModuleName  = $Module | Select-Object -ExpandProperty BaseName
+            $Argument    = $($Modules.Get_Item($Module))
+            if ($Argument) {
+                $ArgFileName = Get-LegalFileName $Argument
+            } else { $ArgFileName = "" }
             # we'll use $GetlessMod for the output folder
             $GetlessMod = $($ModuleName -replace "Get-") 
-            $Suppress = New-Item -Path $OutputPath -name $GetlessMod -ItemType Directory
+            $Suppress = New-Item -Path $OutputPath -name ($GetlessMod + $ArgFileName) -ItemType Directory
             # First line of each modules can specify how output should be handled
             $OutputMethod = Get-Content $Module -TotalCount 1 
-            # run the module on the targets
-            $Argument = $($Modules.Get_Item($Module))
+            # run the module on the targets            
             # "Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList `"$Argument`" -AsJob -ThrottleLimit $ThrottleLimit"
             $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList "$Argument" -AsJob -ThrottleLimit $ThrottleLimit
-            Write-Verbose "Waiting for $ModuleName to complete."
+            Write-Verbose "Waiting for $ModuleName $Argument to complete."
             # Wait-Job does return data to stdout, add $suppress = to start of next line, if needed
             Wait-Job $Job
             foreach($ChildJob in $Job.ChildJobs) { 
                 $Recpt = Receive-Job $ChildJob
-                $Outfile = $OutputPath + $GetlessMod + "\" + $ChildJob.Location + "-" + $GetlessMod
+                $Outfile = $OutputPath + $GetlessMod + $ArgFileName + "\" + $ChildJob.Location + "-" + $GetlessMod + $ArgFileName
                 # save the data
                 switch -Wildcard ($OutputMethod) {
                     "*csv" {
@@ -435,7 +453,7 @@ Param(
                     "*Default" {
                         # Default here means we let PowerShell figure out the output encoding
                         # Used by Get-File.ps1, which can grab arbitrary files
-                        $Outfile = $Outfile + ".default_encoding"
+                        $Outfile = $Outfile
                         $Recpt | Set-Content -Encoding Default $Outfile
                     }
                     default {

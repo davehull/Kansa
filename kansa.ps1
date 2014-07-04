@@ -361,6 +361,21 @@ Param(
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
 }
 
+function Get-LegalFileName {
+<#
+.SYNOPSIS
+Returns argument with illegal filename characters removed.
+#>
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [String]$Argument
+)
+    Write-Debug "Entering ($MyInvocation.MyCommand)"
+    $Argument -replace [regex]::Escape("\") -replace [regex]::Escape("/") -replace [regex]::Escape(":") `
+        -replace [regex]::Escape("*") -replace [regex]::Escape("?") -replace "`"" -replace [regex]::Escape("<") `
+        -replace [regex]::Escape(">") -replace [regex]::Escape("|")
+}
+
 function Get-TargetData {
 <#
 .SYNOPSIS
@@ -391,22 +406,25 @@ Param(
         }
 
         foreach($Module in $Modules.Keys) {
-            $ModuleName = $Module | Select-Object -ExpandProperty BaseName
+            $ModuleName  = $Module | Select-Object -ExpandProperty BaseName
+            $Argument    = $($Modules.Get_Item($Module))
+            if ($Argument) {
+                $ArgFileName = Get-LegalFileName $Argument
+            } else { $ArgFileName = "" }
             # we'll use $GetlessMod for the output folder
             $GetlessMod = $($ModuleName -replace "Get-") 
-            $Suppress = New-Item -Path $OutputPath -name $GetlessMod -ItemType Directory
+            $Suppress = New-Item -Path $OutputPath -name ($GetlessMod + $ArgFileName) -ItemType Directory
             # First line of each modules can specify how output should be handled
             $OutputMethod = Get-Content $Module -TotalCount 1 
-            # run the module on the targets
-            $Argument = $($Modules.Get_Item($Module))
+            # run the module on the targets            
             # "Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList `"$Argument`" -AsJob -ThrottleLimit $ThrottleLimit"
             $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList "$Argument" -AsJob -ThrottleLimit $ThrottleLimit
-            Write-Verbose "Waiting for $ModuleName to complete."
+            Write-Verbose "Waiting for $ModuleName $Argument to complete."
             # Wait-Job does return data to stdout, add $suppress = to start of next line, if needed
             Wait-Job $Job
             foreach($ChildJob in $Job.ChildJobs) { 
                 $Recpt = Receive-Job $ChildJob
-                $Outfile = $OutputPath + $GetlessMod + "\" + $ChildJob.Location + "-" + $GetlessMod
+                $Outfile = $OutputPath + $GetlessMod + $ArgFileName + "\" + $ChildJob.Location + "-" + $GetlessMod + $ArgFileName
                 # save the data
                 switch -Wildcard ($OutputMethod) {
                     "*csv" {

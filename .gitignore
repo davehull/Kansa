@@ -3,4 +3,5 @@ hostlist*
 test
 Output*
 Schedule
+KansaTest.ps1
 !.gitignore

@@ -453,7 +453,7 @@ Param(
                     "*Default" {
                         # Default here means we let PowerShell figure out the output encoding
                         # Used by Get-File.ps1, which can grab arbitrary files
-                        $Outfile = $Outfile + ".default_encoding"
+                        $Outfile = $Outfile
                         $Recpt | Set-Content -Encoding Default $Outfile
                     }
                     default {

@@ -140,13 +140,15 @@ Kansa.ps1
 In the above example the user has specified no arguments, which will
 cause Kansa to run modules per the .\Modules\Modules.conf file against
 a list of hosts that it is able to query from Active Directory. Errors
-and all output will be written to a timestamped output directory.
+and all output will be written to a timestamped output directory. If
+.\Modules\Modules.conf is not found, all ps1 scripts starting with Get-
+under the .\Modules\ directory (recursively) will be run.
 .EXAMPLE
-Kansa.ps1 -ModulePath .\Modules -TargetList hosts.txt -Credential $Credential -Transcribe -Verbose
-In this example the user has specified a module path, a list of hosts to
-target, a user credential under which to execute. The -Transcribe and 
--Verbose flags are also supplied causing all script output to be written
-to a transcript and for the script to be more verbose.
+Kansa.ps1 -TargetList hosts.txt -Credential $Credential -Transcribe -Verbose
+In this example the user has specified a list of hosts to target, a 
+user credential under which to execute. The -Transcribe and -Verbose
+flags are also supplied causing all script output to be written to a 
+transcript and for the script to be more verbose.
 .EXAMPLE
 Kansa.ps1 -ModulePath ".\Modules\Disk\Get-File.ps1 C:\Windows\WindowsUpdate.log" -Target HHWWSQL01
 In this example -ModulePath refers to a specific module that takes a 

@@ -145,6 +145,16 @@ Kansa.ps1 -ModulePath ".\Modules\Disk\Get-File.ps1 C:\Windows\WindowsUpdate.log"
 In this example -ModulePath refers to a specific module that takes a 
 positional parameter (only positional parameters are supported) and the
 script is being run against a single target.
+.EXAMPLE
+Kansa.ps1 -TargetList hostlist -Analysis
+Runs collection according to the configuration in Modules\Modules.conf.
+Following collection, runs analysis scripts per Analysis\Analysis.conf.
+.EXAMPLE
+Kansa.ps1 -ListModules
+Returns a list of all the modules found under the default modules path.
+.EXAMPLE
+Kansa.ps1 -ListAnalysis
+Returns a list of all analysis scripts found under the Analysis path.
 #>
 
 [CmdletBinding()]

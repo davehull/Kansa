@@ -130,10 +130,10 @@ The script can take a list of targets, read from a text file, via the
 -Target argument. You may also supply the -TargetCount argument to 
 limit how many hosts from the file will be targeted. 
 
-In the absence of the -Target argument containing a list of targets, 
-the script will query Acitve Directory for a complete list of hosts and
-will attempt to target all of them. As of this writing, failures are 
-silently ignored.
+In the absence of the -TargetList argument pointing to a text file
+containing a list of hostnames or -Target followed by the name of a
+single host, Kansa.ps1 will query Acitve Directory for a complete 
+list of hosts and will attempt to target all of them. 
 
 .EXAMPLE
 Kansa.ps1

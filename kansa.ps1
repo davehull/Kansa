@@ -268,10 +268,12 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     Write-Debug "`$ModulePath is ${ModulePath}."
 
+    # User may have passed a full path to a specific module, posibly with an argument
     $ModuleScript = ($ModulePath -split " ")[0]
     $ModuleArgs   = ($ModulePath -split [regex]::escape($ModuleScript))[1].Trim()
 
     $Modules = $FoundModules = @()
+    # Need to maintain the order for "order of volatility"
     $ModuleHash = New-Object System.Collections.Specialized.OrderedDictionary
 
     if (!(ls $ModuleScript -ErrorAction SilentlyContinue).PSIsContainer) {
@@ -280,7 +282,7 @@ Param(
 
         if (Test-Path($ModuleScript)) {
             $Module = ls $ModuleScript | Select-Object -ExpandProperty BaseName
-            Write-Verbose "Running module: `n$Module"
+            Write-Verbose "Running module: `n$Module $ModuleArgs"
             Return $ModuleHash
         }
     }

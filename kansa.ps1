@@ -127,13 +127,13 @@ to make changes to remote hosts. As a result, it can be used to
 facilitate remediation.
 
 The script can take a list of targets, read from a text file, via the
--Target argument. You may also supply the -TargetCount argument to 
-limit how many hosts from the file will be targeted. 
+-TargetList <file> argument. You may also supply the -TargetCount 
+argument to limit how many hosts will be targeted. To target a single
+host, use the -Target <hostname> argument.
 
-In the absence of the -TargetList argument pointing to a text file
-containing a list of hostnames or -Target followed by the name of a
-single host, Kansa.ps1 will query Acitve Directory for a complete 
-list of hosts and will attempt to target all of them. 
+In the absence of the -TargetList or -Target arguments, Kansa.ps1 will
+query Acitve Directory for a complete list of hosts and will attempt to
+target all of them. 
 
 .EXAMPLE
 Kansa.ps1

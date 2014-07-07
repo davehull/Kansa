@@ -1,6 +1,7 @@
 ﻿<#
 .SYNOPSIS
-Kansa is a Powershell based incident response framework for Windows environments.
+Kansa is a Powershell based incident response framework for Windows 
+environments.
 .DESCRIPTION
 In this modular version of Mal-Seine, Kansa looks for a modules.conf
 file in the -Modules directory. If one is found, it will control which 
@@ -16,10 +17,10 @@ For example, the Get-PrefetchListing.ps1 module data will be written
 to Output\PrefetchListing\Hostname-PrefetchListing.txt.
 
 If a module returns Powershell objects, its data can be written out in
-one of several file formats, including bin, csv, tsv and xml. Modules that
-return text should choose the txt output format. The first line of each 
-module should contain a comment specifying the output format, following
-this format:
+one of several file formats, including bin, csv, tsv and xml. Modules 
+that return text should choose the txt output format. The first line of 
+each module should contain a comment specifying the output format, 
+following this format:
 
 # OUTPUT xml
 
@@ -29,20 +30,23 @@ This script was written to avoid the need for CredSSP, therefore
 http://trustedsignal.blogspot.com/2014/04/kansa-modular-live-response-tool-for.html
 
 The script assumes you will have administrator level privileges on
-target hosts, though such privileges may not be required by all modules.
+target hosts, though such privileges may not be required by all 
+modules.
 
 If you run this script without the -TargetList argument, Remote Server
-Administration Tools (RSAT), is required. These are available from Microsoft's 
-Download Center for Windows 7 and 8. You can search for RSAT at:
+Administration Tools (RSAT), is required. These are available from 
+Microsoft's Download Center for Windows 7 and 8. You can search for 
+RSAT at:
 
 http://www.microsoft.com/en-us/download/default.aspx
 
 .PARAMETER ModulePath
-An optional parameter that specifies the path to the collector modules. Spaces
-in the path are not supported. However, ModulePath may point directly to a 
-specific module and if that module takes a parameter, you should have a space
-between the path to the script and its first argument, put the whole thing in
-quotes. See example.
+An optional parameter, default is .\Modules\, that specifies the path 
+to the collector modules or a specific module. Spaces in the path are
+not supported, however, ModulePath may point directly to a specific 
+module and if that module takes a parameter, you should have a space 
+between the path to the script and its first argument, put the whole 
+thing in quotes. See example.
 .PARAMETER TargetList
 An optional argument, the name of a file containing a list of servers 
 from the current forest to collect data from.
@@ -51,9 +55,10 @@ An optional argument, the name of a single system to collect data from.
 .PARAMETER TargetCount
 An optional parameter that specifies the maximum number of targets.
 
-In the absence of the TargetList and / or Target arguments, Kansa will use
-Remote System Administration Tools (a separate installed package) to query
-Active Directory and will build a list of hosts to target automatically.
+In the absence of the TargetList and / or Target arguments, Kansa will 
+use Remote System Administration Tools (a separate installed package) 
+to query Active Directory and will build a list of hosts to target 
+automatically.
 
 .PARAMETER Credential
 An optional credential that the script will use for execution. Use the
@@ -66,13 +71,14 @@ script and users of Kansa must copy the required <binary> to the
 Modules\bin\ folder.
 
 For example, the Get-Autorunsc.ps1 collector has a binary dependency on
-Sysinternals Autorunsc.exe. The second line of Get-Autorunsc.ps1 contains
-the "# BINDEP autorunsc.exe" directive and a copy of autorunsc.exe is placed 
-in the Modules\bin folder. If Kansa is run with the -Pushbin flag, it will 
-attempt to copy autorunsc.exe from the Modules\bin path to the ADMIN$ share 
-of each remote host. If your required binaries are already present on
-each target and in the path where the modules expect them to be, you can 
-omit the -Pushbin flag and save the step of copying binaries.
+Sysinternals Autorunsc.exe. The second line of Get-Autorunsc.ps1 
+contains the "# BINDEP autorunsc.exe" directive and a copy of 
+autorunsc.exe is placed in the Modules\bin folder. If Kansa is run with 
+the -Pushbin flag, it will attempt to copy autorunsc.exe from the 
+.\Modules\bin path to the ADMIN$ share of each remote host. If your 
+required binaries are already present on each target and in the path 
+where the modules expect them to be, you can omit the -Pushbin flag and 
+save the step of copying binaries.
 .PARAMETER Ascii
 An optional switch that tells Kansa you want all text output (i.e. txt,
 csv and tsv) and errors be written as Ascii. Unicode is the default.
@@ -86,11 +92,11 @@ An optional switch that lists the available modules. Useful for
 constructing a modules.conf file. Kansa exits after listing.
 You'll likely want to sort the according to the order of volatility.
 .PARAMETER ListAnalysis
-An optional switch that lists the available analysis scripts. Useful for
-constructing an analysis.conf file. Kansa exits after listing. If you 
-use this switch to build an analysis.conf file, you'll likely want to
-edit the list so you're only running the analysis scripts you want to
-run.
+An optional switch that lists the available analysis scripts. Useful 
+for constructing an analysis.conf file. Kansa exits after listing. If 
+you use this switch to build an analysis.conf file, you'll likely want 
+to edit the list so you're only running the analysis scripts you want 
+to run.
 .PARAMETER Analysis
 An optional switch that causes Kansa to run automated analysis based on
 the contents of the Analysis\Analysis.conf file.
@@ -106,34 +112,35 @@ Various and sundry.
 In the absence of a configuration file, specifying which modules to run, 
 this script will run each module across all hosts.
 
-Each module should return objects, ideally, though text is supported. See
-the discussion above about OUTPUT formats.
+Each module should return objects, ideally, though text is supported. 
+See the discussion above about OUTPUT formats.
 
-Because modules should only COLLECT data from remote hosts, their filenames
-must begin with "Get-". Examples:
+Because modules should only COLLECT data from remote hosts, their 
+filenames must begin with "Get-". Examples:
 Get-PrefetchListing.ps1
 Get-Netstat.ps1
 
 Any module not beginning with "Get-" will be ignored.
 
-Note this read-only aspect is unenforced, therefore Kansa can be used to
-make changes to remote hosts. As a result, it can be used to facilitate
-remediation.
+Note this read-only aspect is unenforced, therefore Kansa can be used 
+to make changes to remote hosts. As a result, it can be used to 
+facilitate remediation.
 
-The script can take a list of targets, read from a text file, via the -Target
-argument. You may also supply the -TargetCount argument to limit how many hosts
-from the file will be targeted. 
+The script can take a list of targets, read from a text file, via the
+-Target argument. You may also supply the -TargetCount argument to 
+limit how many hosts from the file will be targeted. 
 
-In the absence of the -Target argument containing a list of targets, the script
-will query Acitve Directory for a complete list of hosts and will attempt to 
-target all of them. As of this writing, failures are silently ignored.
+In the absence of the -Target argument containing a list of targets, 
+the script will query Acitve Directory for a complete list of hosts and
+will attempt to target all of them. As of this writing, failures are 
+silently ignored.
 
 .EXAMPLE
-Kansa.ps1 -ModulePath .\Kansas 
-In the above example the user has specified the module path and a path
-for the tool's output. Note that error logging and transcriptions (if
-specified using -transcribe) are written to the output path. Kansa will
-query active directory for a list of targets in the current forest.
+Kansa.ps1
+In the above example the user has specified no arguments, which will
+cause Kansa to run modules per the .\Modules\Modules.conf file against
+a list of hosts that it is able to query from Active Directory. Errors
+and all output will be written to a timestamped output directory.
 .EXAMPLE
 Kansa.ps1 -ModulePath .\Modules -TargetList hosts.txt -Credential $Credential -Transcribe -Verbose
 In this example the user has specified a module path, a list of hosts to

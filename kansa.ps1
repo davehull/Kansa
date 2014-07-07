@@ -47,6 +47,9 @@ not supported, however, ModulePath may point directly to a specific
 module and if that module takes a parameter, you should have a space 
 between the path to the script and its first argument, put the whole 
 thing in quotes. See example.
+This parameter will eventually be deprecated and the module path will
+be hardcoded to .\Modules\. A new parameter will be added for 
+specifying a single module from the command line.
 .PARAMETER TargetList
 An optional argument, the name of a file containing a list of servers 
 from the current forest to collect data from.
@@ -728,7 +731,7 @@ Write-Debug "`$ServerList is ${TargetList}."
 if ($ListModules) {
     # User provided ListModules switch so exit
     # after returning the full list of modules
-    List-Modules $ModulePath
+    List-Modules ".\Modules\"
     Exit
 }
 # Get-Modules reads the modules.conf file, if

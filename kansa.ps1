@@ -41,9 +41,9 @@ RSAT at:
 http://www.microsoft.com/en-us/download/default.aspx
 
 .PARAMETER ModulePath
-An optional parameter, default is .\Modules\, that specifies the path 
-to the collector modules or a specific module. Spaces in the path are
-not supported, however, ModulePath may point directly to a specific 
+An optional parameter, default value is .\Modules\, that specifies the
+path to the collector modules or a specific module. Spaces in the path 
+are not supported, however, ModulePath may point directly to a specific 
 module and if that module takes a parameter, you should have a space 
 between the path to the script and its first argument, put the whole 
 thing in quotes. See example.
@@ -268,10 +268,12 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     Write-Debug "`$ModulePath is ${ModulePath}."
 
+    # User may have passed a full path to a specific module, posibly with an argument
     $ModuleScript = ($ModulePath -split " ")[0]
     $ModuleArgs   = ($ModulePath -split [regex]::escape($ModuleScript))[1].Trim()
 
     $Modules = $FoundModules = @()
+    # Need to maintain the order for "order of volatility"
     $ModuleHash = New-Object System.Collections.Specialized.OrderedDictionary
 
     if (!(ls $ModuleScript -ErrorAction SilentlyContinue).PSIsContainer) {
@@ -280,7 +282,7 @@ Param(
 
         if (Test-Path($ModuleScript)) {
             $Module = ls $ModuleScript | Select-Object -ExpandProperty BaseName
-            Write-Verbose "Running module: `n$Module"
+            Write-Verbose "Running module: `n$Module $ModuleArgs"
             Return $ModuleHash
         }
     }

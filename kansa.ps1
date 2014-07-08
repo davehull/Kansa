@@ -41,9 +41,9 @@ RSAT at:
 http://www.microsoft.com/en-us/download/default.aspx
 
 .PARAMETER ModulePath
-An optional parameter, default is .\Modules\, that specifies the path 
-to the collector modules or a specific module. Spaces in the path are
-not supported, however, ModulePath may point directly to a specific 
+An optional parameter, default value is .\Modules\, that specifies the
+path to the collector modules or a specific module. Spaces in the path 
+are not supported, however, ModulePath may point directly to a specific 
 module and if that module takes a parameter, you should have a space 
 between the path to the script and its first argument, put the whole 
 thing in quotes. See example.

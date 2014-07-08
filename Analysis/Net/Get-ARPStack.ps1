@@ -26,7 +26,7 @@ if (Get-Command logparser.exe) {
         ct ASC
 "@
 
-    & logparser -i:tsv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"
+    & logparser -q:on -i:tsv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

@@ -255,11 +255,11 @@ Exit the script somewhat gracefully, closing any open transcript.
 function Get-Modules {
 <#
 .SYNOPSIS
-Looks for modules.conf in the $Modulepath, default is Modules.
-If found, returns the list of uncommented modules in the order
-they are listed in the file. If no modules.conf is found, returns
-a list of all modules found in $Modulepath, where a module is a
-.ps1 script starting with Get-.
+Looks for modules.conf in the $Modulepath, default is Modules. If found,
+returns an ordered hashtable of script files and their arguments, if any. 
+If no modules.conf is found, returns an ordered hashtable of all modules
+found in $Modulepath, but no arguments will be present so scripts will
+run with default params. A module is a .ps1 script starting with Get-.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
@@ -636,7 +636,8 @@ Param(
                 Set-Location "$OutputPath$DataDir"
                 Write-Verbose "Running analysis script: ${AnalysisScript}"
                 $AnalysisFile = ((((($AnalysisScript -split "\\")[1]) -split "Get-")[1]) -split ".ps1")[0]
-                & "$StartingPath\Analysis\${AnalysisScript}" | Set-Content -Encoding $Encoding ($AnalysisOutPath + $AnalysisFile)
+                # As of this writing, all analysis output files are tsv
+                & "$StartingPath\Analysis\${AnalysisScript}" | Set-Content -Encoding $Encoding ($AnalysisOutPath + $AnalysisFile + ".tsv")
                 Pop-Location
             } else {
                 "Analysis: No data found for ${AnalysisScript}." | Add-Content -Encoding $Encoding $ErrorLog

@@ -82,6 +82,9 @@ the -Pushbin flag, it will attempt to copy autorunsc.exe from the
 required binaries are already present on each target and in the path 
 where the modules expect them to be, you can omit the -Pushbin flag and 
 save the step of copying binaries.
+.PARAMETER Rmbin
+An optional switch for removing binaries that may have been pushed to
+remote hosts via -Pushbin either on this run, or during a previous run.
 .PARAMETER Ascii
 An optional switch that tells Kansa you want all text output (i.e. txt,
 csv and tsv) and errors be written as Ascii. Unicode is the default.

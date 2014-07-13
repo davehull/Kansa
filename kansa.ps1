@@ -449,7 +449,7 @@ Param(
             $OutputMethod = Get-Content $Module -TotalCount 1 
             # run the module on the targets            
             if ($Arguments) {
-                Write-Verbose "Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList `"$Arguments`" -AsJob -ThrottleLimit $ThrottleLimit"
+                Write-Debug "Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList `"$Arguments`" -AsJob -ThrottleLimit $ThrottleLimit"
                 $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList $Arguments -AsJob -ThrottleLimit $ThrottleLimit
                 Write-Verbose "Waiting for $ModuleName $Arguments to complete."
             } else {

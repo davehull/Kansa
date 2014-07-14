@@ -39,71 +39,113 @@ function Get-LocalDrives
     return $drives
 }
 
+workflow Get-HashesWorkflow {
+	[CmdletBinding()]
+	Param (
+		[Parameter(Mandatory=$True,Position=0)]
+			[String]$BasePath,
+		[Parameter(Mandatory=$True,Position=1)]
+			[string]$SearchHash,
+		[Parameter(Mandatory=$True,Position=2)]
+			[ValidateSet("MD5","SHA1","SHA256","SHA384","SHA512","RIPEMD160")]
+			[string]$HashType = "SHA256",
+		[Parameter(Mandatory=$False,Position=3)]
+			[int]$MinB=4096,
+		[Parameter(Mandatory=$False,Position=4)]
+			[int]$MaxB=10485760,
+		[Parameter(Mandatory=$False,Position=5)]
+			[string]$extRegex="\.(exe|sys|dll|ps1)$"
+	)
+
+	$hashList = @()
+	
+	$Files = (
+		Get-ChildItem -Path $basePath -Recurse -ErrorAction SilentlyContinue | 
+		? -FilterScript { 
+			($_.Length -ge $MinB -and $_.Length -le $_.Length) -and 
+			($_.Extension -match $extRegex) 
+		} | 
+		Select-Object -ExpandProperty FullName
+	)
+
+	foreach -parallel ($File in $Files) {
+        
+		sequence {
+			$workflow:hashList += inlinescript {
+				switch -CaseSensitive ($using:HashType) {
+					"MD5"       { $hash = [System.Security.Cryptography.MD5]::Create() }
+					"SHA1"      { $hash = [System.Security.Cryptography.SHA1]::Create() }
+					"SHA256"    { $hash = [System.Security.Cryptography.SHA256]::Create() }
+					"SHA384"    { $hash = [System.Security.Cryptography.SHA384]::Create() }
+					"SHA512"    { $hash = [System.Security.Cryptography.SHA512]::Create() }
+					"RIPEMD160" { $hash = [System.Security.Cryptography.RIPEMD160]::Create() }
+					#default     { Write-Error -Message "Invalid hash type selected." -Category InvalidArgument }
+				}
+
+				# -Message variable name required because workflows do not support possitional parameters.
+				Write-Verbose -Message "Calculating hash of $using:File."
+				if (Test-Path -LiteralPath $using:File -PathType Leaf) {
+					$FileData = [System.IO.File]::ReadAllBytes($using:File)
+					$HashBytes = $hash.ComputeHash($FileData)
+					$paddedHex = ""
+
+					foreach( $byte in $HashBytes ) {
+						$byteInHex = [String]::Format("{0:X}", $byte)
+						$paddedHex += $byteInHex.PadLeft(2,"0")
+					}
+                
+					Write-Verbose -Message "Hash value was $paddedHex."
+					if ($paddedHex -ieq $using:searchHash) {
+						($file, $paddedHex)
+					}
+				}
+			}
+		}
+    }
+
+	if ($hashList.Count -gt 0) {
+		return $hashList
+	}
+	else {
+		return $false
+	}
+}
 
 function Get-Matches {
-[CmdletBinding()]
-Param (
-    [Parameter(Mandatory=$True,Position=0)]
-        [String]$BasePath,
-    [Parameter(Mandatory=$True,Position=1)]
-        [string]$SearchHash,
-    [Parameter(Mandatory=$True,Position=2)]
-        [ValidateSet("MD5","SHA1","SHA256","SHA384","SHA512","RIPEMD160")]
-        [string]$HashType = "SHA256",
-    [Parameter(Mandatory=$False,Position=3)]
-        [int]$MinB=4096,
-    [Parameter(Mandatory=$False,Position=4)]
-        [int]$MaxB=10485760,
-    [Parameter(Mandatory=$False,Position=5)]
-        [Array]$extRegex="\.(exe|sys|dll|ps1)$"
-)
+	[CmdletBinding()]
+	Param (
+		[Parameter(Mandatory=$True,Position=0)]
+			[String]$BasePath,
+		[Parameter(Mandatory=$True,Position=1)]
+			[string]$SearchHash,
+		[Parameter(Mandatory=$True,Position=2)]
+			[ValidateSet("MD5","SHA1","SHA256","SHA384","SHA512","RIPEMD160")]
+			[string]$HashType = "SHA256",
+		[Parameter(Mandatory=$False,Position=3)]
+			[int]$MinB=4096,
+		[Parameter(Mandatory=$False,Position=4)]
+			[int]$MaxB=10485760,
+		[Parameter(Mandatory=$False,Position=5)]
+			[string]$extRegex="\.(exe|sys|dll|ps1)$"
+	)
 
-    switch ( $HashType.ToUpper() ) {
-        "MD5"       { $hash = [System.Security.Cryptography.MD5]::Create() }
-        "SHA1"      { $hash = [System.Security.Cryptography.SHA1]::Create() }
-        "SHA256"    { $hash = [System.Security.Cryptography.SHA256]::Create() }
-        "SHA384"    { $hash = [System.Security.Cryptography.SHA384]::Create() }
-        "SHA512"    { $hash = [System.Security.Cryptography.SHA512]::Create() }
-        "RIPEMD160" { $hash = [System.Security.Cryptography.RIPEMD160]::Create() }
-        #default     { Write-Error -Message "Invalid hash type selected." -Category InvalidArgument }
+	$HashType = $HashType.ToUpper()
+    $hashList = Get-HashesWorkflow -BasePath $BasePath -SearchHash $FileHash -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
+    
+    if ($hashList) {
+		$hashCount = $hashList.Count.ToString()
+		Write-Verbose "Found $hashCount matching files."    
+		#foreach($key in $hashList.Keys) {
+  #          $o = "" | Select-Object File, Hash
+  #          $o.File = $key
+  #          $o.Hash = $($hashList.$key)
+  #          $o
+  #      }
+		$hashList | gm -view all # Hmm, no output at all...
     }
-
-    $hashList = @{}
-    $match = $False
-
-    foreach ($File in (Get-ChildItem -Path $basePath -Recurse | ? { 
-        ($_.Length -ge $MinB -and $_.Length -le $_.Length) -and 
-        ($_.Extension -match $extRegex) 
-    } | Select-Object -ExpandProperty FullName)) {
-        Write-Verbose "Calculating hash of $File."
-        if (Test-Path -LiteralPath $File -PathType Leaf) {
-            $FileData = [System.IO.File]::ReadAllBytes($File)
-            $HashBytes = $hash.ComputeHash($FileData)
-            $paddedHex = ""
-
-            foreach( $byte in $hashBytes ) {
-                $byteInHex = [String]::Format("{0:X}", $byte)
-                $paddedHex += $byteInHex.PadLeft(2,"0")
-            }
-                
-            Write-Verbose "Hash value was $paddedHex."
-            if ($paddedHex -ieq $searchHash) {
-                $hashList.Add($file, $paddedHex)
-                $match = $True
-            }
-        }
-    }
-
-    $hashCount = $hashList.Count.ToString()
-    Write-Verbose "Found $hashCount matching files."
-    if ($match) {
-        foreach($key in $hashList.Keys) {
-            $o = "" | Select-Object File, Hash
-            $o.File = $key
-            $o.Hash = $($hashList.$key)
-            $o
-        }
-    }
+	else {
+		Write-Verbose "Found no matching files."
+	}
 }
 
 

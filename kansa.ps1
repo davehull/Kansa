@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 Kansa is a Powershell based incident response framework for Windows 
 environments.
@@ -275,7 +275,7 @@ Param(
 
     # User may have passed a full path to a specific module, posibly with an argument
     $ModuleScript = ($ModulePath -split " ")[0]
-    $ModuleArgs   = ($ModulePath -split [regex]::escape($ModuleScript))[1].Trim()
+    $ModuleArgs   = @($ModulePath -split [regex]::escape($ModuleScript))[1].Trim()
 
     $Modules = $FoundModules = @()
     # Need to maintain the order for "order of volatility"
@@ -397,12 +397,13 @@ Returns argument with illegal filename characters removed.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
-        [String]$Argument
+        [Array]$Argument
 )
     Write-Debug "Entering ($MyInvocation.MyCommand)"
+    $Argument = $Arguments -join ""
     $Argument -replace [regex]::Escape("\") -replace [regex]::Escape("/") -replace [regex]::Escape(":") `
         -replace [regex]::Escape("*") -replace [regex]::Escape("?") -replace "`"" -replace [regex]::Escape("<") `
-        -replace [regex]::Escape(">") -replace [regex]::Escape("|")
+        -replace [regex]::Escape(">") -replace [regex]::Escape("|") -replace " "
 }
 
 function Get-TargetData {
@@ -436,9 +437,10 @@ Param(
 
         foreach($Module in $Modules.Keys) {
             $ModuleName  = $Module | Select-Object -ExpandProperty BaseName
-            $Argument    = $($Modules.Get_Item($Module))
-            if ($Argument) {
-                $ArgFileName = Get-LegalFileName $Argument
+            $Arguments   = @()
+            $Arguments   += $($Modules.Get_Item($Module)) -split ","
+            if ($Arguments) {
+                $ArgFileName = Get-LegalFileName $Arguments
             } else { $ArgFileName = "" }
             # we'll use $GetlessMod for the output folder
             $GetlessMod = $($ModuleName -replace "Get-") 
@@ -446,10 +448,10 @@ Param(
             # First line of each modules can specify how output should be handled
             $OutputMethod = Get-Content $Module -TotalCount 1 
             # run the module on the targets            
-            if ($Argument) {
-                Write-Debug "Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList `"$Argument`" -AsJob -ThrottleLimit $ThrottleLimit"
-                $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList "$Argument" -AsJob -ThrottleLimit $ThrottleLimit
-                Write-Verbose "Waiting for $ModuleName $Argument to complete."
+            if ($Arguments) {
+                Write-Debug "Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList `"$Arguments`" -AsJob -ThrottleLimit $ThrottleLimit"
+                $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList $Arguments -AsJob -ThrottleLimit $ThrottleLimit
+                Write-Verbose "Waiting for $ModuleName $Arguments to complete."
             } else {
                 Write-Debug "Invoke-Command -Session $PSSessions -FilePath $Module -AsJob -ThrottleLimit $ThrottleLimit"
                 $Job = Invoke-Command -Session $PSSessions -FilePath $Module -AsJob -ThrottleLimit $ThrottleLimit                

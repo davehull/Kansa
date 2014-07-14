@@ -20,6 +20,13 @@ Param(
         [int]$MaxB=10485760
 ) 
 
+$ErrorActionPreference = "Continue"
+
+<#
+($FileHash, $HashType, $BasePaths, $extRegex, $MinB, $MaxB) -join "|"
+exit
+#>
+
 function Get-LocalDrives
 {
     # DriveType 3 is localdisk as opposed to removeable. Details: http://msdn.microsoft.com/en-us/library/aa394173%28v=vs.85%29.aspx
@@ -63,12 +70,14 @@ Param (
     $hashList = @{}
     $match = $False
 
-    foreach ($file in (Get-ChildItem -Path $basePath -Recurse | ? { ($_.Length -ge $MinB -and $_.Length -le $_.Length) -and ($_.Extension -match $extRegex) } | Select-Object -ExpandProperty FullName)) {
-        Write-Verbose "Calculating hash of $file."
-        if (Test-Path -LiteralPath $file -PathType Leaf) {
-            $fileData = New-Object IO.StreamReader $file
-            $hashBytes = $hash.ComputeHash($fileData.BaseStream)
-            $fileData.Close()
+    foreach ($File in (Get-ChildItem -Path $basePath -Recurse | ? { 
+        ($_.Length -ge $MinB -and $_.Length -le $_.Length) -and 
+        ($_.Extension -match $extRegex) 
+    } | Select-Object -ExpandProperty FullName)) {
+        Write-Verbose "Calculating hash of $File."
+        if (Test-Path -LiteralPath $File -PathType Leaf) {
+            $FileData = [System.IO.File]::ReadAllBytes($File)
+            $HashBytes = $hash.ComputeHash($FileData)
             $paddedHex = ""
 
             foreach( $byte in $hashBytes ) {

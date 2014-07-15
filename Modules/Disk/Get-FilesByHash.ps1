@@ -22,11 +22,6 @@ Param(
 
 $ErrorActionPreference = "Continue"
 
-<#
-($FileHash, $HashType, $BasePaths, $extRegex, $MinB, $MaxB) -join "|"
-exit
-#>
-
 function Get-LocalDrives
 {
     # DriveType 3 is localdisk as opposed to removeable. Details: http://msdn.microsoft.com/en-us/library/aa394173%28v=vs.85%29.aspx
@@ -57,6 +52,21 @@ workflow Get-HashesWorkflow {
 			[string]$extRegex="\.(exe|sys|dll|ps1)$"
 	)
 
+	# Workflows are how PowerShell does multi-threading. The parent process spawns multiple
+	# child processes, which each receive the code contained within the parallel block. Once
+	# fed to a child, each command will run in non-deterministic order unless they are placed  
+	# inside a sequence block. 
+	# 
+	# One problem we encountered when testing is that if the target host uses an SSD, this can 
+	# max out that machine's CPU. I may add a command-line switch to force single-threaded
+	# execution in the future.
+	#
+	# References:
+	#   http://blogs.technet.com/b/heyscriptingguy/archive/2012/11/20/use-powershell-workflow-to-ping-computers-in-parallel.aspx
+	#   http://blogs.technet.com/b/heyscriptingguy/archive/2012/12/26/powershell-workflows-the-basics.aspx
+	#   http://blogs.technet.com/b/heyscriptingguy/archive/2013/01/02/powershell-workflows-restrictions.aspx
+	#   http://blogs.technet.com/b/heyscriptingguy/archive/2013/01/09/powershell-workflows-nesting.aspx
+
 	$hashList = @()
 	
 	$Files = (
@@ -71,7 +81,7 @@ workflow Get-HashesWorkflow {
 	foreach -parallel ($File in $Files) {
         
 		sequence {
-			$workflow:hashList += inlinescript {
+			$entry = inlinescript {
 				switch -CaseSensitive ($using:HashType) {
 					"MD5"       { $hash = [System.Security.Cryptography.MD5]::Create() }
 					"SHA1"      { $hash = [System.Security.Cryptography.SHA1]::Create() }
@@ -96,10 +106,11 @@ workflow Get-HashesWorkflow {
                 
 					Write-Verbose -Message "Hash value was $paddedHex."
 					if ($paddedHex -ieq $using:searchHash) {
-						($file, $paddedHex)
+						@($using:File, $paddedHex)
 					}
 				}
 			}
+			$workflow:hashList += , $entry
 		}
     }
 
@@ -133,27 +144,24 @@ function Get-Matches {
     $hashList = Get-HashesWorkflow -BasePath $BasePath -SearchHash $FileHash -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
     
     if ($hashList) {
-		$hashCount = $hashList.Count.ToString()
+		$hashCount = ($hashList.Count / 2).ToString()
 		Write-Verbose "Found $hashCount matching files."    
-		#foreach($key in $hashList.Keys) {
-  #          $o = "" | Select-Object File, Hash
-  #          $o.File = $key
-  #          $o.Hash = $($hashList.$key)
-  #          $o
-  #      }
-		$hashList | gm -view all # Hmm, no output at all...
+		for($i = 0; $i -lt ($hashCount * 2); $i += 2) {
+            $o = "" | Select-Object File, Hash
+            $o.File = $hashList[$i]
+            $o.Hash = $hashList[$i + 1]
+            $o
+        }
     }
 	else {
 		Write-Verbose "Found no matching files."
 	}
 }
 
-
 if ($BasePaths.Length -eq 0) {
     Write-Verbose "No path specified, enumerating local drives."
     $BasePaths = Get-LocalDrives
 }
-
 
 foreach ($basePath in $BasePaths) {
     Write-Verbose "Getting file hashes for $basePath."

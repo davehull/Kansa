@@ -2,6 +2,10 @@
 # Get-FilesByHash.ps1 scans the local disks for files matching the provided
 # hash. Defaults to SHA-256. For example cmd.exe's hash (on Windows 8.1)
 # is 0B9BC863E2807B6886760480083E51BA8A66118659F4FF274E7B73944D2219F5
+# davehull -- on my Win8.1 system, c:\windows\system32\cmd.exe SHA256 hash 
+# is 58A5766A2DE54A6908A2CA30DD5983790B8C63614A455292613B129877223E9. I'm 
+# wondering if z4ns4tsu had the same System32\SysWoW64 redirection issue I
+# encountered.
 
 [CmdletBinding()]
 Param(

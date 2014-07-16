@@ -210,7 +210,7 @@ Try {
 
 # Long paths prevent data from being written, this is used to test their length
 # Per http://msdn.microsoft.com/en-us/library/aa365247.aspx#maxpath, maximum
-# path length should be 260 characters. We set it to 242 here to account for
+# path length should be 260 characters. We set it to 241 here to account for
 # max computername length of 15 characters, it's part of the path, plus a 
 # hyphen separator and a dot-three extension.
 # extension -- 260 - 19 = 241.
@@ -464,29 +464,34 @@ Param(
             }
             # Wait-Job does return data to stdout, add $suppress = to start of next line, if needed
             Wait-Job $Job
+            
             # set up our output location
             $GetlessMod = $($ModuleName -replace "Get-") 
-            # Long paths prevent output from being written, so we must truncate them
-
+            # Long paths prevent output from being written, so we truncate $ArgFileName to accomodate
+            # We're estimating the output path because at this point, we don't know what the hostname
+            # is and it is part of the path. Hostnames are 15 characters max, so we assume worst case
             $EstOutPathLength = $OutputPath.Length + ($GetlessMod.Length * 2) + ($ArgFileName.Length * 2)
             if ($EstOutPathLength -gt $MAXPATH) { 
-                $PathDiff = [Int] $EstOutPathLength - ($OutputPath.Length + ($GetlessMod.Length * 2) -gt 0)
-                $ArgLength = $PathDiff - $MAXPATH
-                if ($ArgLength -gt 0 -and $ArgLength -lt $ArgFileName.Length) {
-                    $ArgFileName = $ArgFileName.Substring(0, $ArgLength)
+                # Get the path length without the arguments, then we can determine how long $ArgFileName can be
+                $PathDiff = [int] $EstOutPathLength - ($OutputPath.Length + ($GetlessMod.Length * 2) -gt 0)
+                $MaxArgLength = $PathDiff - $MAXPATH
+                if ($MaxArgLength -gt 0 -and $MaxArgLength -lt $ArgFileName.Length) {
+                    $ArgFileName = $ArgFileName.Substring(0, $MaxArgLength)
                 }
             }
-
-                
+                            
             $Suppress = New-Item -Path $OutputPath -name ($GetlessMod + $ArgFileName) -ItemType Directory
             foreach($ChildJob in $Job.ChildJobs) { 
                 $Recpt = Receive-Job $ChildJob
+                                
+                # Now that we know our hostname, let's double check our path length, if it's too long, we'll write an error
+                # Max path is 260 characters, if we're over 256, we can't accomodate an extension
                 $Outfile = $OutputPath + $GetlessMod + $ArgFileName + "\" + $ChildJob.Location + "-" + $GetlessMod + $ArgFileName
-                Write-Verbose $Outfile
-                if ($Outfile.length -gt 257) {
-                    Write-Verbose $Outfile.length
-                    $Outfile = $Outfile.Substring(0,256)
+                if ($Outfile.length -gt 256) {
+                    "${GetlessMod}'s output path length exceeds 260 character limit. Can't write the output to disk for $($ChildJob.Location)." | Add-Content -Encoding $Encoding $ErrorLog
+                    Continue
                 }
+
                 # save the data
                 switch -Wildcard ($OutputMethod) {
                     "*csv" {

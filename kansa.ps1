@@ -208,6 +208,9 @@ Param(
 # the Exit-Script function and clean up things as needed.
 Try {
 
+# Long paths prevent data from being written, this is used to test their length
+Set-Variable -Name MAXPATH -Value 242 -Option Constant
+
 function FuncTemplate {
 <#
 .SYNOPSIS
@@ -442,9 +445,6 @@ Param(
             if ($Arguments) {
                 $ArgFileName = Get-LegalFileName $Arguments
             } else { $ArgFileName = "" }
-            # we'll use $GetlessMod for the output folder
-            $GetlessMod = $($ModuleName -replace "Get-") 
-            $Suppress = New-Item -Path $OutputPath -name ($GetlessMod + $ArgFileName) -ItemType Directory
             # First line of each modules can specify how output should be handled
             $OutputMethod = Get-Content $Module -TotalCount 1 
             # run the module on the targets            
@@ -459,9 +459,36 @@ Param(
             }
             # Wait-Job does return data to stdout, add $suppress = to start of next line, if needed
             Wait-Job $Job
+            # set up our output location
+            $GetlessMod = $($ModuleName -replace "Get-") 
+            # Long paths prevent output from being written, so we must truncate them
+
+            $EstOutPathLength = $OutputPath.Length + ($GetlessMod.Length * 2) + ($ArgFileName.Length * 2)
+            $EstOutPathLength
+            exit
+            if ($EstOutPathLength -gt $MAXPATH) { 
+                $PathDiff = [Int] $EstOutPathLength - ($OutputPath.Length + ($GetlessMod.Length * 2) -gt 0)
+                $ArgLength = $MAXPATH - $PathDiff
+                $ArgLength
+                $ArgFileName.Length
+                exit
+                if ($ArgLength -gt 0 -and $ArgLength -lt $ArgFileName.Length) {
+                    $ArgFileName = $ArgFileName.Substring(0, $ArgLength)
+                    $ArgFileName
+                    exit
+                }
+            }
+
+                
+            $Suppress = New-Item -Path $OutputPath -name ($GetlessMod + $ArgFileName) -ItemType Directory
             foreach($ChildJob in $Job.ChildJobs) { 
                 $Recpt = Receive-Job $ChildJob
                 $Outfile = $OutputPath + $GetlessMod + $ArgFileName + "\" + $ChildJob.Location + "-" + $GetlessMod + $ArgFileName
+                Write-Verbose $Outfile
+                if ($Outfile.length -gt 257) {
+                    Write-Verbose $Outfile.length
+                    $Outfile = $Outfile.Substring(0,256)
+                }
                 # save the data
                 switch -Wildcard ($OutputMethod) {
                     "*csv" {

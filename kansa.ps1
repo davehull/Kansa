@@ -209,7 +209,12 @@ Param(
 Try {
 
 # Long paths prevent data from being written, this is used to test their length
-Set-Variable -Name MAXPATH -Value 242 -Option Constant
+# Per http://msdn.microsoft.com/en-us/library/aa365247.aspx#maxpath, maximum
+# path length should be 260 characters. We set it to 242 here to account for
+# max computername length of 15 characters, it's part of the path, plus a 
+# hyphen separator and a dot-three extension.
+# extension -- 260 - 19 = 241.
+Set-Variable -Name MAXPATH -Value 241 -Option Constant
 
 function FuncTemplate {
 <#

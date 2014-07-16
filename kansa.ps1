@@ -208,6 +208,14 @@ Param(
 # the Exit-Script function and clean up things as needed.
 Try {
 
+# Long paths prevent data from being written, this is used to test their length
+# Per http://msdn.microsoft.com/en-us/library/aa365247.aspx#maxpath, maximum
+# path length should be 260 characters. We set it to 241 here to account for
+# max computername length of 15 characters, it's part of the path, plus a 
+# hyphen separator and a dot-three extension.
+# extension -- 260 - 19 = 241.
+Set-Variable -Name MAXPATH -Value 241 -Option Constant
+
 function FuncTemplate {
 <#
 .SYNOPSIS
@@ -246,7 +254,7 @@ Exit the script somewhat gracefully, closing any open transcript.
         $Suppress = Stop-Transcript
     }
     if (Test-Path($ErrorLog)) {
-        Write-Output "Script completed with errors. See ${ErrorLog} for details."
+        Write-Output "Script completed with warnings or errors. See ${ErrorLog} for details."
     }
     if (!(Get-ChildItem $OutputPath)) {
         # $OutputPath is empty, nuke it
@@ -442,9 +450,6 @@ Param(
             if ($Arguments) {
                 $ArgFileName = Get-LegalFileName $Arguments
             } else { $ArgFileName = "" }
-            # we'll use $GetlessMod for the output folder
-            $GetlessMod = $($ModuleName -replace "Get-") 
-            $Suppress = New-Item -Path $OutputPath -name ($GetlessMod + $ArgFileName) -ItemType Directory
             # First line of each modules can specify how output should be handled
             $OutputMethod = Get-Content $Module -TotalCount 1 
             # run the module on the targets            
@@ -459,9 +464,36 @@ Param(
             }
             # Wait-Job does return data to stdout, add $suppress = to start of next line, if needed
             Wait-Job $Job
+            
+            # set up our output location
+            $GetlessMod = $($ModuleName -replace "Get-") 
+            # Long paths prevent output from being written, so we truncate $ArgFileName to accomodate
+            # We're estimating the output path because at this point, we don't know what the hostname
+            # is and it is part of the path. Hostnames are 15 characters max, so we assume worst case
+            $EstOutPathLength = $OutputPath.Length + ($GetlessMod.Length * 2) + ($ArgFileName.Length * 2)
+            if ($EstOutPathLength -gt $MAXPATH) { 
+                # Get the path length without the arguments, then we can determine how long $ArgFileName can be
+                $PathDiff = [int] $EstOutPathLength - ($OutputPath.Length + ($GetlessMod.Length * 2) -gt 0)
+                $MaxArgLength = $PathDiff - $MAXPATH
+                if ($MaxArgLength -gt 0 -and $MaxArgLength -lt $ArgFileName.Length) {
+                    $OrigArgFileName = $ArgFileName
+                    $ArgFileName = $ArgFileName.Substring(0, $MaxArgLength)
+                    "WARNING: ${GetlessMod}'s output path contains the arguments that were passed to it. Those arguments were truncated from $OrigArgFileName to $ArgFileName to accomodate Window's MAXPATH limit of 260 characters." | Add-Content -Encoding $Encoding $ErrorLog
+                }
+            }
+                            
+            $Suppress = New-Item -Path $OutputPath -name ($GetlessMod + $ArgFileName) -ItemType Directory
             foreach($ChildJob in $Job.ChildJobs) { 
                 $Recpt = Receive-Job $ChildJob
+                                
+                # Now that we know our hostname, let's double check our path length, if it's too long, we'll write an error
+                # Max path is 260 characters, if we're over 256, we can't accomodate an extension
                 $Outfile = $OutputPath + $GetlessMod + $ArgFileName + "\" + $ChildJob.Location + "-" + $GetlessMod + $ArgFileName
+                if ($Outfile.length -gt 256) {
+                    "ERROR: ${GetlessMod}'s output path length exceeds 260 character limit. Can't write the output to disk for $($ChildJob.Location)." | Add-Content -Encoding $Encoding $ErrorLog
+                    Continue
+                }
+
                 # save the data
                 switch -Wildcard ($OutputMethod) {
                     "*csv" {

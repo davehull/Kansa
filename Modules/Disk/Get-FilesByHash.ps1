@@ -236,9 +236,7 @@ function Get-Matches {
 		[Parameter(Mandatory=$False,Position=4)]
 			[int]$MaxB=10485760,
 		[Parameter(Mandatory=$False,Position=5)]
-			[string]$extRegex="\.(exe|sys|dll|ps1)$",
-		[Parameter(Mandatory=$False)] # Private & non-positional. Be careful when adding new parameters to ensure Kansa can pass to them.
-			[bool]$useWorkflow=$True
+			[string]$extRegex="\.(exe|sys|dll|ps1)$"
 	)
 	
 	# Check if we're in a WOW64 situation. Thanks to MagicAndi on StackOverflow for this check.
@@ -280,14 +278,7 @@ if ($BasePaths.Length -eq 0) {
     $BasePaths = Get-LocalDrives
 }
 
-if ((Get-Host).Version.ToString() -ge 3) {
-	$useWorkflow = $True
-}
-else {
-	$useWorkflow = $False
-}
-
 foreach ($basePath in $BasePaths) {
     Write-Verbose "Getting file hashes for $basePath."
-    Get-Matches -BasePath $BasePath -SearchHash $FileHash -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB -useWorkflow $useWorkflow
+    Get-Matches -BasePath $BasePath -SearchHash $FileHash -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
 }

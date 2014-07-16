@@ -434,13 +434,11 @@ Param(
 
         $Directives = Get-Content $Module | Select-String -CaseSensitive -Pattern "OUTPUT|BINDEP"
         foreach ($Directive in $Directives) {
-            # Write-Verbose "`$Directive is $Directive."
-            if ( $Directive -match "^OUTPUT|^# OUTPUT (.*)" ) {
-                $DirectiveHash.Add("OUTPUT", $($matches[1]))
-                #Write-Verbose "`$DirectiveHash(`"OUTPUT`") is:  $($DirectiveHash.Get_Item(`"OUTPUT`"))"
+            if ( $Directive -match "(^OUTPUT|^# OUTPUT) (.*)" ) {
+                $DirectiveHash.Add("OUTPUT", $($matches[2]))
             }
-            if ( $Directive -match "^BINDEP|^# BINDEP (.*)" ) {
-                $DirectiveHash.Add("BINDEP", $($matches[1]))
+            if ( $Directive -match "(^BINDEP|^# BINDEP) (.*)" ) {
+                $DirectiveHash.Add("BINDEP", $($matches[2]))
             }
         }
         $DirectiveHash
@@ -491,9 +489,13 @@ Param(
             $DirectivesHash  = @{}
             $DirectivesHash = Get-Directives $Module
             $OutputMethod = $($DirectivesHash.Get_Item("OUTPUT"))
-            # TK Next line is depracated, should be replaced by above line
-            # $OutputMethod = Get-Content $Module -TotalCount 1 
-
+            if ($Pushbin) {
+                $bindep = $($DirectivesHash.Get_Item("BINDEP"))
+                if ($bindep) {
+                    Push-Bindep -Targets $Targets -Module $Module -Bindep $bindep -Credential $Credential
+                }
+            }
+            
             # run the module on the targets            
             if ($Arguments) {
                 Write-Debug "Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList `"$Arguments`" -AsJob -ThrottleLimit $ThrottleLimit"
@@ -603,42 +605,36 @@ Param(
     [Parameter(Mandatory=$True,Position=0)]
         [Array]$Targets,
     [Parameter(Mandatory=$True,Position=1)]
-        [HashTable]$Modules,
-    [Parameter(Mandatory=$False,Position=2)]
+        [String]$Module,
+    [Parameter(Mandatory=$True,Position=2)]
+        [String]$Bindep,
+    [Parameter(Mandatory=$False,Position=3)]
         [PSCredential]$Credential
         
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
-    foreach($Module in $Modules.Keys) {
-        $ModuleName = $Module | Select-Object -ExpandProperty BaseName
-        # read the second line to determine binary dependency, not required
-        $bindepline = Get-Content $Module -TotalCount 2 | Select-Object -Skip 1
-        if ($bindepline -match '#\sBINDEP\s(.*)') {
-            $Bindep = $($Matches[1])
-            Write-Verbose "${ModuleName} has dependency on ${Bindep}."
-            if (-not (Test-Path("$Bindep"))) {
-                Write-Verbose "${Bindep} not found in ${ModulePath}bin, skipping."
-                "WARNING: ${Bindep} not found in ${ModulePath}\bin, skipping." | Add-Content -Encoding $Encoding $ErrorLog
-                Continue
+    Write-Verbose "${Module} has dependency on ${Bindep}."
+    if (-not (Test-Path("$Bindep"))) {
+        Write-Verbose "${Bindep} not found in ${ModulePath}bin, skipping."
+        "WARNING: ${Bindep} not found in ${ModulePath}\bin, skipping." | Add-Content -Encoding $Encoding $ErrorLog
+        Continue
+    }
+    Write-Verbose "Attempting to copy ${Bindep} to targets..."
+    foreach($Target in $Targets) {
+       Try {
+            if ($Credential) {
+                $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
+                Copy-Item "$Bindep" "KansaDrive:"
+                $suppress = Remove-PSDrive -Name "KansaDrive"
+            } else {
+                $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
+                Copy-Item "$Bindep" "KansaDrive:"
+                $suppress = Remove-PSDrive -Name "KansaDrive"
             }
-            Write-Verbose "Attempting to copy ${Bindep} to targets..."
-            foreach($Target in $Targets) {
-                Try {
-                    if ($Credential) {
-                        $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
-                        Copy-Item "$Bindep" "KansaDrive:"
-                        $suppress = Remove-PSDrive -Name "KansaDrive"
-                    } else {
-                        $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
-                        Copy-Item "$Bindep" "KansaDrive:"
-                        $suppress = Remove-PSDrive -Name "KansaDrive"
-                    }
-                } Catch [Exception] {
-                    "WARNING: Failed to copy ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
-                    $Error | Add-Content -Encoding $Encoding $ErrorLog
-                    $Error.Clear()
-                }
-            }
+        } Catch [Exception] {
+            "WARNING: Failed to copy ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
+            $Error | Add-Content -Encoding $Encoding $ErrorLog
+            $Error.Clear()
         }
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
@@ -892,13 +888,6 @@ if ($TargetList) {
     $Targets  = Get-Targets -TargetCount $TargetCount
 }
 # Done getting targets #
-
-
-# Copy binaries to targets if requested #
-if ($PushBin) {
-    Push-Bindep -Targets $Targets -Modules $Modules -Credential $Credential
-}
-# Done pushing bins #
 
 
 # Finally, let's gather some data. #

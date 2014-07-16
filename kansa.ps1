@@ -414,6 +414,42 @@ Param(
         -replace [regex]::Escape(">") -replace [regex]::Escape("|") -replace " "
 }
 
+function Get-Directives {
+<#
+.SYNOPSIS
+Returns a hashtable of directives found in the script
+As of this writing it will support both the legacy directives on the first two
+lines fo the script and the newer .SYNOPSIS/.NOTES based directives. After all
+collectors have been updated to use the newer method, the old code will be
+removed.
+#>
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [String]$Module
+)
+    Write-Debug "Entering $($MyInvocation.MyCommand)"
+    if (Test-Path($Module)) {
+        
+        $DirectiveHash = @{}
+
+        $Directives = Get-Content $Module | Select-String -CaseSensitive -Pattern "OUTPUT|BINDEP"
+        foreach ($Directive in $Directives) {
+            # Write-Verbose "`$Directive is $Directive."
+            if ( $Directive -match "^OUTPUT|^# OUTPUT (.*)" ) {
+                $DirectiveHash.Add("OUTPUT", $($matches[1]))
+                #Write-Verbose "`$DirectiveHash(`"OUTPUT`") is:  $($DirectiveHash.Get_Item(`"OUTPUT`"))"
+            }
+            if ( $Directive -match "^BINDEP|^# BINDEP (.*)" ) {
+                $DirectiveHash.Add("BINDEP", $($matches[1]))
+            }
+        }
+        $DirectiveHash
+    } else {
+        "WARNING: Get-Directives was passed invalid module $Module." | Add-Content -Encoding $Encoding $ErrorLog
+    }
+}
+
+
 function Get-TargetData {
 <#
 .SYNOPSIS
@@ -450,8 +486,14 @@ Param(
             if ($Arguments) {
                 $ArgFileName = Get-LegalFileName $Arguments
             } else { $ArgFileName = "" }
-            # First line of each modules can specify how output should be handled
-            $OutputMethod = Get-Content $Module -TotalCount 1 
+            
+            # Get our directives both old and new style
+            $DirectivesHash  = @{}
+            $DirectivesHash = Get-Directives $Module
+            $OutputMethod = $($DirectivesHash.Get_Item("OUTPUT"))
+            # TK Next line is depracated, should be replaced by above line
+            # $OutputMethod = Get-Content $Module -TotalCount 1 
+
             # run the module on the targets            
             if ($Arguments) {
                 Write-Debug "Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList `"$Arguments`" -AsJob -ThrottleLimit $ThrottleLimit"

@@ -478,7 +478,7 @@ Param(
                 if ($MaxArgLength -gt 0 -and $MaxArgLength -lt $ArgFileName.Length) {
                     $OrigArgFileName = $ArgFileName
                     $ArgFileName = $ArgFileName.Substring(0, $MaxArgLength)
-                    "WARNING: ${GetlessMod}'s output path contains the arguments that were passed to it. Those arguments were truncated from $OrigArgFileName to $ArgFileName." | Add-Content -Encoding $Encoding $ErrorLog
+                    "WARNING: ${GetlessMod}'s output path contains the arguments that were passed to it. Those arguments were truncated from $OrigArgFileName to $ArgFileName to accomodate Window's MAXPATH limit of 260 characters." | Add-Content -Encoding $Encoding $ErrorLog
                 }
             }
                             

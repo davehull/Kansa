@@ -310,7 +310,7 @@ Param(
             $ModuleArgs   = ($Module -split [regex]::escape($ModuleScript))[1].Trim()
             $Modpath = $ModulePath + "\" + $ModuleScript
             if (!(Test-Path($Modpath))) {
-                "Could not find module specified in ${ModulePath}\Modules.conf: $ModuleScript. Skipping." | Add-Content -Encoding $Encoding $ErrorLog
+                "WARNING: Could not find module specified in ${ModulePath}\Modules.conf: $ModuleScript. Skipping." | Add-Content -Encoding $Encoding $ErrorLog
             } else {
                 # module found add it and its arguments to the $ModuleHash
                 $ModuleHash.Add((ls $ModPath), $Moduleargs)
@@ -336,12 +336,12 @@ function Load-AD {
         $Error.Clear()
         Import-Module ActiveDirectory
         if ($Error) {
-            "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
+            "ERROR: Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
             $Error.Clear()
             Exit
         }
     } else {
-        "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
+        "ERROR: Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
         Exit
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
@@ -355,7 +355,7 @@ function Get-Forest {
         Write-Verbose "Forest is ${forest}."
         $Forest
     } catch {
-        "Get-Forest could not find current forest." | Add-Content -Encoding $Encoding $ErrorLog
+        "ERROR: Get-Forest could not find current forest. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
         Exit
     }
 }
@@ -390,7 +390,7 @@ Param(
         Write-Verbose "`$Targets are ${Targets}."
         return $Targets
     } Catch [Exception] {
-        "Get-Targets failed. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
+        "ERROR: Get-Targets failed. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
         $Error | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()
         Exit
@@ -576,7 +576,7 @@ Param(
             Write-Verbose "${ModuleName} has dependency on ${Bindep}."
             if (-not (Test-Path("$Bindep"))) {
                 Write-Verbose "${Bindep} not found in ${ModulePath}bin, skipping."
-                "${Bindep} not found in ${ModulePath}\bin, skipping." | Add-Content -Encoding $Encoding $ErrorLog
+                "WARNING: ${Bindep} not found in ${ModulePath}\bin, skipping." | Add-Content -Encoding $Encoding $ErrorLog
                 Continue
             }
             Write-Verbose "Attempting to copy ${Bindep} to targets..."
@@ -592,7 +592,7 @@ Param(
                         $suppress = Remove-PSDrive -Name "KansaDrive"
                     }
                 } Catch [Exception] {
-                    "Failed to copy ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
+                    "WARNING: Failed to copy ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
                     $Error | Add-Content -Encoding $Encoding $ErrorLog
                     $Error.Clear()
                 }
@@ -639,7 +639,7 @@ Param(
                         $suppress = Remove-PSDrive -Name "KansaDrive"
                     }
                 } Catch [Exception] {
-                    "Failed to remove ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
+                    "WARNING: Failed to remove ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
                     $Error | Add-Content -Encoding $Encoding $ErrorLog
                     $Error.Clear()
                 }
@@ -726,11 +726,11 @@ Param(
                 & "$StartingPath\Analysis\${AnalysisScript}" | Set-Content -Encoding $Encoding ($AnalysisOutPath + $AnalysisFile + ".tsv")
                 Pop-Location
             } else {
-                "Analysis: No data found for ${AnalysisScript}." | Add-Content -Encoding $Encoding $ErrorLog
+                "WARNING: Analysis: No data found for ${AnalysisScript}." | Add-Content -Encoding $Encoding $ErrorLog
                 Continue
             }
         } else {
-            "Analysis script, .\Analysis\${AnalysisScript}, missing # DATADIR directive, skipping analysis." | Add-Content -Encoding $Encoding $ErrorLog
+            "WARNING: Analysis script, .\Analysis\${AnalysisScript}, missing # DATADIR directive, skipping analysis." | Add-Content -Encoding $Encoding $ErrorLog
             Continue
         }        
     }
@@ -783,16 +783,16 @@ if ($Ascii) {
 Write-Debug "Sanity checking parameters"
 $Exit = $False
 if ($TargetList -and -not (Test-Path($TargetList))) {
-    "User supplied TargetList, $TargetList, was not found." | Add-Content -Encoding $Encoding $ErrorLog
+    "ERROR: User supplied TargetList, $TargetList, was not found." | Add-Content -Encoding $Encoding $ErrorLog
     $Exit = $True
 }
 if ($TargetCount -lt 0) {
-    "User supplied TargetCount, $TargetCount, was negative." | Add-Content -Encoding $Encoding $ErrorLog
+    "ERROR: User supplied TargetCount, $TargetCount, was negative." | Add-Content -Encoding $Encoding $ErrorLog
     $Exit = $True
 }
 #TKTK Add test for $Credential
 if ($Exit) {
-    "One or more errors were encountered with user supplied arguments. Exiting." | Add-Content -Encoding $Encoding $ErrorLog
+    "ERROR: One or more errors were encountered with user supplied arguments. Exiting." | Add-Content -Encoding $Encoding $ErrorLog
     Exit
 }
 Write-Debug "Parameter sanity check complete."

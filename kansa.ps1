@@ -254,7 +254,7 @@ Exit the script somewhat gracefully, closing any open transcript.
         $Suppress = Stop-Transcript
     }
     if (Test-Path($ErrorLog)) {
-        Write-Output "Script completed with errors. See ${ErrorLog} for details."
+        Write-Output "Script completed with warnings or errors. See ${ErrorLog} for details."
     }
     if (!(Get-ChildItem $OutputPath)) {
         # $OutputPath is empty, nuke it
@@ -476,7 +476,9 @@ Param(
                 $PathDiff = [int] $EstOutPathLength - ($OutputPath.Length + ($GetlessMod.Length * 2) -gt 0)
                 $MaxArgLength = $PathDiff - $MAXPATH
                 if ($MaxArgLength -gt 0 -and $MaxArgLength -lt $ArgFileName.Length) {
+                    $OrigArgFileName = $ArgFileName
                     $ArgFileName = $ArgFileName.Substring(0, $MaxArgLength)
+                    "WARNING: ${GetlessMod}'s output path contains the arguments that were passed to it. Those arguments were truncated from $OrigArgFileName to $ArgFileName." | Add-Content -Encoding $Encoding $ErrorLog
                 }
             }
                             
@@ -488,7 +490,7 @@ Param(
                 # Max path is 260 characters, if we're over 256, we can't accomodate an extension
                 $Outfile = $OutputPath + $GetlessMod + $ArgFileName + "\" + $ChildJob.Location + "-" + $GetlessMod + $ArgFileName
                 if ($Outfile.length -gt 256) {
-                    "${GetlessMod}'s output path length exceeds 260 character limit. Can't write the output to disk for $($ChildJob.Location)." | Add-Content -Encoding $Encoding $ErrorLog
+                    "ERROR: ${GetlessMod}'s output path length exceeds 260 character limit. Can't write the output to disk for $($ChildJob.Location)." | Add-Content -Encoding $Encoding $ErrorLog
                     Continue
                 }
 

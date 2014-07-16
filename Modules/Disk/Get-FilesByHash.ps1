@@ -93,7 +93,7 @@ workflow Get-HashesWorkflow {
 				}
 
 				# -Message variable name required because workflows do not support possitional parameters.
-				Write-Verbose -Message "Calculating hash of $using:File."
+				Write-Debug -Message "Calculating hash of $using:File."
 				if (Test-Path -LiteralPath $using:File -PathType Leaf) {
 					$FileData = [System.IO.File]::ReadAllBytes($using:File)
 					$HashBytes = $hash.ComputeHash($FileData)
@@ -104,18 +104,20 @@ workflow Get-HashesWorkflow {
 						$paddedHex += $byteInHex.PadLeft(2,"0")
 					}
                 
-					Write-Verbose -Message "Hash value was $paddedHex."
+					Write-Debug -Message "Hash value was $paddedHex."
 					if ($paddedHex -ieq $using:searchHash) {
 						@($using:File, $paddedHex)
 					}
 				}
 			}
-			$workflow:hashList += , $entry
+            if ($entry) {
+			    $workflow:hashList += ,$entry
+            }
 		}
     }
 
 	if ($hashList.Count -gt 0) {
-		return $hashList
+		return ,$hashList
 	}
 	else {
 		return $false
@@ -144,12 +146,11 @@ function Get-Matches {
     $hashList = Get-HashesWorkflow -BasePath $BasePath -SearchHash $FileHash -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
     
     if ($hashList) {
-		$hashCount = ($hashList.Count / 2).ToString()
-		Write-Verbose "Found $hashCount matching files."    
-		for($i = 0; $i -lt ($hashCount * 2); $i += 2) {
+		Write-Verbose "Found matching files."    
+		foreach($entry in $hashList) {
             $o = "" | Select-Object File, Hash
-            $o.File = $hashList[$i]
-            $o.Hash = $hashList[$i + 1]
+            $o.File = $entry[0]
+            $o.Hash = $entry[1]
             $o
         }
     }

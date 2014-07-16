@@ -143,12 +143,12 @@ workflow Get-HashesWorkflow {
 		}
     }
 
-	if ($hashList.Count -gt 0) {
+	#if ($hashList.Count -gt 0) {
 		return ,$hashList
-	}
-	else {
-		return $false
-	}
+	#}
+	#else {
+	#	return $false
+	#}
 }
 
 function Get-Hashes {

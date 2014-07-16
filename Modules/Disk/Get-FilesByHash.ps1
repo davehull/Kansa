@@ -133,7 +133,7 @@ workflow Get-HashesWorkflow {
                 
 					Write-Debug -Message "Hash value was $paddedHex."
 					if ($paddedHex -ieq $using:searchHash) {
-						@($using:File, $paddedHex)
+						$using:File
 					}
 				}
 			}
@@ -143,12 +143,7 @@ workflow Get-HashesWorkflow {
 		}
     }
 
-	#if ($hashList.Count -gt 0) {
-		return ,$hashList
-	#}
-	#else {
-	#	return $false
-	#}
+	return ,$hashList
 }
 
 function Get-Hashes {
@@ -207,18 +202,12 @@ function Get-Hashes {
                
 			Write-Debug -Message "Hash value was $paddedHex."
 			if ($paddedHex -ieq $searchHash) {
-				$entry = $file,$paddedHex
-				$hashList += ,$entry
+				$hashList += ,$file
 			}
 		}
 	}
 
-	if ($hashList.Count -gt 0) {
-		return ,$hashList
-	}
-	else {
-		return $false
-	}
+	return ,$hashList
 }
 
 function Get-Matches {
@@ -263,8 +252,8 @@ function Get-Matches {
 		Write-Verbose "Found files matching hash $FileHash."    
 		foreach($entry in $hashList) {
             $o = "" | Select-Object File, Hash
-            $o.File = $entry[0]
-            $o.Hash = $entry[1]
+            $o.File = $entry
+            $o.Hash = $FileHash
             $o
         }
     }

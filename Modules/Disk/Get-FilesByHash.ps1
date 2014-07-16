@@ -3,12 +3,13 @@
 # hash. Defaults to SHA-256. For example cmd.exe's hash (on Windows 8.1)
 # is 0B9BC863E2807B6886760480083E51BA8A66118659F4FF274E7B73944D2219F5
 #
-# As a note of warning, when reading files from C:\Windows\System32, if you 
+# As a note of warning, when reading files from %windir%\System32, if you 
 # are running in a 32-bit PowerShell instance on a 64-bit system the Windows
-# API will transparently redirect your calls to C:\Windows\SysWOW64 instead,
-# as documented in https://github.com/davehull/Kansa/issues/41. Currently we
-# are not aware of a way to bypass this redirection as System.IO.File does
-# not support the use of the \\.\ path modifier to access the physical disk.
+# filesystem API will transparently redirect your calls to %windir%\SysWOW64
+# instead, as documented in https://github.com/davehull/Kansa/issues/41. 
+# Using the path %windir%\Sysnative will direct these calls to the 64-bit
+# versions of the applications (thanks @lanatmwan for the pointer to 
+# http://msdn.microsoft.com/en-us/library/windows/desktop/aa384187(v=vs.85).aspx).
 
 [CmdletBinding()]
 Param(

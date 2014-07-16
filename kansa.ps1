@@ -464,18 +464,11 @@ Param(
             # Long paths prevent output from being written, so we must truncate them
 
             $EstOutPathLength = $OutputPath.Length + ($GetlessMod.Length * 2) + ($ArgFileName.Length * 2)
-            $EstOutPathLength
-            exit
             if ($EstOutPathLength -gt $MAXPATH) { 
                 $PathDiff = [Int] $EstOutPathLength - ($OutputPath.Length + ($GetlessMod.Length * 2) -gt 0)
-                $ArgLength = $MAXPATH - $PathDiff
-                $ArgLength
-                $ArgFileName.Length
-                exit
+                $ArgLength = $PathDiff - $MAXPATH
                 if ($ArgLength -gt 0 -and $ArgLength -lt $ArgFileName.Length) {
                     $ArgFileName = $ArgFileName.Substring(0, $ArgLength)
-                    $ArgFileName
-                    exit
                 }
             }
 

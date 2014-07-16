@@ -1,4 +1,3 @@
-# OUTPUT TSV
 <# 
 .SYNOPSIS
 Get-FilesByHash.ps1 scans the provided paths for files matching the provided hash.
@@ -18,6 +17,7 @@ Optional. Minimum size of files to check in bytes. Defaults to 4096.
 .PARAMETER MaxB
 Optional. Maximum size of files to check in bytes. Defaults to 10485760.
 .NOTES
+OUTPUT TSV
 When passing specific modules with parameters via Kansa.ps1's -ModulePath 
 parameter, be sure to quote the entire string, like shown here:
 .\kansa.ps1 -ModulePath ".\Modules\Disk\Get-FilesByHash.ps1 9E2639ECE5631BAB3A41E3495C1DC119,MD5,C:\,\.ps1$"

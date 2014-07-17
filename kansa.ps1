@@ -14,17 +14,36 @@ folder named for each module in the -Output path. Each target will have
 its data written to separate files.
 
 For example, the Get-PrefetchListing.ps1 module data will be written
-to Output\PrefetchListing\Hostname-PrefetchListing.txt.
+to Output_timestamp\PrefetchListing\Hostname-PrefetchListing.txt.
 
 If a module returns Powershell objects, its data can be written out in
-one of several file formats, including bin, csv, tsv and xml. Modules 
-that return text should choose the txt output format. The first line of 
-each module should contain a comment specifying the output format, 
-following this format:
+one of several file formats, including csv, tsv and xml. Modules that
+return objects should specify how they want Kansa to handle their 
+output via an OUTPUT directive in the .SYNOPSIS .NOTES section.
 
-# OUTPUT xml
+Directives must appear on a line by themselves, must begin the line
+and must be written in all capital letters. Here's an example:
 
-This script was written to avoid the need for CredSSP, therefore 
+OUTPUT tsv
+
+This directive, instructs Kansa to treat the data returned by the 
+given module as tab separated values and the data will be saved
+to disk accordingly.
+
+Modules that don't include an OUPUT directive will have their data
+treated as text.
+
+There are a few special OUTPUT directives: bin, zip and Default.
+OUPUT bin would be used for binary data (i.e. memory dumps)
+OUTPUT zip would be used for zip files, modules must compress the
+data themselves, Kansa.ps1 will not do the compression. The default
+module template includes code for compressing data and is meant to
+serve as a reference.
+OUTPUT Default should be used to let Powershell auto-detect the data
+type and treat it accordingly.
+
+
+Kansa.ps1 was written to avoid the need for CredSSP, therefore 
 "second-hops" must be avoided. For more details on this see:
 
 http://trustedsignal.blogspot.com/2014/04/kansa-modular-live-response-tool-for.html
@@ -68,20 +87,29 @@ An optional credential that the script will use for execution. Use the
 $Credential = Get-Credential convention to populate a suitable variable.
 .PARAMETER Pushbin
 An optional flag that causes Kansa to push required binaries to the 
-ADMIN$ shares of targets. Modules that need to work with Pushbin, must 
-include the "# BINDEP <binary>" directive on the second line of their 
-script and users of Kansa must copy the required <binary> to the 
-Modules\bin\ folder.
+ADMIN$ shares of targets. Modules that require third-party binaries, 
+must include the "BINDEP <binary>" directive.
 
 For example, the Get-Autorunsc.ps1 collector has a binary dependency on
-Sysinternals Autorunsc.exe. The second line of Get-Autorunsc.ps1 
-contains the "# BINDEP autorunsc.exe" directive and a copy of 
-autorunsc.exe is placed in the Modules\bin folder. If Kansa is run with 
-the -Pushbin flag, it will attempt to copy autorunsc.exe from the 
-.\Modules\bin path to the ADMIN$ share of each remote host. If your 
-required binaries are already present on each target and in the path 
-where the modules expect them to be, you can omit the -Pushbin flag and 
-save the step of copying binaries.
+Sysinternals Autorunsc.exe. The Get-Autorunsc.ps1 collector contains a
+special line called a "directive" that instructs Kansa.ps1 to copy the
+Autorunsc.exe binary to remote systems when called with -Pushbin.
+
+Kansa does not ship with third-party binaries. Users must place them in
+the Modules\bin\ path and the BINDEP directive should reference the 
+binary via its path relative to Kansa.ps1.
+
+Directives should be placed in module's .SYNOPSIS sections under .NOTES
+    * Directives must appear on a line by themselves
+    * Directives must start the line 
+    # Directives must be in all capital letters
+
+For example, the directive for Get-Autorunsc.ps1 as of this writing is
+BINDEP .\Modules\bin\Autorunsc.exe
+
+If your required binaries are already present on each target and in the 
+path where the modules expect them to be, you can omit the -Pushbin 
+flag and save the step of copying binaries.
 .PARAMETER Rmbin
 An optional switch for removing binaries that may have been pushed to
 remote hosts via -Pushbin either on this run, or during a previous run.

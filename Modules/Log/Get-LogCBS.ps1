@@ -1,5 +1,11 @@
-﻿# OUTPUT TSV
-# Returns the contents of the CBS log.
+﻿<#
+.SYNOPSIS
+Get-LogCBS.ps1 returns the contents of the CBS log.
+
+.NOTES
+Next line required by Kansa.ps1 for handling this scripts output.
+OUTPUT TSV
+#>
 
 Get-Content $env:windir\logs\CBS\cbs.log | % { 
     $_ -replace "\s\s+", "`t" 

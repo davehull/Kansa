@@ -1,5 +1,13 @@
-﻿# OUTPUT tsv
-# get service failure
+﻿<#
+.SYNOPSIS
+Get-SvcFail.ps1 returns information about Windows Service recovery
+options, which could be used as a persistence mechanism by adversaries.
+.NOTES
+The following line is required by kansa.ps1. Kansa uses it to determine
+how to handle the ouput from this script.
+OUTPUT tsv
+#>
+
 $data = $($(foreach ($svc in (& $env:windir\system32\sc query)) { 
     if ($svc -match "SERVICE_NAME:\s(.*)") { 
         & $env:windir\system32\sc qfailure $($matches[1])}}))

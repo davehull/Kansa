@@ -1,7 +1,16 @@
-﻿# OUTPUT TSV
-# Get-LogUserAssist.ps1 retrieves UserAssist data from ntuser.dat hives
-# Retrieves "count" from value data, but on my Win8.1 system count does not appear to be incremented consistently
-# Retrieves data from locked hives for logged on users, by finding their hives in HKEY_USERS
+﻿<#
+.SYNOPSIS
+Get-LogUserAssist.ps1 retrieves UserAssist data from ntuser.dat hives
+Retrieves "count" from value data, but on my Win8.1 system count does 
+not appear to be incremented consistently.
+Retrieves data from locked hives for logged on users, by finding their
+hives in HKEY_USERS
+
+.NOTES
+Next line is required by kansa.ps1 for handling this scripts output.
+OUTPUT TSV
+#>
+
 [CmdletBinding()]
 Param()
 foreach($user in (Get-WmiObject win32_userprofile)) { 

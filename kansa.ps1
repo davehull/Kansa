@@ -575,6 +575,12 @@ Param(
                     }
                 }
             }
+            if ($rmbin) {
+                if ($bindep) {
+                    Remove-Bindep -Targets $Targets -Module $Module -Bindep $bindep -Credential $Credential
+                }
+            }
+
         }
         Remove-PSSession $PSSessions
     } Catch [Exception] {
@@ -588,18 +594,21 @@ function Push-Bindep {
 <#
 .SYNOPSIS
 Attempts to copy required binaries to targets.
-If a module depends on an external binary, the binary should be copied to
-.\Modules\bin\ and the module should reference the binary on it's second line
-through the use of a comment such as the following:
-# BINDEP .\Modules\bin\autorunsc.exe
+If a module depends on an external binary, the binary should be copied 
+to .\Modules\bin\ and the module should reference the binary in the 
+.NOTES section of the .SYNOPSIS as follows:
+BINDEP .\Modules\bin\autorunsc.exe
 
-Some Modules may require multiple binary files, say an executable and required
-dlls. See the .\Modules\Disk\Get-FlsBodyFile.ps1 as an example. The # BINDEP
-line in that module references .\Modules\bin\fls.zip. Kansa will copy that zip
-file to the targets, but the module itself handles the unzipping of the fls.zip
-file.
+!! This directive is case-sensitve and must start the line !!
 
-# BINDEP must include the path to the binary, relative to Kansa.ps1's path.
+Some Modules may require multiple binary files, say an executable and 
+required dlls. See the .\Modules\Disk\Get-FlsBodyFile.ps1 as an 
+example. The BINDEP line in that module references 
+.\Modules\bin\fls.zip. Kansa will copy that zip file to the targets, 
+but the module itself handles the unzipping of the fls.zip file.
+
+BINDEP must include the path to the binary, relative to Kansa.ps1's 
+path.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
@@ -644,44 +653,37 @@ Param(
 function Remove-Bindep {
 <#
 .SYNOPSIS
-Attempts to remove binaries from targets.
-BINDEP must include the path to the binary, relative to Kansa.ps1's path.
+Attempts to remove binaries from targets when Kansa.ps1 is run with 
+-rmbin switch.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
         [Array]$Targets,
     [Parameter(Mandatory=$True,Position=1)]
-        [HashTable]$Modules,
-    [Parameter(Mandatory=$False,Position=2)]
+        [String]$Module,
+    [Parameter(Mandatory=$True,Position=2)]
+        [String]$Bindep,
+    [Parameter(Mandatory=$False,Position=3)]
         [PSCredential]$Credential
-        
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
-    foreach($Module in $Modules.Keys) {
-        $ModuleName = $Module | Select-Object -ExpandProperty BaseName
-        # read the second line to determine binary dependency, not required
-        $bindepline = Get-Content $Module -TotalCount 2 | Select-Object -Skip 1
-        if ($bindepline -match '#\sBINDEP\s(.*)') {
-            $Bindep = $($Matches[1])
-            $Bindep = $Bindep.Substring($Bindep.LastIndexOf("\") + 1)
-            Write-Verbose "${ModuleName} had a dependency on ${Bindep}. Removing."
-            foreach($Target in $Targets) {
-                Try {
-                    if ($Credential) {
-                        $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
-                        Remove-Item "KansaDrive:\$Bindep" 
-                        $suppress = Remove-PSDrive -Name "KansaDrive"
-                    } else {
-                        $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
-                        Remove-Item "KansaDrive:\$Bindep"
-                        $suppress = Remove-PSDrive -Name "KansaDrive"
-                    }
-                } Catch [Exception] {
-                    "WARNING: Failed to remove ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
-                    $Error | Add-Content -Encoding $Encoding $ErrorLog
-                    $Error.Clear()
-                }
+    $Bindep = $Bindep.Substring($Bindep.LastIndexOf("\") + 1)
+    Write-Verbose "Attempting to remove ${Bindep} from remote hosts."
+    foreach($Target in $Targets) {
+       Try {
+            if ($Credential) {
+                $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
+                Remove-Item "KansaDrive:\$Bindep" 
+                $suppress = Remove-PSDrive -Name "KansaDrive"
+            } else {
+                $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
+                Remove-Item "KansaDrive:\$Bindep"
+                $suppress = Remove-PSDrive -Name "KansaDrive"
             }
+        } Catch [Exception] {
+            "WARNING: Failed to remove ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
+            $Error | Add-Content -Encoding $Encoding $ErrorLog
+            $Error.Clear()
         }
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    

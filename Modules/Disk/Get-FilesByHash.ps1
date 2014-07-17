@@ -1,7 +1,11 @@
-﻿# OUTPUT TSV
+﻿<#
+.SYNOPSIS
 # Get-FilesByHash.ps1 scans the local disks for files matching the provided
 # hash. Defaults to SHA-256. For example cmd.exe's hash (on Windows 8.1)
 # is 0B9BC863E2807B6886760480083E51BA8A66118659F4FF274E7B73944D2219F5
+.NOTES
+OUTPUT TSV
+#>
 
 [CmdletBinding()]
 Param(

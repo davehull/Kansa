@@ -1,9 +1,11 @@
-﻿# OUTPUT zip
-<#
+﻿<#
 .SYNOPSIS
 Acquires copies of prefetch files, if enabled, copying them
 to a zip file. This is not the fastest, but in my testing, it
 works.
+.NOTES
+Next line is Kansa.ps1's output directive
+OUTPUT zip
 #>
 
 function add-zip

@@ -14,17 +14,36 @@ folder named for each module in the -Output path. Each target will have
 its data written to separate files.
 
 For example, the Get-PrefetchListing.ps1 module data will be written
-to Output\PrefetchListing\Hostname-PrefetchListing.txt.
+to Output_timestamp\PrefetchListing\Hostname-PrefetchListing.txt.
 
 If a module returns Powershell objects, its data can be written out in
-one of several file formats, including bin, csv, tsv and xml. Modules 
-that return text should choose the txt output format. The first line of 
-each module should contain a comment specifying the output format, 
-following this format:
+one of several file formats, including csv, tsv and xml. Modules that
+return objects should specify how they want Kansa to handle their 
+output via an OUTPUT directive in the .SYNOPSIS .NOTES section.
 
-# OUTPUT xml
+Directives must appear on a line by themselves, must begin the line
+and must be written in all capital letters. Here's an example:
 
-This script was written to avoid the need for CredSSP, therefore 
+OUTPUT tsv
+
+This directive, instructs Kansa to treat the data returned by the 
+given module as tab separated values and the data will be saved
+to disk accordingly.
+
+Modules that don't include an OUPUT directive will have their data
+treated as text.
+
+There are a few special OUTPUT directives: bin, zip and Default.
+OUPUT bin would be used for binary data (i.e. memory dumps)
+OUTPUT zip would be used for zip files, modules must compress the
+data themselves, Kansa.ps1 will not do the compression. The default
+module template includes code for compressing data and is meant to
+serve as a reference.
+OUTPUT Default should be used to let Powershell auto-detect the data
+type and treat it accordingly.
+
+
+Kansa.ps1 was written to avoid the need for CredSSP, therefore 
 "second-hops" must be avoided. For more details on this see:
 
 http://trustedsignal.blogspot.com/2014/04/kansa-modular-live-response-tool-for.html
@@ -68,20 +87,29 @@ An optional credential that the script will use for execution. Use the
 $Credential = Get-Credential convention to populate a suitable variable.
 .PARAMETER Pushbin
 An optional flag that causes Kansa to push required binaries to the 
-ADMIN$ shares of targets. Modules that need to work with Pushbin, must 
-include the "# BINDEP <binary>" directive on the second line of their 
-script and users of Kansa must copy the required <binary> to the 
-Modules\bin\ folder.
+ADMIN$ shares of targets. Modules that require third-party binaries, 
+must include the "BINDEP <binary>" directive.
 
 For example, the Get-Autorunsc.ps1 collector has a binary dependency on
-Sysinternals Autorunsc.exe. The second line of Get-Autorunsc.ps1 
-contains the "# BINDEP autorunsc.exe" directive and a copy of 
-autorunsc.exe is placed in the Modules\bin folder. If Kansa is run with 
-the -Pushbin flag, it will attempt to copy autorunsc.exe from the 
-.\Modules\bin path to the ADMIN$ share of each remote host. If your 
-required binaries are already present on each target and in the path 
-where the modules expect them to be, you can omit the -Pushbin flag and 
-save the step of copying binaries.
+Sysinternals Autorunsc.exe. The Get-Autorunsc.ps1 collector contains a
+special line called a "directive" that instructs Kansa.ps1 to copy the
+Autorunsc.exe binary to remote systems when called with -Pushbin.
+
+Kansa does not ship with third-party binaries. Users must place them in
+the Modules\bin\ path and the BINDEP directive should reference the 
+binary via its path relative to Kansa.ps1.
+
+Directives should be placed in module's .SYNOPSIS sections under .NOTES
+    * Directives must appear on a line by themselves
+    * Directives must start the line 
+    # Directives must be in all capital letters
+
+For example, the directive for Get-Autorunsc.ps1 as of this writing is
+BINDEP .\Modules\bin\Autorunsc.exe
+
+If your required binaries are already present on each target and in the 
+path where the modules expect them to be, you can omit the -Pushbin 
+flag and save the step of copying binaries.
 .PARAMETER Rmbin
 An optional switch for removing binaries that may have been pushed to
 remote hosts via -Pushbin either on this run, or during a previous run.
@@ -310,7 +338,7 @@ Param(
             $ModuleArgs   = ($Module -split [regex]::escape($ModuleScript))[1].Trim()
             $Modpath = $ModulePath + "\" + $ModuleScript
             if (!(Test-Path($Modpath))) {
-                "Could not find module specified in ${ModulePath}\Modules.conf: $ModuleScript. Skipping." | Add-Content -Encoding $Encoding $ErrorLog
+                "WARNING: Could not find module specified in ${ModulePath}\Modules.conf: $ModuleScript. Skipping." | Add-Content -Encoding $Encoding $ErrorLog
             } else {
                 # module found add it and its arguments to the $ModuleHash
                 $ModuleHash.Add((ls $ModPath), $Moduleargs)
@@ -336,12 +364,12 @@ function Load-AD {
         $Error.Clear()
         Import-Module ActiveDirectory
         if ($Error) {
-            "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
+            "ERROR: Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
             $Error.Clear()
             Exit
         }
     } else {
-        "Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
+        "ERROR: Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
         Exit
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
@@ -355,7 +383,7 @@ function Get-Forest {
         Write-Verbose "Forest is ${forest}."
         $Forest
     } catch {
-        "Get-Forest could not find current forest." | Add-Content -Encoding $Encoding $ErrorLog
+        "ERROR: Get-Forest could not find current forest. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
         Exit
     }
 }
@@ -390,7 +418,7 @@ Param(
         Write-Verbose "`$Targets are ${Targets}."
         return $Targets
     } Catch [Exception] {
-        "Get-Targets failed. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
+        "ERROR: Get-Targets failed. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
         $Error | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()
         Exit
@@ -413,6 +441,40 @@ Param(
         -replace [regex]::Escape("*") -replace [regex]::Escape("?") -replace "`"" -replace [regex]::Escape("<") `
         -replace [regex]::Escape(">") -replace [regex]::Escape("|") -replace " "
 }
+
+function Get-Directives {
+<#
+.SYNOPSIS
+Returns a hashtable of directives found in the script
+As of this writing it will support both the legacy directives on the first two
+lines fo the script and the newer .SYNOPSIS/.NOTES based directives. After all
+collectors have been updated to use the newer method, the old code will be
+removed.
+#>
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [String]$Module
+)
+    Write-Debug "Entering $($MyInvocation.MyCommand)"
+    if (Test-Path($Module)) {
+        
+        $DirectiveHash = @{}
+
+        $Directives = Get-Content $Module | Select-String -CaseSensitive -Pattern "OUTPUT|BINDEP"
+        foreach ($Directive in $Directives) {
+            if ( $Directive -match "(^OUTPUT|^# OUTPUT) (.*)" ) {
+                $DirectiveHash.Add("OUTPUT", $($matches[2]))
+            }
+            if ( $Directive -match "(^BINDEP|^# BINDEP) (.*)" ) {
+                $DirectiveHash.Add("BINDEP", $($matches[2]))
+            }
+        }
+        $DirectiveHash
+    } else {
+        "WARNING: Get-Directives was passed invalid module $Module." | Add-Content -Encoding $Encoding $ErrorLog
+    }
+}
+
 
 function Get-TargetData {
 <#
@@ -450,8 +512,18 @@ Param(
             if ($Arguments) {
                 $ArgFileName = Get-LegalFileName $Arguments
             } else { $ArgFileName = "" }
-            # First line of each modules can specify how output should be handled
-            $OutputMethod = Get-Content $Module -TotalCount 1 
+            
+            # Get our directives both old and new style
+            $DirectivesHash  = @{}
+            $DirectivesHash = Get-Directives $Module
+            $OutputMethod = $($DirectivesHash.Get_Item("OUTPUT"))
+            if ($Pushbin) {
+                $bindep = $($DirectivesHash.Get_Item("BINDEP"))
+                if ($bindep) {
+                    Push-Bindep -Targets $Targets -Module $Module -Bindep $bindep -Credential $Credential
+                }
+            }
+            
             # run the module on the targets            
             if ($Arguments) {
                 Write-Debug "Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList `"$Arguments`" -AsJob -ThrottleLimit $ThrottleLimit"
@@ -531,6 +603,12 @@ Param(
                     }
                 }
             }
+            if ($rmbin) {
+                if ($bindep) {
+                    Remove-Bindep -Targets $Targets -Module $Module -Bindep $bindep -Credential $Credential
+                }
+            }
+
         }
         Remove-PSSession $PSSessions
     } Catch [Exception] {
@@ -544,59 +622,56 @@ function Push-Bindep {
 <#
 .SYNOPSIS
 Attempts to copy required binaries to targets.
-If a module depends on an external binary, the binary should be copied to
-.\Modules\bin\ and the module should reference the binary on it's second line
-through the use of a comment such as the following:
-# BINDEP .\Modules\bin\autorunsc.exe
+If a module depends on an external binary, the binary should be copied 
+to .\Modules\bin\ and the module should reference the binary in the 
+.NOTES section of the .SYNOPSIS as follows:
+BINDEP .\Modules\bin\autorunsc.exe
 
-Some Modules may require multiple binary files, say an executable and required
-dlls. See the .\Modules\Disk\Get-FlsBodyFile.ps1 as an example. The # BINDEP
-line in that module references .\Modules\bin\fls.zip. Kansa will copy that zip
-file to the targets, but the module itself handles the unzipping of the fls.zip
-file.
+!! This directive is case-sensitve and must start the line !!
 
-# BINDEP must include the path to the binary, relative to Kansa.ps1's path.
+Some Modules may require multiple binary files, say an executable and 
+required dlls. See the .\Modules\Disk\Get-FlsBodyFile.ps1 as an 
+example. The BINDEP line in that module references 
+.\Modules\bin\fls.zip. Kansa will copy that zip file to the targets, 
+but the module itself handles the unzipping of the fls.zip file.
+
+BINDEP must include the path to the binary, relative to Kansa.ps1's 
+path.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
         [Array]$Targets,
     [Parameter(Mandatory=$True,Position=1)]
-        [HashTable]$Modules,
-    [Parameter(Mandatory=$False,Position=2)]
+        [String]$Module,
+    [Parameter(Mandatory=$True,Position=2)]
+        [String]$Bindep,
+    [Parameter(Mandatory=$False,Position=3)]
         [PSCredential]$Credential
         
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
-    foreach($Module in $Modules.Keys) {
-        $ModuleName = $Module | Select-Object -ExpandProperty BaseName
-        # read the second line to determine binary dependency, not required
-        $bindepline = Get-Content $Module -TotalCount 2 | Select-Object -Skip 1
-        if ($bindepline -match '#\sBINDEP\s(.*)') {
-            $Bindep = $($Matches[1])
-            Write-Verbose "${ModuleName} has dependency on ${Bindep}."
-            if (-not (Test-Path("$Bindep"))) {
-                Write-Verbose "${Bindep} not found in ${ModulePath}bin, skipping."
-                "${Bindep} not found in ${ModulePath}\bin, skipping." | Add-Content -Encoding $Encoding $ErrorLog
-                Continue
+    Write-Verbose "${Module} has dependency on ${Bindep}."
+    if (-not (Test-Path("$Bindep"))) {
+        Write-Verbose "${Bindep} not found in ${ModulePath}bin, skipping."
+        "WARNING: ${Bindep} not found in ${ModulePath}\bin, skipping." | Add-Content -Encoding $Encoding $ErrorLog
+        Continue
+    }
+    Write-Verbose "Attempting to copy ${Bindep} to targets..."
+    foreach($Target in $Targets) {
+       Try {
+            if ($Credential) {
+                $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
+                Copy-Item "$Bindep" "KansaDrive:"
+                $suppress = Remove-PSDrive -Name "KansaDrive"
+            } else {
+                $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
+                Copy-Item "$Bindep" "KansaDrive:"
+                $suppress = Remove-PSDrive -Name "KansaDrive"
             }
-            Write-Verbose "Attempting to copy ${Bindep} to targets..."
-            foreach($Target in $Targets) {
-                Try {
-                    if ($Credential) {
-                        $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
-                        Copy-Item "$Bindep" "KansaDrive:"
-                        $suppress = Remove-PSDrive -Name "KansaDrive"
-                    } else {
-                        $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
-                        Copy-Item "$Bindep" "KansaDrive:"
-                        $suppress = Remove-PSDrive -Name "KansaDrive"
-                    }
-                } Catch [Exception] {
-                    "Failed to copy ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
-                    $Error | Add-Content -Encoding $Encoding $ErrorLog
-                    $Error.Clear()
-                }
-            }
+        } Catch [Exception] {
+            "WARNING: Failed to copy ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
+            $Error | Add-Content -Encoding $Encoding $ErrorLog
+            $Error.Clear()
         }
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
@@ -606,44 +681,37 @@ Param(
 function Remove-Bindep {
 <#
 .SYNOPSIS
-Attempts to remove binaries from targets.
-BINDEP must include the path to the binary, relative to Kansa.ps1's path.
+Attempts to remove binaries from targets when Kansa.ps1 is run with 
+-rmbin switch.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
         [Array]$Targets,
     [Parameter(Mandatory=$True,Position=1)]
-        [HashTable]$Modules,
-    [Parameter(Mandatory=$False,Position=2)]
+        [String]$Module,
+    [Parameter(Mandatory=$True,Position=2)]
+        [String]$Bindep,
+    [Parameter(Mandatory=$False,Position=3)]
         [PSCredential]$Credential
-        
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
-    foreach($Module in $Modules.Keys) {
-        $ModuleName = $Module | Select-Object -ExpandProperty BaseName
-        # read the second line to determine binary dependency, not required
-        $bindepline = Get-Content $Module -TotalCount 2 | Select-Object -Skip 1
-        if ($bindepline -match '#\sBINDEP\s(.*)') {
-            $Bindep = $($Matches[1])
-            $Bindep = $Bindep.Substring($Bindep.LastIndexOf("\") + 1)
-            Write-Verbose "${ModuleName} had a dependency on ${Bindep}. Removing."
-            foreach($Target in $Targets) {
-                Try {
-                    if ($Credential) {
-                        $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
-                        Remove-Item "KansaDrive:\$Bindep" 
-                        $suppress = Remove-PSDrive -Name "KansaDrive"
-                    } else {
-                        $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
-                        Remove-Item "KansaDrive:\$Bindep"
-                        $suppress = Remove-PSDrive -Name "KansaDrive"
-                    }
-                } Catch [Exception] {
-                    "Failed to remove ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
-                    $Error | Add-Content -Encoding $Encoding $ErrorLog
-                    $Error.Clear()
-                }
+    $Bindep = $Bindep.Substring($Bindep.LastIndexOf("\") + 1)
+    Write-Verbose "Attempting to remove ${Bindep} from remote hosts."
+    foreach($Target in $Targets) {
+       Try {
+            if ($Credential) {
+                $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
+                Remove-Item "KansaDrive:\$Bindep" 
+                $suppress = Remove-PSDrive -Name "KansaDrive"
+            } else {
+                $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
+                Remove-Item "KansaDrive:\$Bindep"
+                $suppress = Remove-PSDrive -Name "KansaDrive"
             }
+        } Catch [Exception] {
+            "WARNING: Failed to remove ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
+            $Error | Add-Content -Encoding $Encoding $ErrorLog
+            $Error.Clear()
         }
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
@@ -726,11 +794,11 @@ Param(
                 & "$StartingPath\Analysis\${AnalysisScript}" | Set-Content -Encoding $Encoding ($AnalysisOutPath + $AnalysisFile + ".tsv")
                 Pop-Location
             } else {
-                "Analysis: No data found for ${AnalysisScript}." | Add-Content -Encoding $Encoding $ErrorLog
+                "WARNING: Analysis: No data found for ${AnalysisScript}." | Add-Content -Encoding $Encoding $ErrorLog
                 Continue
             }
         } else {
-            "Analysis script, .\Analysis\${AnalysisScript}, missing # DATADIR directive, skipping analysis." | Add-Content -Encoding $Encoding $ErrorLog
+            "WARNING: Analysis script, .\Analysis\${AnalysisScript}, missing # DATADIR directive, skipping analysis." | Add-Content -Encoding $Encoding $ErrorLog
             Continue
         }        
     }
@@ -783,16 +851,16 @@ if ($Ascii) {
 Write-Debug "Sanity checking parameters"
 $Exit = $False
 if ($TargetList -and -not (Test-Path($TargetList))) {
-    "User supplied TargetList, $TargetList, was not found." | Add-Content -Encoding $Encoding $ErrorLog
+    "ERROR: User supplied TargetList, $TargetList, was not found." | Add-Content -Encoding $Encoding $ErrorLog
     $Exit = $True
 }
 if ($TargetCount -lt 0) {
-    "User supplied TargetCount, $TargetCount, was negative." | Add-Content -Encoding $Encoding $ErrorLog
+    "ERROR: User supplied TargetCount, $TargetCount, was negative." | Add-Content -Encoding $Encoding $ErrorLog
     $Exit = $True
 }
 #TKTK Add test for $Credential
 if ($Exit) {
-    "One or more errors were encountered with user supplied arguments. Exiting." | Add-Content -Encoding $Encoding $ErrorLog
+    "ERROR: One or more errors were encountered with user supplied arguments. Exiting." | Add-Content -Encoding $Encoding $ErrorLog
     Exit
 }
 Write-Debug "Parameter sanity check complete."
@@ -850,13 +918,6 @@ if ($TargetList) {
     $Targets  = Get-Targets -TargetCount $TargetCount
 }
 # Done getting targets #
-
-
-# Copy binaries to targets if requested #
-if ($PushBin) {
-    Push-Bindep -Targets $Targets -Modules $Modules -Credential $Credential
-}
-# Done pushing bins #
 
 
 # Finally, let's gather some data. #

@@ -1,19 +1,12 @@
-﻿# OUTPUT tsv
-<#
+﻿<#
+.SYNOPSIS
 Get-ProcsWMI.ps1
 Acquires various details about running processes, including
 commandline arguments, process start time, parent process id 
 and md5 hash of the processes image as found on disk.
-#>
-
-# OUTPUT tsv
-<#
-Get-ProcsHash.ps1
-Acquires hash, set to MD5 by default, for each unique ExecutablePath returned by
-Get-WmiObject -Query "Select * from win32_process"
-
-You can change the hash to one of MD5, SHA1, SHA256, SHA384, SHA512 or RIPEMD160 on
-the first line of code in this script.
+.NOTES
+Kansa.ps1 output directive follows
+OUTPUT tsv
 #>
 
 $hashtype = "MD5"

@@ -1,10 +1,14 @@
-﻿# OUTPUT txt
-# BINDEP rekall.zip
-<#
+﻿<#
 .SYNOPSIS
 Get-RekalPslist.ps1
-When run via Kansa.ps1 with -Pushbin flag, this module will install the WinPMem driver on remote
-systems, then run Rekall to collect the process listing from memory.
+When run via Kansa.ps1 with -Pushbin flag, this module will install the
+WinPMem driver on remote systems, then run Rekall to collect the 
+process listing from memory.
+
+.NOTES
+Kansa.ps1 directives, next two lines
+OUTPUT txt
+BINDEP rekall.zip
 #>
 
 # Expand-Zip does what the name implies, here for reference, used by Get-FlsBodyfile.ps1

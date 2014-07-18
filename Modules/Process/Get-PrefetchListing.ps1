@@ -1,7 +1,9 @@
-﻿# OUTPUT tsv
-<#
+﻿<#
 .SYNOPSIS
 Get listing of prefetch files
+.NOTES
+Next line is Kansa.ps1's output directive
+OUTPUT tsv
 #>
 
 $pfconf = (Get-ItemProperty "hklm:\system\currentcontrolset\control\session manager\memory management\prefetchparameters").EnablePrefetcher 

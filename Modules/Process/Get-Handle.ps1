@@ -1,14 +1,21 @@
-﻿# OUTPUT tsv
-# BINDEP .\Modules\bin\Handle.exe
-<# 
-Acquires handle data using sysinternals handle.exe
+﻿<#
+.SYNOPSIS
+Get-Handle acquires handle data using sysinternals handle.exe
 
 !!THIS SCRIPT ASSUMES HANDLE.EXE WILL BE IN $ENV:SYSTEMROOT!!
 
 If you have handle.exe in your Modules\bin\ path and run the script with the -Pushbin
 flag, Kansa will attempt to copy the binary to the ADMIN$. Binaries are not removed, so
 subsequent runs won't require -Pushbin.
-
+.NOTES
+Below are directives required by Kansa.ps1, they are case sensitive.
+The first, OUTPUT tsv, tells Kansa.ps1 that output from this script
+should be saved as tsv data. The second, BINDEP, tells Kansa that
+the executable following it needs to be copied to remote systems.
+.NOTES
+Next two lines are Kansa.ps1 directives
+OUTPUT tsv
+BINDEP .\Modules\bin\Handle.exe
 #>
 
 

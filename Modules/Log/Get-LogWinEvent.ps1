@@ -1,5 +1,4 @@
-﻿# OUTPUT TSV
-<# 
+﻿<# 
 .SYNOPSIS
 Get-LogWinEvent
 .PARAMETER LogName
@@ -16,6 +15,10 @@ When passing specific modules with parameters via Kansa.ps1's
 -ModulePath parameter, be sure to quote the entire string, like shown
 here:
 .\kansa.ps1 -Target localhost -ModulePath ".\Modules\Log\Get-LogWinEvent.ps1 Security"
+
+Next line is required by Kansa for proper handling of this script's
+output.
+OUTPUT TSV
 #>
 
 [CmdletBinding()]

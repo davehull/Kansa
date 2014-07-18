@@ -1,5 +1,12 @@
-﻿# OUTPUT zip
-# Grabs copies of Powershell profiles, both users specific and default
+﻿<#
+.SYNOPSIS
+Get-PSProfiles.ps1 returns copies of all Powershell profiles.
+.NOTES
+The following line is used by Kansa.ps1 to determine how to treat the
+ouput from this script.
+OUTPUT zip
+#>
+
 function add-zip
 {
     param([string]$zipfilename)

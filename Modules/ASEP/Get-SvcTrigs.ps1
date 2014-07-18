@@ -1,5 +1,12 @@
-﻿# OUTPUT tsv
-# Acquires service triggers
+﻿<#
+.SYNOPSIS
+Get-SvcTrigs.ps1 returns information about service triggers, which
+could be used as a persistence mechanism.
+.NOTES
+The following line is needed by Kansa.ps1 to determine how to treat the
+output of this script.
+OUTPUT tsv
+#>
 
 $svctrigs = $($(foreach ($svc in (& $env:windir\system32\sc.exe query)) { 
     if ($svc -match "SERVICE_NAME:\s(.*)") {

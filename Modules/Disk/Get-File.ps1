@@ -1,5 +1,4 @@
-﻿# OUTPUT Default
-<# 
+﻿<# 
 .SYNOPSIS
 Get-File.ps1 retrieves the user specified file.
 .PARAMETER File
@@ -15,6 +14,9 @@ When passing specific modules with parameters via Kansa.ps1's
 -ModulePath parameter, be sure to quote the entire string, like shown
 here:
 .\kansa.ps1 -Target localhost -ModulePath ".\Modules\Disk\Get-File.ps1 C:\boot.log"
+
+Following line is needed by Kansa.ps1 to determine how to handle output
+OUTPUT Default
 #>
 
 

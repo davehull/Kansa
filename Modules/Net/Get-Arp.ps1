@@ -1,6 +1,9 @@
-﻿# OUTPUT tsv
-<#
+﻿<#
+.SYNOPSIS
 Get-ARP.ps1 acquires arp table
+.NOTES
+Next line tells Kansa.ps1 how to format this script's output.
+OUTPUT tsv
 #>
 
 if (Get-Command Get-NetNeighbor -ErrorAction SilentlyContinue) {

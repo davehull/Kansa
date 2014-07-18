@@ -1,7 +1,9 @@
-﻿# OUTPUT tsv
-<#
+﻿<#
 .SYNOPSIS
 Get-DNSCache.ps1 acquires DNS cache entries from the target host.
+.NOTES
+Next line tells Kansa.ps1 how to format this script's output.
+OUTPUT tsv
 #>
 
 if (Get-Command Get-DnsClientCache -ErrorAction SilentlyContinue) {

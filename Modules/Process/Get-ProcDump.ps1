@@ -1,6 +1,4 @@
-﻿# OUTPUT bin
-# BINDEP .\Modules\bin\Procdump.exe
-<#
+﻿<#
 .SYNOPSIS
 Get-ProcDump.ps1 acquires a Sysinternal procdump of the specified 
 process
@@ -17,12 +15,21 @@ When passing specific modules with parameters via Kansa.ps1's
 shown here:
 .\kansa.ps1 -Target localhost -ModulePath ".\Modules\Process\Get-ProcDumpe.ps1 104"
 
+Arguments passed via Modules\Modules.conf should not be quoted.
+
+Multiple arguments may be passed with comma separators.
+
 If you have procdump.exe in your Modules\bin\ path and run Kansa with 
 the -Pushbin flag, Kansa will attempt to copy the binary to the ADMIN$.
-Binaries are not removed, so subsequent runs won't require -Pushbin.
+Binaries aren't removed unless Kansa.ps1 is run with the -rmbin switch.
 
 Also, you should configure this to dump the process you're interested
 in. By default it dumps itself, which is probably not what you want.
+
+.NOTES
+Kansa.ps1 output and bindep directives follow:
+OUTPUT bin
+BINDEP .\Modules\bin\Procdump.exe
 #>
 
 [CmdletBinding()]

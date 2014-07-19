@@ -3,8 +3,9 @@ Kansa
 
 A modular incident response framework in Powershell.
 
-More info:
-http://trustedsignal.blogspot.com/search/label/Kansa
+More info:  
+http://trustedsignal.blogspot.com/search/label/Kansa  
+http://www.powershellmagazine.com/2014/07/18/kansa-a-powershell-based-incident-response-framework/  
 
 ##What does it do? 
 It uses Powershell Remoting to run user contributed, ahem, user contri-  

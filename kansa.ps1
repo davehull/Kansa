@@ -460,13 +460,16 @@ Param(
         
         $DirectiveHash = @{}
 
-        $Directives = Get-Content $Module | Select-String -CaseSensitive -Pattern "OUTPUT|BINDEP"
+        $Directives = Get-Content $Module | Select-String -CaseSensitive -Pattern "OUTPUT|BINDEP|DATADIR"
         foreach ($Directive in $Directives) {
             if ( $Directive -match "(^OUTPUT|^# OUTPUT) (.*)" ) {
                 $DirectiveHash.Add("OUTPUT", $($matches[2]))
             }
             if ( $Directive -match "(^BINDEP|^# BINDEP) (.*)" ) {
                 $DirectiveHash.Add("BINDEP", $($matches[2]))
+            }
+            if ( $Directive -match "(^DATADIR|^# DATADIR) (.*)" ) {
+                $DirectiveHash.Add("DATADIR", $($matches[2])) 
             }
         }
         $DirectiveHash

@@ -453,9 +453,15 @@ removed.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
-        [String]$Module
+        [String]$Module,
+    [Parameter(Mandatory=$False,Position=1)]
+        [Switch]$AnalysisPath
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
+    if ($AnalysisPath) {
+        $Module = ".\Analysis\" + $Module
+    }
+
     if (Test-Path($Module)) {
         
         $DirectiveHash = @{}
@@ -784,10 +790,12 @@ Param(
     $AnalysisOutPath = $OutputPath + "\AnalysisReports\"
     $Suppress = New-Item -Path $AnalysisOutPath -ItemType Directory -Force
 
+    # Get our DATADIR directive
+    $DirectivesHash  = @{}
     foreach($AnalysisScript in $AnalysisScripts) {
-        $lineone = gc ($StartingPath + "\Analysis\" + $AnalysisScript) -TotalCount 1
-        if ($lineone -match 'DATADIR (.*)$') {
-            $DataDir = $($matches[1])
+        $DirectivesHash = Get-Directives $AnalysisScript -AnalysisPath
+        $DataDir = $($DirectivesHash.Get_Item("DATADIR"))
+        if ($DataDir) {
             if (Test-Path "$OutputPath$DataDir") {
                 Push-Location
                 Set-Location "$OutputPath$DataDir"

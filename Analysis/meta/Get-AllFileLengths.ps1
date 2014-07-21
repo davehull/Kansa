@@ -19,4 +19,4 @@ Param(
 # So bring in all files with a hyphen in their names
 $files = ls -r $Path | ? { $_.Name -match ".*\-.*" }
 
-$files | Select-Object BaseName, Length | Sort-Object Length 
+$files | Select-Object BaseName, Length | Sort-Object Length | ConvertTo-Csv -Delimiter "`t"

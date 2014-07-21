@@ -1,11 +1,13 @@
-﻿# DATADIR SvcFail
-<#
+﻿<#
+.SYNOPSIS
 Get-SvcFailStack.ps1
 Requires logparser.exe in path
 Pulls stack rank of all Service Failures from acquired Service Failure data
 
 This script expects files matching the pattern *SvcFail.tsv to be in 
 the current working directory.
+.NOTES
+DATADIR SvcFail
 #>
 
 if (Get-Command logparser.exe) {

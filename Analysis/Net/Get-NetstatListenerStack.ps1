@@ -1,5 +1,5 @@
-﻿# DATADIR Netstat
-<#
+﻿<#
+.SYNOPSIS
 Get-NetstatListenerStack.ps1
 Requires logparser.exe in path
 
@@ -11,6 +11,8 @@ on Protocol, Component and Process
 This script exepcts files matching the pattern 
 *netstat.tsv to be in the current working
 directory
+.NOTES
+DATADIR Netstat
 #>
 
 if (Get-Command logparser.exe) {

@@ -20,7 +20,7 @@ This script exepcts files matching the pattern
 *netstat.tsv to be in the current working
 directory
 .NOTES
-DATADIR Net
+DATADIR Netstat
 #>
 
 if (Get-Command logparser.exe) {

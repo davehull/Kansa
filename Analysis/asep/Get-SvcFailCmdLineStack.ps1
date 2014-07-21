@@ -1,5 +1,5 @@
-﻿# DATADIR SvcFail
-<#
+﻿<#
+.SYNOPSIS
 Get-SvcFailCmdLineStack.ps1
 Requires logparser.exe in path
 Pulls stack rank of Service Failure CmdLines from acquired Service Failure data
@@ -7,6 +7,8 @@ where CmdLine is not 'customScript.cmd' nor NULL
 
 This script expects files matching the pattern *SvcFail.tsv to be in 
 the current working directory.
+.NOTES
+DATADIR SvcFail
 #>
 
 if (Get-Command logparser.exe) {

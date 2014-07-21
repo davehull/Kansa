@@ -1,11 +1,13 @@
-﻿# DATADIR LocalAdmins
-<#
+﻿<#
+.SYNOPSIS
 Get-LocalAdminStack.ps1
 Requires logparser.exe in path
 Pulls frequency of local admin account entries
 
 This script expects files matching the *LocalAdmins.tsv pattern to be in the
 current working directory.
+.NOTES
+DATADIR LocalAdmins
 #>
 
 

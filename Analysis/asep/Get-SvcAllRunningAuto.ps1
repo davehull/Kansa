@@ -1,8 +1,10 @@
-﻿# DATADIR SvcAll
-<#
+﻿<#
+.SYNOPSIS
 Get-SvcAllRunningAuto.ps1
 Parses through the Get-SvcAll.ps1 data and returns
 those items that are running or set to start automatically.
+.NOTES
+DATADIR SvcAll
 #>
 
 $data = $null

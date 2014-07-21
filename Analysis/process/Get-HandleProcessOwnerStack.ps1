@@ -1,5 +1,5 @@
-﻿# DATADIR Handle
-<#
+﻿<#
+.SYNOPSIS
 Get-HandleProcessOnwerStack.ps1
 
 Pulls frequency from Get-Handle data based on ProcessName and Owner
@@ -7,6 +7,8 @@ Pulls frequency from Get-Handle data based on ProcessName and Owner
 Requirements:
 logparser.exe in path
 Handle data matching *Handle.tsv in pwd
+.NOTES
+DATADIR Handle
 #>
 
 

@@ -1,5 +1,5 @@
-﻿# DATADIR SvcAll
-<#
+﻿<#
+.SYNOPSIS
 Get-SvcAllStack.ps1
 A basic stack for services aggregating on Caption and Pathname.
 Out put is fairly ugly, it is sorted by Name, rather than count.
@@ -17,7 +17,8 @@ a pathname without double-quotes. A superficial difference.
 Get-Autorunsc.ps1 provides much of the same information, but
 Get-SvcAll.ps1 shows Process Ids for running processes and tells
 you which account the item is running under.
-
+.NOTES
+DATADIR SvcAll
 #>
 
 $data = $null

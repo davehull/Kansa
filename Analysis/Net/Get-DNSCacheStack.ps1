@@ -1,11 +1,13 @@
-﻿# DATADIR DNSCache
-<#
+﻿<#
+.SYNOPSIS
 Get-DNSCacheStack.ps1
 Requires logparser.exe in path
 Pulls frequency of DNSCache entries
 
 This script expects files matching the *DNSCache.tsv pattern to be in the
 current working directory.
+.NOTES
+DATADIR DNSCache
 #>
 
 

@@ -1,5 +1,5 @@
-﻿# DATADIR Autorunsc
-<#
+﻿<#
+.SYNOPSIS
 Get-ASEPImagePathLaunchStringStack.ps1
 Requires logparser.exe in path
 
@@ -9,6 +9,8 @@ not 'File not found'
 
 This script expects files matching the *autorunsc.txt pattern to be in the
 current working directory.
+.NOTES
+DATADIR Autorunsc
 #>
 
 

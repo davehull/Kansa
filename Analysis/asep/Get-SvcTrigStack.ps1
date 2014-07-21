@@ -1,11 +1,13 @@
-﻿# DATADIR SvcTrigs
-<#
+﻿<#
+.SYNOPSIS
 Get-SvcTrigStack.ps1
 Requires logparser.exe in path
 Pulls stack rank of Service Triggers from acquired Service Trigger data
 
 This script expects files matching the pattern *svctrigs.tsv to be in 
 the current working directory.
+.NOTES
+DATADIR SvcTrigs
 #>
 
 if (Get-Command logparser.exe) {

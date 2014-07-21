@@ -1,5 +1,5 @@
-﻿# DATADIR Netstat
-<#
+﻿<#
+.SYNOPSIS
 Get-NetstatStackForeignIpProcess.ps1
 Requires logparser.exe in path
 
@@ -23,6 +23,8 @@ from the query...
 This script exepcts files matching the pattern 
 *netstat.tsv to be in the current working
 directory
+.NOTES
+DATADIR Netstat
 #>
 
 if (Get-Command logparser.exe) {

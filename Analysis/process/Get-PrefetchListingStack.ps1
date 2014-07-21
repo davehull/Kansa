@@ -1,5 +1,5 @@
-﻿# DATADIR PrefetchListing
-<#
+﻿<#
+.SYNOPSIS
 Get-PrefetchListingStack.ps1
 Requires logparser.exe in path
 Pulls stack rank of prefetch files based
@@ -8,6 +8,8 @@ on collected Get-PrefetchListing data.
 This script exepcts files matching the pattern 
 *PrefetchListing.tsv to be in the current working
 directory
+.NOTES
+DATADIR PrefetchListing
 #>
 
 if (Get-Command logparser.exe) {

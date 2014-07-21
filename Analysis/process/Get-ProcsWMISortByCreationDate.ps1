@@ -1,5 +1,5 @@
-﻿# DATADIR ProcsWMI
-<#
+﻿<#
+.SYNOPSIS
 Get-ProcsWMISortByStartTime.ps1
 
 Returns process CreationDate, ProcessId, ParentProcessId, CommandLine
@@ -7,6 +7,8 @@ Returns process CreationDate, ProcessId, ParentProcessId, CommandLine
 Requires:
 Process data matching *ProcWMI.tsv in pwd
 logparser.exe in path
+.NOTES
+DATADIR ProcsWMI
 #>
 
 if (Get-Command logparser.exe) {

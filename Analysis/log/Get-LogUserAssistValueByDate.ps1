@@ -1,11 +1,13 @@
-﻿# DATADIR LogUserAssist
-<#
+﻿<#
+.SYNOPSIS
 Get-LogUserAssistValueByDate.ps1
 Requires logparser.exe in path
 Returns UserAssist data sorted by KeyLastWritetime descending
 
 This script expects files matching the *LogUserAssist.tsv pattern to be in the
 current working directory.
+.NOTES
+DATADIR LogUserAssist
 #>
 
 

@@ -1,5 +1,5 @@
-﻿# DATADIR ProcsWMI
-<#
+﻿<#
+.SYNOPSIS
 Get-ProcsWMITempExePath.ps1
 
 Returns DISTINCT process CreationDate, ProcessId, ParentProcessId, CommandLine, 
@@ -9,6 +9,8 @@ AppData\Local, common temporary folders
 Requires:
 Process data matching *ProcWMI.tsv in pwd
 logparser.exe in path
+.NOTES
+DATADIR ProcsWMI
 #>
 
 if (Get-Command logparser.exe) {

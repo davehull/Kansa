@@ -1,11 +1,13 @@
-﻿# DATADIR Arp
-<#
+﻿<#
+.SYNOPSIS
 Get-ARPStack.ps1
 Requires logparser.exe in path
 Pulls frequency of ARP based on IpAddr
 
 This script expects files matching the *Arp.tsv pattern to be in the
 current working directory.
+.NOTES
+DATADIR Arp
 #>
 
 

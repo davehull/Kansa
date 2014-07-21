@@ -1,5 +1,5 @@
-﻿# DATADIR Netstat
-<#
+﻿<#
+.SYNOPSIS
 Get-NetstatForeign24sStack.ps1
 Requires logparser.exe in path
 Pulls stack rank of Netstat connections aggregating 
@@ -19,6 +19,8 @@ from the query...
 This script exepcts files matching the pattern 
 *netstat.tsv to be in the current working
 directory
+.NOTES
+DATADIR Net
 #>
 
 if (Get-Command logparser.exe) {

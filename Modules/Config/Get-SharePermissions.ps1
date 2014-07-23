@@ -1,5 +1,9 @@
 ﻿<#
-
+.SYNOPSIS
+Get-SharePermissions.ps1 enumerates the SMB shares on the local host and lists
+the share permissions and NTFS access-control lists for them.
+.NOTES
+OUTPUT TSV
 #>
 
 function Get-SddlParts {
@@ -20,6 +24,15 @@ function Get-SddlParts {
         $key, $value, $splitSddl = $splitSddl
         $o.Part = $key
         $o.Value = $value
+
+        # If it's a SID, also get the associated username.
+        if ((($key -eq "O:") -or ($key -eq "G:")) -and ($value.Length -gt 5))
+        {
+            $objSid = New-Object System.Security.Principal.SecurityIdentifier($value)
+            $objUser = $objSid.Translate([System.Security.Principal.NTAccount])
+            $o.Value = $objUser.Value + " ($value)"
+        }
+
         $o
     }
 }
@@ -38,4 +51,6 @@ foreach ($share in (Get-SmbShare))
     $share | fl *
     $smbPerms | fl *
     $aclPerms | fl *
+
+    #$o = "" | Select-Object Share, Path, Source, User, IsOwner, Read, Write, Modify
 }

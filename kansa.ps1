@@ -763,7 +763,7 @@ function Set-KansaPath {
         }
     }
     if (-not($found)) {
-        $env:path = $env:path + ";$pwd\Analysis\ASEP;$pwd\Analysis\Meta;$pwd\Analysis\Net;$pwd\Analysis\Process;$pwd\Analysis\Log;"
+        $env:path = $env:path + ";$pwd\Analysis\ASEP;$pwd\Analysis\Config;$pwd\Analysis\Meta;$pwd\Analysis\Net;$pwd\Analysis\Process;$pwd\Analysis\Log;"
     }
 }
 

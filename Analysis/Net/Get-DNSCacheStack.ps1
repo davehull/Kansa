@@ -1,11 +1,13 @@
-﻿# DATADIR DNSCache
-<#
+﻿<#
+.SYNOPSIS
 Get-DNSCacheStack.ps1
 Requires logparser.exe in path
 Pulls frequency of DNSCache entries
 
 This script expects files matching the *DNSCache.tsv pattern to be in the
 current working directory.
+.NOTES
+DATADIR DNSCache
 #>
 
 
@@ -22,7 +24,7 @@ if (Get-Command logparser.exe) {
         ct ASC
 "@
 
-    & logparser -q:on -i:tsv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"
+    & logparser -stats:off -i:tsv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

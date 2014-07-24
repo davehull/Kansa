@@ -1,5 +1,5 @@
-﻿# DATADIR ProcsWMI
-<#
+﻿<#
+.SYNOPSIS
 Get-ProcsWMICmdLineStack.ps1
 
 Pulls frequency of processes based on path CommandLine
@@ -7,6 +7,8 @@ Pulls frequency of processes based on path CommandLine
 Requires:
 Process data matching *ProcWMI.tsv in pwd
 logparser.exe in path
+.NOTES
+DATADIR ProcsWMI
 #>
 
 if (Get-Command logparser.exe) {
@@ -22,7 +24,7 @@ if (Get-Command logparser.exe) {
         ct ASC
 "@
 
-    & logparser -q:on -i:tsv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"
+    & logparser -stats:off -i:tsv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

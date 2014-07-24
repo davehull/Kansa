@@ -1,4 +1,5 @@
 ﻿<#
+.SYNOPSIS
 Get-Lengths.ps1
 Lists sizes for the user specified files. Enabling
 analysts to quickly spot differences at a very high level.
@@ -47,4 +48,4 @@ Param(
 
 $files = Get-Files $FileNamePattern
 
-$files | Select-Object BaseName, Length | Sort-Object Length | Out-GridView -Title "Kansa module output lengths: $FileNamePattern"
+$files | Select-Object BaseName, Length | Sort-Object Length | ConvertTo-Csv -Delimiter "`t"

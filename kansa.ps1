@@ -453,20 +453,29 @@ removed.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
-        [String]$Module
+        [String]$Module,
+    [Parameter(Mandatory=$False,Position=1)]
+        [Switch]$AnalysisPath
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
+    if ($AnalysisPath) {
+        $Module = ".\Analysis\" + $Module
+    }
+
     if (Test-Path($Module)) {
         
         $DirectiveHash = @{}
 
-        $Directives = Get-Content $Module | Select-String -CaseSensitive -Pattern "OUTPUT|BINDEP"
+        $Directives = Get-Content $Module | Select-String -CaseSensitive -Pattern "OUTPUT|BINDEP|DATADIR"
         foreach ($Directive in $Directives) {
             if ( $Directive -match "(^OUTPUT|^# OUTPUT) (.*)" ) {
                 $DirectiveHash.Add("OUTPUT", $($matches[2]))
             }
             if ( $Directive -match "(^BINDEP|^# BINDEP) (.*)" ) {
                 $DirectiveHash.Add("BINDEP", $($matches[2]))
+            }
+            if ( $Directive -match "(^DATADIR|^# DATADIR) (.*)" ) {
+                $DirectiveHash.Add("DATADIR", $($matches[2])) 
             }
         }
         $DirectiveHash
@@ -754,7 +763,7 @@ function Set-KansaPath {
         }
     }
     if (-not($found)) {
-        $env:path = $env:path + ";$pwd\Analysis\ASEP;$pwd\Analysis\Meta;$pwd\Analysis\Net;$pwd\Analysis\Process;$pwd\Analysis\Log;"
+        $env:path = $env:path + ";$pwd\Analysis\ASEP;$pwd\Analysis\Config;$pwd\Analysis\Meta;$pwd\Analysis\Net;$pwd\Analysis\Process;$pwd\Analysis\Log;"
     }
 }
 
@@ -781,10 +790,12 @@ Param(
     $AnalysisOutPath = $OutputPath + "\AnalysisReports\"
     $Suppress = New-Item -Path $AnalysisOutPath -ItemType Directory -Force
 
+    # Get our DATADIR directive
+    $DirectivesHash  = @{}
     foreach($AnalysisScript in $AnalysisScripts) {
-        $lineone = gc ($StartingPath + "\Analysis\" + $AnalysisScript) -TotalCount 1
-        if ($lineone -match 'DATADIR (.*)$') {
-            $DataDir = $($matches[1])
+        $DirectivesHash = Get-Directives $AnalysisScript -AnalysisPath
+        $DataDir = $($DirectivesHash.Get_Item("DATADIR"))
+        if ($DataDir) {
             if (Test-Path "$OutputPath$DataDir") {
                 Push-Location
                 Set-Location "$OutputPath$DataDir"

@@ -1,5 +1,5 @@
-﻿# DATADIR PrefetchListing
-<#
+﻿<#
+.SYNOPSIS
 Get-PrefetchListingLastWriteTime.ps1
 Requires logparser.exe in path
 Pulls PrefetchListing data sorted by LastWriteTimeUtc Descending
@@ -8,6 +8,8 @@ on collected Get-PrefetchListing data.
 This script exepcts files matching the pattern 
 *PrefetchListing.tsv to be in the current working
 directory
+.NOTES
+DATADIR PrefetchListing
 #>
 
 if (Get-Command logparser.exe) {
@@ -23,7 +25,7 @@ if (Get-Command logparser.exe) {
         LastWriteTimeUtc Desc
 "@
 
-    & logparser -q:on -i:tsv -fixedsep:on -dtlines:0 -rtp:-1 $lpquery
+    & logparser -stats:off -i:tsv -fixedsep:on -dtlines:0 -rtp:-1 $lpquery
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

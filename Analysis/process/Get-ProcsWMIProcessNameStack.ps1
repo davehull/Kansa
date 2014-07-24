@@ -1,25 +1,25 @@
 ﻿<#
 .SYNOPSIS
-Get-LocalAdminStack.ps1
-Requires logparser.exe in path
-Pulls frequency of local admin account entries
+Get-ProcsWMIProcessNameStack.ps1
 
-This script expects files matching the *LocalAdmins.tsv pattern to be in the
-current working directory.
+Pulls frequency of processes based on path ProcessName
+
+Requires:
+Process data matching *ProcWMI.tsv in pwd
+logparser.exe in path
 .NOTES
-DATADIR LocalAdmins
+DATADIR ProcsWMI
 #>
-
 
 if (Get-Command logparser.exe) {
     $lpquery = @"
     SELECT
-        COUNT(Account) as ct,
-        Account
+        COUNT(ProcessName) as ct,
+        ProcessName
     FROM
-        *LocalAdmins.tsv
+        *ProcsWMI.tsv
     GROUP BY
-        Account
+        ProcessName
     ORDER BY
         ct ASC
 "@

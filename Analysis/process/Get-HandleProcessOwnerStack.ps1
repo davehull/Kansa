@@ -1,5 +1,5 @@
-﻿# DATADIR Handle
-<#
+﻿<#
+.SYNOPSIS
 Get-HandleProcessOnwerStack.ps1
 
 Pulls frequency from Get-Handle data based on ProcessName and Owner
@@ -7,6 +7,8 @@ Pulls frequency from Get-Handle data based on ProcessName and Owner
 Requirements:
 logparser.exe in path
 Handle data matching *Handle.tsv in pwd
+.NOTES
+DATADIR Handle
 #>
 
 
@@ -26,7 +28,7 @@ if (Get-Command logparser.exe) {
         ct ASC
 "@
 
-    & logparser -q:on -i:tsv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"
+    & logparser -stats:off -i:tsv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

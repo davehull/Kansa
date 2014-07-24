@@ -1,7 +1,7 @@
 ﻿<#
 .SYNOPSIS
-Get-SharePermissions.ps1 enumerates the SMB shares on the local host and lists
-the share permissions and NTFS access-control lists for them.
+Get-SharePermissions.ps1 enumerates the SMB shares on the target host and lists
+the share and NTFS access rights for them.
 .NOTES
 OUTPUT TSV
 #>
@@ -10,8 +10,10 @@ Param(
 
 )
 
-foreach ($share in (Get-SmbShare -name "test"))
+foreach ($share in (Get-SmbShare))
 {
+    $shareName = $share.Name
+    Write-Verbose "Grabbing share rights for $shareName"
     $shareOwner = (Get-Acl -Path $share.Path).Owner
     
     $o = "" | Select-Object Share, Path, Source, User, Type, IsOwner, Full, Write, Read, Other
@@ -42,10 +44,23 @@ foreach ($share in (Get-SmbShare -name "test"))
         $o.User = $aclPermParts[0]
         $o.Type = $aclPermParts[1]
         $o.IsOwner = $shareOwner -match ($aclPermParts[0].Trim() -replace "\\", "\\")
-        $o.Full = $aclRights.Contains("FullControl")
-        $o.Write = $aclRights.Contains("FullControl") -or $aclRights.Contains("Write")
-        $o.Read = $aclRights.Contains("FullControl") -or $aclRights.Contains("Read")
-        $o.Other = $aclPermParts[2].Trim() -match "(FullControl|Write|Read|,|\s){0}"
+        $o.Full = $o.Write = $o.Read = $o.Other = $False
+
+        # The way ACL entries are written out as a string is...odd. I would
+        # have preferred to use SDDL output, but parsing it lead me down too
+        # many rabbit holes.
+        while($aclRights)
+        {
+            $aclRight, $aclRights = $aclRights
+
+            switch ($aclRight)
+            {
+                "FullControl" { $o.Full  = $o.Write = $o.Read = $True; break }
+                "Write"       { $o.Write = $True; break }
+                "Read"        { $o.Read  = $True; break }
+                default       { $o.Other = $True }
+            }
+        }
 
         $o
     }

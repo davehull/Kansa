@@ -378,11 +378,15 @@ function Load-AD {
 function Get-Forest {
     # what forest are we in?
     Write-Debug "Entering $($MyInvocation.MyCommand)"
-    try {
-        $Forest = (Get-ADForest).Name
+    $Error.Clear()
+    $Forest = (Get-ADForest).Name
+
+    if ($Forest) {
         Write-Verbose "Forest is ${forest}."
         $Forest
-    } catch {
+    } elseif ($Error) {
+        # Write the $Error to the $Errorlog
+        $Error | Add-Content -Encoding $Encoding $ErrorLog
         "ERROR: Get-Forest could not find current forest. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
         Exit
     }

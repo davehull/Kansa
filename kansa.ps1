@@ -400,6 +400,8 @@ Param(
         [int]$TargetCount=0
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
+    Error.Clear()
+    $Targets = $False
     if ($TargetList) {
         # user provided a list of targets
         if ($TargetCount -eq 0) {
@@ -407,11 +409,7 @@ Param(
         } else {
             $Targets = Get-Content $TargetList | % { $_.Trim() } | Where-Object { $_.Length -gt 0 } | Select-Object -First $TargetCount
         }
-        Write-Verbose "`$Targets are ${Targets}."
-        return $Targets
-    } 
-        
-    Try {
+    } else {
         # no target list provided, we'll query AD for it
         Write-Verbose "`$TargetCount is ${TargetCount}."
         if ($TargetCount -eq 0 -or $TargetCount -eq $Null) {
@@ -419,12 +417,18 @@ Param(
         } else {
             $Targets = Get-ADComputer -Filter * -ResultSetSize $TargetCount | Select-Object -ExpandProperty Name
         }
+    }
+
+    if ($Targets) {
         Write-Verbose "`$Targets are ${Targets}."
         return $Targets
-    } Catch [Exception] {
-        "ERROR: Get-Targets failed. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
+    } else {
+        Write-Verbose "Get-Targets function found no targets. Checking for errors."
+    }
+    
+    if ($Error) { # if we make it here, something went wrong
         $Error | Add-Content -Encoding $Encoding $ErrorLog
-        $Error.Clear()
+        "ERROR: Get-Targets function could not get a list of targets. Quitting."
         Exit
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"

@@ -1,0 +1,3 @@
+# Never upload Private modules
+Private
+!.gitignore

@@ -404,7 +404,7 @@ Param(
         [int]$TargetCount=0
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
-    Error.Clear()
+    $Error.Clear()
     $Targets = $False
     if ($TargetList) {
         # user provided a list of targets
@@ -513,7 +513,7 @@ Param(
         [Int]$ThrottleLimit
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
-    Error.Clear()
+    $Error.Clear()
 
     # Create our sessions with targets
     if ($Credential) {

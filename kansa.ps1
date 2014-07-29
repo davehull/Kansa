@@ -262,8 +262,12 @@ Param(
         $Error.Clear()
     }
 
-    Try {
-        <# Only terminating error code needs to go in a try/catch #>
+    Try { 
+        <# 
+        Try/Catch blocks are for terminating errors. See some of the
+        functions below for examples of how non-terminating errors can 
+        be caught and handled. 
+        #>
     } Catch [Exception] {
         $Error | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()
@@ -509,129 +513,128 @@ Param(
         [Int]$ThrottleLimit
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
+    Error.Clear()
 
-    Try {
-        # Create our sessions with targets
-        if ($Credential) {
-            $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile) -Credential $Credential
-            $Error | Add-Content -Encoding $Encoding $ErrorLog
-            $Error.Clear()
-        } else {
-            $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile)
-            $Error | Add-Content -Encoding $Encoding $ErrorLog
-            $Error.Clear()
-        }
-
-        foreach($Module in $Modules.Keys) {
-            $ModuleName  = $Module | Select-Object -ExpandProperty BaseName
-            $Arguments   = @()
-            $Arguments   += $($Modules.Get_Item($Module)) -split ","
-            if ($Arguments) {
-                $ArgFileName = Get-LegalFileName $Arguments
-            } else { $ArgFileName = "" }
-            
-            # Get our directives both old and new style
-            $DirectivesHash  = @{}
-            $DirectivesHash = Get-Directives $Module
-            $OutputMethod = $($DirectivesHash.Get_Item("OUTPUT"))
-            if ($Pushbin) {
-                $bindep = $($DirectivesHash.Get_Item("BINDEP"))
-                if ($bindep) {
-                    Push-Bindep -Targets $Targets -Module $Module -Bindep $bindep -Credential $Credential
-                }
-            }
-            
-            # run the module on the targets            
-            if ($Arguments) {
-                Write-Debug "Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList `"$Arguments`" -AsJob -ThrottleLimit $ThrottleLimit"
-                $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList $Arguments -AsJob -ThrottleLimit $ThrottleLimit
-                Write-Verbose "Waiting for $ModuleName $Arguments to complete."
-            } else {
-                Write-Debug "Invoke-Command -Session $PSSessions -FilePath $Module -AsJob -ThrottleLimit $ThrottleLimit"
-                $Job = Invoke-Command -Session $PSSessions -FilePath $Module -AsJob -ThrottleLimit $ThrottleLimit                
-                Write-Verbose "Waiting for $ModuleName to complete."
-            }
-            # Wait-Job does return data to stdout, add $suppress = to start of next line, if needed
-            Wait-Job $Job
-            
-            # set up our output location
-            $GetlessMod = $($ModuleName -replace "Get-") 
-            # Long paths prevent output from being written, so we truncate $ArgFileName to accomodate
-            # We're estimating the output path because at this point, we don't know what the hostname
-            # is and it is part of the path. Hostnames are 15 characters max, so we assume worst case
-            $EstOutPathLength = $OutputPath.Length + ($GetlessMod.Length * 2) + ($ArgFileName.Length * 2)
-            if ($EstOutPathLength -gt $MAXPATH) { 
-                # Get the path length without the arguments, then we can determine how long $ArgFileName can be
-                $PathDiff = [int] $EstOutPathLength - ($OutputPath.Length + ($GetlessMod.Length * 2) -gt 0)
-                $MaxArgLength = $PathDiff - $MAXPATH
-                if ($MaxArgLength -gt 0 -and $MaxArgLength -lt $ArgFileName.Length) {
-                    $OrigArgFileName = $ArgFileName
-                    $ArgFileName = $ArgFileName.Substring(0, $MaxArgLength)
-                    "WARNING: ${GetlessMod}'s output path contains the arguments that were passed to it. Those arguments were truncated from $OrigArgFileName to $ArgFileName to accomodate Window's MAXPATH limit of 260 characters." | Add-Content -Encoding $Encoding $ErrorLog
-                }
-            }
-                            
-            $Suppress = New-Item -Path $OutputPath -name ($GetlessMod + $ArgFileName) -ItemType Directory
-            foreach($ChildJob in $Job.ChildJobs) { 
-                $Recpt = Receive-Job $ChildJob
-                                
-                # Now that we know our hostname, let's double check our path length, if it's too long, we'll write an error
-                # Max path is 260 characters, if we're over 256, we can't accomodate an extension
-                $Outfile = $OutputPath + $GetlessMod + $ArgFileName + "\" + $ChildJob.Location + "-" + $GetlessMod + $ArgFileName
-                if ($Outfile.length -gt 256) {
-                    "ERROR: ${GetlessMod}'s output path length exceeds 260 character limit. Can't write the output to disk for $($ChildJob.Location)." | Add-Content -Encoding $Encoding $ErrorLog
-                    Continue
-                }
-
-                # save the data
-                switch -Wildcard ($OutputMethod) {
-                    "*csv" {
-                        $Outfile = $Outfile + ".csv"
-                        $Recpt | ConvertTo-Csv -NoTypeInformation | % { $_ -replace "`"" } | Set-Content -Encoding $Encoding $Outfile
-                    }
-                    "*tsv" {
-                        $Outfile = $Outfile + ".tsv"
-                        $Recpt | ConvertTo-Csv -NoTypeInformation -Delimiter "`t" | % { $_ -replace "`"" } | Set-Content -Encoding $Encoding $Outfile
-                    }
-                    "*xml" {
-                        $Outfile = $Outfile + ".xml"
-                        $Recpt | Export-Clixml $Outfile -Encoding $Encoding
-                    }
-                    "*bin" {
-                        $Outfile = $Outfile + ".bin"
-                        $Recpt | Set-Content -Encoding Byte $Outfile
-                    }
-                    "*zip" {
-                        # Compression should be done in the collector
-                        # Default collector template has a function
-                        # for compressing data as an example
-                        $Outfile = $Outfile + ".zip"
-                        $Recpt | Set-Content -Encoding Byte $Outfile
-                    }
-                    "*Default" {
-                        # Default here means we let PowerShell figure out the output encoding
-                        # Used by Get-File.ps1, which can grab arbitrary files
-                        $Outfile = $Outfile
-                        $Recpt | Set-Content -Encoding Default $Outfile
-                    }
-                    default {
-                        $Outfile = $Outfile + ".txt"
-                        $Recpt | Set-Content -Encoding $Encoding $Outfile
-                    }
-                }
-            }
-            if ($rmbin) {
-                if ($bindep) {
-                    Remove-Bindep -Targets $Targets -Module $Module -Bindep $bindep -Credential $Credential
-                }
-            }
-
-        }
-        Remove-PSSession $PSSessions
-    } Catch [Exception] {
+    # Create our sessions with targets
+    if ($Credential) {
+        $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile) -Credential $Credential
+        $Error | Add-Content -Encoding $Encoding $ErrorLog
+        $Error.Clear()
+    } else {
+        $PSSessions = New-PSSession -ComputerName $Targets -SessionOption (New-PSSessionOption -NoMachineProfile)
         $Error | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()
     }
+
+    foreach($Module in $Modules.Keys) {
+        $ModuleName  = $Module | Select-Object -ExpandProperty BaseName
+        $Arguments   = @()
+        $Arguments   += $($Modules.Get_Item($Module)) -split ","
+        if ($Arguments) {
+            $ArgFileName = Get-LegalFileName $Arguments
+        } else { $ArgFileName = "" }
+            
+        # Get our directives both old and new style
+        $DirectivesHash  = @{}
+        $DirectivesHash = Get-Directives $Module
+        $OutputMethod = $($DirectivesHash.Get_Item("OUTPUT"))
+        if ($Pushbin) {
+            $bindep = $($DirectivesHash.Get_Item("BINDEP"))
+            if ($bindep) {
+                Push-Bindep -Targets $Targets -Module $Module -Bindep $bindep -Credential $Credential
+            }
+        }
+            
+        # run the module on the targets            
+        if ($Arguments) {
+            Write-Debug "Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList `"$Arguments`" -AsJob -ThrottleLimit $ThrottleLimit"
+            $Job = Invoke-Command -Session $PSSessions -FilePath $Module -ArgumentList $Arguments -AsJob -ThrottleLimit $ThrottleLimit
+            Write-Verbose "Waiting for $ModuleName $Arguments to complete."
+        } else {
+            Write-Debug "Invoke-Command -Session $PSSessions -FilePath $Module -AsJob -ThrottleLimit $ThrottleLimit"
+            $Job = Invoke-Command -Session $PSSessions -FilePath $Module -AsJob -ThrottleLimit $ThrottleLimit                
+            Write-Verbose "Waiting for $ModuleName to complete."
+        }
+        # Wait-Job does return data to stdout, add $suppress = to start of next line, if needed
+        Wait-Job $Job
+            
+        # set up our output location
+        $GetlessMod = $($ModuleName -replace "Get-") 
+        # Long paths prevent output from being written, so we truncate $ArgFileName to accomodate
+        # We're estimating the output path because at this point, we don't know what the hostname
+        # is and it is part of the path. Hostnames are 15 characters max, so we assume worst case
+        $EstOutPathLength = $OutputPath.Length + ($GetlessMod.Length * 2) + ($ArgFileName.Length * 2)
+        if ($EstOutPathLength -gt $MAXPATH) { 
+            # Get the path length without the arguments, then we can determine how long $ArgFileName can be
+            $PathDiff = [int] $EstOutPathLength - ($OutputPath.Length + ($GetlessMod.Length * 2) -gt 0)
+            $MaxArgLength = $PathDiff - $MAXPATH
+            if ($MaxArgLength -gt 0 -and $MaxArgLength -lt $ArgFileName.Length) {
+                $OrigArgFileName = $ArgFileName
+                $ArgFileName = $ArgFileName.Substring(0, $MaxArgLength)
+                "WARNING: ${GetlessMod}'s output path contains the arguments that were passed to it. Those arguments were truncated from $OrigArgFileName to $ArgFileName to accomodate Window's MAXPATH limit of 260 characters." | Add-Content -Encoding $Encoding $ErrorLog
+            }
+        }
+                            
+        $Suppress = New-Item -Path $OutputPath -name ($GetlessMod + $ArgFileName) -ItemType Directory
+        foreach($ChildJob in $Job.ChildJobs) { 
+            $Recpt = Receive-Job $ChildJob
+                            
+            # Now that we know our hostname, let's double check our path length, if it's too long, we'll write an error
+            # Max path is 260 characters, if we're over 256, we can't accomodate an extension
+            $Outfile = $OutputPath + $GetlessMod + $ArgFileName + "\" + $ChildJob.Location + "-" + $GetlessMod + $ArgFileName
+            if ($Outfile.length -gt 256) {
+                "ERROR: ${GetlessMod}'s output path length exceeds 260 character limit. Can't write the output to disk for $($ChildJob.Location)." | Add-Content -Encoding $Encoding $ErrorLog
+                Continue
+            }
+
+            # save the data
+            switch -Wildcard ($OutputMethod) {
+                "*csv" {
+                    $Outfile = $Outfile + ".csv"
+                    $Recpt | ConvertTo-Csv -NoTypeInformation | % { $_ -replace "`"" } | Set-Content -Encoding $Encoding $Outfile
+                }
+                "*tsv" {
+                    $Outfile = $Outfile + ".tsv"
+                    $Recpt | ConvertTo-Csv -NoTypeInformation -Delimiter "`t" | % { $_ -replace "`"" } | Set-Content -Encoding $Encoding $Outfile
+                }
+                "*xml" {
+                    $Outfile = $Outfile + ".xml"
+                    $Recpt | Export-Clixml $Outfile -Encoding $Encoding
+                }
+                "*bin" {
+                    $Outfile = $Outfile + ".bin"
+                    $Recpt | Set-Content -Encoding Byte $Outfile
+                }
+                "*zip" {
+                    # Compression should be done in the collector
+                    # Default collector template has a function
+                    # for compressing data as an example
+                    $Outfile = $Outfile + ".zip"
+                    $Recpt | Set-Content -Encoding Byte $Outfile
+                }
+                "*Default" {
+                    # Default here means we let PowerShell figure out the output encoding
+                    # Used by Get-File.ps1, which can grab arbitrary files
+                    $Outfile = $Outfile
+                    $Recpt | Set-Content -Encoding Default $Outfile
+                }
+                default {
+                    $Outfile = $Outfile + ".txt"
+                    $Recpt | Set-Content -Encoding $Encoding $Outfile
+                }
+            }
+        }
+        if ($rmbin) {
+            if ($bindep) {
+                Remove-Bindep -Targets $Targets -Module $Module -Bindep $bindep -Credential $Credential
+            }
+        }
+
+    }
+    Remove-PSSession $PSSessions
+    $Error | Add-Content -Encoding $Encoding $ErrorLog
+    $Error.Clear()
+    
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
 

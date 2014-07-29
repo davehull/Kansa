@@ -746,7 +746,7 @@ Param(
     $Error.Clear()
 
     foreach ($dir in (ls $ModulePath)) {
-        if ($dir.PSIsContainer -and $dir.name -ne "bin") {
+        if ($dir.PSIsContainer -and $dir.name -ne "bin" -and $dir.name -ne "Private") {
             foreach($file in (ls $ModulePath\$dir\Get-*)) {
                 $($dir.Name + "\" + (split-path -leaf $file))
             }

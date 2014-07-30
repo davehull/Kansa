@@ -715,20 +715,21 @@ Param(
         [PSCredential]$Credential
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
+    $Error.Clear()
     $Bindep = $Bindep.Substring($Bindep.LastIndexOf("\") + 1)
     Write-Verbose "Attempting to remove ${Bindep} from remote hosts."
     foreach($Target in $Targets) {
-       Try {
-            if ($Credential) {
-                $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
-                Remove-Item "KansaDrive:\$Bindep" 
-                $suppress = Remove-PSDrive -Name "KansaDrive"
-            } else {
-                $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
-                Remove-Item "KansaDrive:\$Bindep"
-                $suppress = Remove-PSDrive -Name "KansaDrive"
-            }
-        } Catch [Exception] {
+        if ($Credential) {
+            $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
+            Remove-Item "KansaDrive:\$Bindep" 
+            $suppress = Remove-PSDrive -Name "KansaDrive"
+        } else {
+            $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
+            Remove-Item "KansaDrive:\$Bindep"
+            $suppress = Remove-PSDrive -Name "KansaDrive"
+        }
+        
+        if ($Error) {
             "WARNING: Failed to remove ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
             $Error | Add-Content -Encoding $Encoding $ErrorLog
             $Error.Clear()

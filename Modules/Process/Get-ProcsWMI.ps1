@@ -43,7 +43,7 @@ Param(
         $PaddedHex
         
     } else {
-        Write-Error -Message "Invalid input file or path specified." -Category InvalidArgument
+        Write-Error -Message "Invalid input file or path specified. $FilePath" -Category InvalidArgument
     }
 }
 

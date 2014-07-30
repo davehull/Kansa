@@ -670,6 +670,7 @@ Param(
         
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
+    $Error.Clear()
     Write-Verbose "${Module} has dependency on ${Bindep}."
     if (-not (Test-Path("$Bindep"))) {
         Write-Verbose "${Bindep} not found in ${ModulePath}bin, skipping."
@@ -678,17 +679,17 @@ Param(
     }
     Write-Verbose "Attempting to copy ${Bindep} to targets..."
     foreach($Target in $Targets) {
-       Try {
-            if ($Credential) {
-                $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
-                Copy-Item "$Bindep" "KansaDrive:"
-                $suppress = Remove-PSDrive -Name "KansaDrive"
-            } else {
-                $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
-                Copy-Item "$Bindep" "KansaDrive:"
-                $suppress = Remove-PSDrive -Name "KansaDrive"
-            }
-        } Catch [Exception] {
+        if ($Credential) {
+            $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
+            Copy-Item "$Bindep" "KansaDrive:"
+            $suppress = Remove-PSDrive -Name "KansaDrive"
+        } else {
+            $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
+            Copy-Item "$Bindep" "KansaDrive:"
+            $suppress = Remove-PSDrive -Name "KansaDrive"
+        }
+    
+        if ($Error) {
             "WARNING: Failed to copy ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
             $Error | Add-Content -Encoding $Encoding $ErrorLog
             $Error.Clear()

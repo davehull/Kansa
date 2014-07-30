@@ -285,15 +285,23 @@ Exit the script somewhat gracefully, closing any open transcript.
     if ($Transcribe) {
         $Suppress = Stop-Transcript
     }
+
+    if ($Error) {
+        "Exit-Script function was passed an error, this may be a duplicate that wasn't previously cleared, or Kansa.ps1 has crashed." | Add-Content -Encoding $Encoding $ErrorLog
+        $Error | Add-Content -Encoding $Encoding $ErrorLog
+        $Error.Clear()
+    }
+
     if (Test-Path($ErrorLog)) {
         Write-Output "Script completed with warnings or errors. See ${ErrorLog} for details."
     }
+
     if (!(Get-ChildItem $OutputPath)) {
         # $OutputPath is empty, nuke it
         "Output path was created, but Kansa finished with no hits, no runs and no errors. Nuking the folder."
         $suppress = Remove-Item $OutputPath -Force
     }
-    $Error.Clear()
+
     Exit
 }
 

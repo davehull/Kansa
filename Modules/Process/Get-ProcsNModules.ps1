@@ -46,19 +46,27 @@ Param(
         $PaddedHex
         
     } else {
+        "$FilePath is invalid or locked."
         Write-Error -Message "Invalid input file or path specified. $FilePath" -Category InvalidArgument
     }
 }
+
+$hashtable = @{}
 
 Get-Process | % { 
     $MM = $_.MainModule | Select-Object -ExpandProperty FileName
     $Modules = $($_.Modules | Select-Object -ExpandProperty FileName)
  
     foreach($Module in $Modules) {
-        $o = "" | Select-Object BasePath, ParentPath, Hash, ProcessName
-        $o.BasePath    = $Module.Substring($Module.LastIndexOf("\") + 1)
-        $o.ParentPath  = $Module.Substring(0, $Module.LastIndexOf("\"))
-        $o.Hash        = Compute-FileHash -FilePath $Module
+        $o = "" | Select-Object Name, ParentPath, Hash, ProcessName
+        $o.Name = $Module.Substring($Module.LastIndexOf("\") + 1)
+        $o.ParentPath = $Module.Substring(0, $Module.LastIndexOf("\"))
+        if ($hashtable.get_item($Module)) {
+            $o.Hash = $hashtable.get_item($Module)
+        } else {
+            $o.Hash = Compute-FileHash -FilePath $Module
+            $hashtable.Add($Module, $o.Hash)
+        }
         $o.ProcessName = $MM
         $o
     }

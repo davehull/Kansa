@@ -211,7 +211,7 @@ Param(
     [Parameter(Mandatory=$False,Position=3)]
         [int]$TargetCount=0,
     [Parameter(Mandatory=$False,Position=4)]
-        [PSCredential]$Credential=$Null,
+        [System.Management.Automation.PSCredential]$Credential=$Null,
     [Parameter(Mandatory=$False,Position=5)]
         [Switch]$Pushbin,
     [Parameter(Mandatory=$False,Position=6)]
@@ -516,7 +516,7 @@ Param(
     [Parameter(Mandatory=$True,Position=1)]
         [System.Collections.Specialized.OrderedDictionary]$Modules,
     [Parameter(Mandatory=$False,Position=2)]
-        [PSCredential]$Credential=$False,
+        [System.Management.Automation.PSCredential]$Credential=$False,
     [Parameter(Mandatory=$False,Position=3)]
         [Int]$ThrottleLimit
 )
@@ -674,7 +674,7 @@ Param(
     [Parameter(Mandatory=$True,Position=2)]
         [String]$Bindep,
     [Parameter(Mandatory=$False,Position=3)]
-        [PSCredential]$Credential
+        [System.Management.Automation.PSCredential]$Credential
         
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
@@ -721,7 +721,7 @@ Param(
     [Parameter(Mandatory=$True,Position=2)]
         [String]$Bindep,
     [Parameter(Mandatory=$False,Position=3)]
-        [PSCredential]$Credential
+        [System.Management.Automation.PSCredential]$Credential
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     $Error.Clear()

@@ -47,7 +47,7 @@ Param(
         
     } else {
         "$FilePath is invalid or locked."
-        Write-Error -Message "Invalid input file or path specified. $FilePath" -Category InvalidArgument
+        Write-Error -Message "$FilePath is invalid or locked." -Category InvalidArgument
     }
 }
 
@@ -67,7 +67,7 @@ Get-Process | % {
             $o.Hash = Compute-FileHash -FilePath $Module
             $hashtable.Add($Module, $o.Hash)
         }
-        $o.ProcessName = $MM
+        # $o.ProcessName = $MM
         $o
     }
 }

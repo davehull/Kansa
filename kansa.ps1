@@ -234,6 +234,10 @@ Param(
 
 # Opening with a Try so the Finally block at the bottom will always call
 # the Exit-Script function and clean up things as needed.
+# Saw this cause an issue in an environment with PSv2. If you run into
+# an issue where the script is exiting without really doing anything,
+# comment out this and the Finally a the botom of the script, the error
+# handling, won't be as robust, but the script should work.
 Try {
 
 # Long paths prevent data from being written, this is used to test their length
@@ -974,6 +978,8 @@ if ($rmbin) {
 Exit
 # We're done. #
 
+# On some PSv2 systems, the outer Try/Finally caused issues. Commenting
+# this out fixed it.
 } Finally {
     Exit-Script
 }

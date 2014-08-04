@@ -809,34 +809,38 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     $Error.Clear()
 
-    $AnalysisScripts = @()
-    $AnalysisScripts = Get-Content "$StartingPath\Analysis\Analysis.conf" | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
+    if (Get-Command -Name Logparser.exe) {
+        $AnalysisScripts = @()
+        $AnalysisScripts = Get-Content "$StartingPath\Analysis\Analysis.conf" | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
 
-    $AnalysisOutPath = $OutputPath + "\AnalysisReports\"
-    $Suppress = New-Item -Path $AnalysisOutPath -ItemType Directory -Force
+        $AnalysisOutPath = $OutputPath + "\AnalysisReports\"
+        $Suppress = New-Item -Path $AnalysisOutPath -ItemType Directory -Force
 
-    # Get our DATADIR directive
-    $DirectivesHash  = @{}
-    foreach($AnalysisScript in $AnalysisScripts) {
-        $DirectivesHash = Get-Directives $AnalysisScript -AnalysisPath
-        $DataDir = $($DirectivesHash.Get_Item("DATADIR"))
-        if ($DataDir) {
-            if (Test-Path "$OutputPath$DataDir") {
-                Push-Location
-                Set-Location "$OutputPath$DataDir"
-                Write-Verbose "Running analysis script: ${AnalysisScript}"
-                $AnalysisFile = ((((($AnalysisScript -split "\\")[1]) -split "Get-")[1]) -split ".ps1")[0]
-                # As of this writing, all analysis output files are tsv
-                & "$StartingPath\Analysis\${AnalysisScript}" | Set-Content -Encoding $Encoding ($AnalysisOutPath + $AnalysisFile + ".tsv")
-                Pop-Location
+        # Get our DATADIR directive
+        $DirectivesHash  = @{}
+        foreach($AnalysisScript in $AnalysisScripts) {
+            $DirectivesHash = Get-Directives $AnalysisScript -AnalysisPath
+            $DataDir = $($DirectivesHash.Get_Item("DATADIR"))
+            if ($DataDir) {
+                if (Test-Path "$OutputPath$DataDir") {
+                    Push-Location
+                    Set-Location "$OutputPath$DataDir"
+                    Write-Verbose "Running analysis script: ${AnalysisScript}"
+                    $AnalysisFile = ((((($AnalysisScript -split "\\")[1]) -split "Get-")[1]) -split ".ps1")[0]
+                    # As of this writing, all analysis output files are tsv
+                    & "$StartingPath\Analysis\${AnalysisScript}" | Set-Content -Encoding $Encoding ($AnalysisOutPath + $AnalysisFile + ".tsv")
+                    Pop-Location
+                } else {
+                    "WARNING: Analysis: No data found for ${AnalysisScript}." | Add-Content -Encoding $Encoding $ErrorLog
+                    Continue
+                }
             } else {
-                "WARNING: Analysis: No data found for ${AnalysisScript}." | Add-Content -Encoding $Encoding $ErrorLog
+                "WARNING: Analysis script, .\Analysis\${AnalysisScript}, missing # DATADIR directive, skipping analysis." | Add-Content -Encoding $Encoding $ErrorLog
                 Continue
-            }
-        } else {
-            "WARNING: Analysis script, .\Analysis\${AnalysisScript}, missing # DATADIR directive, skipping analysis." | Add-Content -Encoding $Encoding $ErrorLog
-            Continue
-        }        
+            }        
+        }
+    } else {
+        "Kansa could not find logparser.exe in path. Skipping Analysis." | Add-Content -Encoding $Encoding -$ErrorLog
     }
     # Non-terminating errors can be checked via
     if ($Error) {

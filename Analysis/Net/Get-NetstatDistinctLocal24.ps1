@@ -1,7 +1,7 @@
 ﻿<#
-Get-NetstatDistinctLocal16.ps1
+Get-NetstatDistinctLocal24.ps1
 Requires logparser.exe in path
-Pulls distinct /16 local network addresses. Useful for building the 
+Pulls distinct /24 local network addresses. Useful for building the 
 filter for local addresses in other analysis scripts, so you can see
 what hosts are communicating to hosts outside your environment.
 
@@ -14,11 +14,11 @@ if (Get-Command logparser.exe) {
 
     $lpquery = @"
     SELECT
-        Distinct substr(LocalAddress, 0, last_index_of(substr(LocalAddress, 0, last_index_of(LocalAddress, '.')), '.')) as Local/16
+        Distinct substr(ForeignAddress, 0, last_index_of(ForeignAddress, '.')) as IP/24,
     FROM
         *netstat.tsv
     ORDER BY
-        Local/16
+        Local/24
 "@
 
     & logparser -i:tsv -fixedsep:on -dtlines:0 -rtp:-1 $lpquery

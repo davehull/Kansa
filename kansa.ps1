@@ -780,7 +780,9 @@ Param(
 
 function Set-KansaPath {
     # Update the path to inlcude Kansa analysis script paths, if they aren't already
-    $kansapath = Split-Path -Path $MyInvocation.MyCommand.Definition
+    $Invocation = (Get-Variable MyInvocation -Scope 1).Value
+    $kansapath = Split-Path $Invocation.MyCommand.Path
+    Write-Verbose $kansapath
     $found = $False
     foreach($path in ($env:path -split ";")) {
         if ([regex]::escape($kansapath) -match [regex]::escape($path)) {

@@ -137,6 +137,8 @@ the contents of the Analysis\Analysis.conf file.
 .PARAMETER Transcribe
 An optional flag that causes Start-Transcript to run at the start
 of the script, writing to $OutputPath\yyyyMMddhhmmss.log
+.PARAMETER Quiet
+An optional flag that overrides Kansa's default of running with -Verbose.
 .INPUTS
 None
 You cannot pipe objects to this cmdlet
@@ -178,11 +180,11 @@ and all output will be written to a timestamped output directory. If
 .\Modules\Modules.conf is not found, all ps1 scripts starting with Get-
 under the .\Modules\ directory (recursively) will be run.
 .EXAMPLE
-Kansa.ps1 -TargetList hosts.txt -Credential $Credential -Transcribe -Verbose
+Kansa.ps1 -TargetList hosts.txt -Credential $Credential -Transcribe
 In this example the user has specified a list of hosts to target, a 
-user credential under which to execute. The -Transcribe and -Verbose
-flags are also supplied causing all script output to be written to a 
-transcript and for the script to be more verbose.
+user credential under which to execute. The -Transcribe flag is also
+supplied, causing all script output to be written to a transcript. By
+default, the script will also output verbose runstate information.
 .EXAMPLE
 Kansa.ps1 -ModulePath ".\Modules\Disk\Get-File.ps1 C:\Windows\WindowsUpdate.log" -Target HHWWSQL01
 In this example -ModulePath refers to a specific module that takes a 
@@ -229,7 +231,9 @@ Param(
     [Parameter(Mandatory=$False,Position=12)]
         [Switch]$Analysis,
     [Parameter(Mandatory=$False,Position=13)]
-        [Switch]$Transcribe
+        [Switch]$Transcribe,
+    [Parameter(Mandatory=$False,Position=14)]
+        [Switch]$Quiet=$False
 )
 
 # Opening with a Try so the Finally block at the bottom will always call
@@ -247,6 +251,14 @@ Try {
 # hyphen separator and a dot-three extension.
 # extension -- 260 - 19 = 241.
 Set-Variable -Name MAXPATH -Value 241 -Option Constant
+
+# Since Kansa provides so much useful information through Write-Vebose, we
+# want it to run with that flag enabled by default. This behavior can be
+# overridden by passing the -Quiet flag. This is scoped only to this context,
+# so we don't need to reset it when we're done.
+if(!$Quiet) {
+    $VerbosePreference = "Continue"
+}
 
 function FuncTemplate {
 <#

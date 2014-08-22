@@ -13,7 +13,7 @@ is flipped by multiplying the result by -1 since the natural log of a number
 between 0 and 1 is always negative.
 
 More clearly:
-  H = SUM(-1 * Pi * LOGN(Pi))
+  H = SUM(-1 * Pi * LOG2(Pi))
 
 Refrences: 
   - http://en.wikipedia.org/wiki/Entropy_(information_theory)
@@ -50,19 +50,19 @@ if (Test-Path $BasePath -PathType Container) {
                 foreach($byte in 0..255) {
                     $byteProb = ([double]$byteCounts[[byte]$byte])/$byteTotal
                     if ($byteProb -gt 0) {
-                        $fileEntropy += (-1 * $byteProb) * [Math]::Log($byteProb)
+                        $fileEntropy += (-1 * $byteProb) * [Math]::Log($byteProb, 2.0)
                     }
                 }
             }
         
-        $o = "" | Select-Object FullName, Length, CreationTimeUtc, LastAccessTimeUtc, LastWriteTimeUtc, Entropy
-        $o.FullName = $childItem.FullName
-        $o.Length   = $childItem.Length
-        $o.CreationTimeUtc = $childItem.CreationTimeUtc
-        $o.LastAccesstimeUtc = $childItem.LastAccessTimeUtc
-        $o.LastWriteTimeUtc = $childItem.LastWriteTimeUtc
-        $o.Entropy = $fileEntropy
+            $o = "" | Select-Object FullName, Length, CreationTimeUtc, LastAccessTimeUtc, LastWriteTimeUtc, Entropy
+            $o.FullName = $childItem.FullName
+            $o.Length   = $childItem.Length
+            $o.CreationTimeUtc = $childItem.CreationTimeUtc
+            $o.LastAccesstimeUtc = $childItem.LastAccessTimeUtc
+            $o.LastWriteTimeUtc = $childItem.LastWriteTimeUtc
+            $o.Entropy = $fileEntropy
 
-        $o
+            $o
         }
 }

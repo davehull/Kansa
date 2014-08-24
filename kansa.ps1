@@ -875,7 +875,7 @@ $StartingPath = Get-Location | Select-Object -ExpandProperty Path
 # Create timestamped output path. Write transcript and error log #
 # to output path. Keep this first in the script so we can catch  #
 # errors in the error log of the output directory. We may create #
-$Runtime = ([String] (Get-Date -Format yyyyMMddHHmm))
+$Runtime = ([String] (Get-Date -Format yyyyMMddHHmmss))
 $OutputPath = $StartingPath + "\Output_$Runtime\"
 $Suppress = New-Item -Path $OutputPath -ItemType Directory -Force 
 

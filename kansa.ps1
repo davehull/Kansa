@@ -345,7 +345,7 @@ Param(
     # Need to maintain the order for "order of volatility"
     $ModuleHash = New-Object System.Collections.Specialized.OrderedDictionary
 
-    if (!(ls $ModuleScript -ErrorAction SilentlyContinue).PSIsContainer) {
+    if ((ls $ModuleScript -ErrorAction SilentlyContinue).PSIsContainer -eq $False) {
         # User may have provided full path to a .ps1 module, which is how you run a single module explicitly
         $ModuleHash.Add((ls $ModuleScript), $ModuleArgs)
 
@@ -875,7 +875,7 @@ $StartingPath = Get-Location | Select-Object -ExpandProperty Path
 # Create timestamped output path. Write transcript and error log #
 # to output path. Keep this first in the script so we can catch  #
 # errors in the error log of the output directory. We may create #
-$Runtime = ([String] (Get-Date -Format yyyyMMddHHmm))
+$Runtime = ([String] (Get-Date -Format yyyyMMddHHmmss))
 $OutputPath = $StartingPath + "\Output_$Runtime\"
 $Suppress = New-Item -Path $OutputPath -ItemType Directory -Force 
 

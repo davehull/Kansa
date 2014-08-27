@@ -15,24 +15,48 @@ between 0 and 1 is always negative.
 More clearly:
   H = SUM(-1 * Pi * LOG2(Pi))
 
-Refrences: 
-  - http://en.wikipedia.org/wiki/Entropy_(information_theory)
-  - http://en.wiktionary.org/wiki/Shannon_entropy
 .PARAMETER BasePath
 Optional base path to start the listing. Uses IIS's default of C:\inetpub\wwwroot
 if this isn't provided.
+.PARAMETER extRegex
+Optional. Files must match the regex to be included in output. Defaults to all
+files ("\..*$").
+.PARAMETER MinB
+Optional. Minimum size of files to check in bytes. Defaults to 0.
+.PARAMETER MaxB
+Optional. Maximum size of files to check in bytes. Defaults to 281474976645120
+(the maximum possible file size on Windows 8.1/Server 2012 R2 systems using the
+default cluster size).
 .NOTES
 Next line is required by kansa.ps1 for proper handling of script output
 OUTPUT tsv
+.LINK
+http://en.wikipedia.org/wiki/Entropy_(information_theory)
+http://en.wiktionary.org/wiki/Shannon_entropy
 #>
 
 Param(
     [Parameter(Mandatory=$False,Position=0)]
-        [string]$BasePath="C:\inetpub\wwwroot"
+        [string]$BasePath="C:\inetpub\wwwroot",
+    [Parameter(Mandatory=$False,Position=1)]
+        [string]$extRegex="\..*$",
+    [Parameter(Mandatory=$False,Position=2)]
+        [long]$MinB=0,
+    [Parameter(Mandatory=$False,Position=3)]
+        [long]$MaxB=281474976645120
 )
 
 if (Test-Path $BasePath -PathType Container) {
-        foreach ($childItem in (Get-ChildItem $BasePath -Recurse)) {
+
+        $files = (
+            Get-ChildItem -Path $BasePath -Recurse -ErrorAction SilentlyContinue |
+            ? -FilterScript {
+                ($_.Extension -match $extRegex) -and
+                ($_.Length -ge $MinB -and $_.Length -le $MaxB)
+            }
+        )
+
+        foreach ($childItem in $files) {
             $fileEntropy = 0.0
             $byteCounts = @{}
             $byteTotal = 0
@@ -65,4 +89,7 @@ if (Test-Path $BasePath -PathType Container) {
 
             $o
         }
+}
+else {
+    Write-Error -Message "Invalid path specified: $BasePath"
 }

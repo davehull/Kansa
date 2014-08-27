@@ -602,7 +602,13 @@ Param(
         $Suppress = New-Item -Path $OutputPath -name ($GetlessMod + $ArgFileName) -ItemType Directory
         foreach($ChildJob in $Job.ChildJobs) { 
             $Recpt = Receive-Job $ChildJob
-                            
+            
+            # Log errors from child jobs, including module and host that failed.
+            if($Error) {
+                $ModuleName + " reports error on " + $ChildJob.Location + ": `"" + $Error + "`"" | Add-Content -Encoding $Encoding $ErrorLog
+                $Error.Clear()
+            }
+
             # Now that we know our hostname, let's double check our path length, if it's too long, we'll write an error
             # Max path is 260 characters, if we're over 256, we can't accomodate an extension
             $Outfile = $OutputPath + $GetlessMod + $ArgFileName + "\" + $ChildJob.Location + "-" + $GetlessMod + $ArgFileName

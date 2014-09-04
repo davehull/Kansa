@@ -654,6 +654,11 @@ Param(
                 }
             }
         }
+
+        # Release memory reserved for Job data since we don't need it any more.
+        # Fixes bug number 73.
+        Remove-Job $Job
+
         if ($rmbin) {
             if ($bindep) {
                 Remove-Bindep -Targets $Targets -Module $Module -Bindep $bindep -Credential $Credential

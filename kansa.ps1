@@ -959,8 +959,6 @@ if ($ListModules) {
 # it exists, otherwise will have same data as
 # List-Modules command above.
 $Modules = Get-Modules -ModulePath $ModulePath
-$Modules
-exit
 # Done getting modules #
 
 

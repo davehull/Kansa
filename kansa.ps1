@@ -345,7 +345,7 @@ Param(
     # Need to maintain the order for "order of volatility"
     $ModuleHash = New-Object System.Collections.Specialized.OrderedDictionary
 
-    if ((ls $ModuleScript -ErrorAction SilentlyContinue).PSIsContainer -eq $False) {
+    if (!(ls $ModuleScript -ErrorActionSilentlyContinue).PSIsContainer -eq $True) {
         # User may have provided full path to a .ps1 module, which is how you run a single module explicitly
         $ModuleHash.Add((ls $ModuleScript), $ModuleArgs)
 
@@ -783,7 +783,7 @@ Param(
     $Error.Clear()
 
     foreach ($dir in (ls $ModulePath)) {
-        if ($dir.PSIsContainer -and $dir.name -ne "bin" -and $dir.name -ne "Private") {
+        if ($dir.PSIsContainer -and ($dir.name -ne "bin" -or $dir.name -ne "Private")) {
             foreach($file in (ls $ModulePath\$dir\Get-*)) {
                 $($dir.Name + "\" + (split-path -leaf $file))
             }
@@ -959,6 +959,8 @@ if ($ListModules) {
 # it exists, otherwise will have same data as
 # List-Modules command above.
 $Modules = Get-Modules -ModulePath $ModulePath
+$Modules
+exit
 # Done getting modules #
 
 

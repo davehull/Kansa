@@ -29,12 +29,13 @@ Param(
 )
 
 Function Expand-Zip ($zipfile, $destination) {
+	[int32]$copyOption = 16 # Yes to all
     $shell = New-Object -ComObject shell.application
     $zip = $shell.Namespace($zipfile)
     foreach($item in $zip.items()) {
-        $shell.Namespace($destination).copyhere($item)
+        $shell.Namespace($destination).copyhere($item, $copyOption)
     }
-}    
+} 
 
 $flspath = ($env:SystemRoot + "\fls.zip")
 

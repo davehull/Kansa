@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Kansa is a Powershell based incident response framework for Windows 
 environments.
@@ -359,8 +359,7 @@ Param(
     if (Test-Path($Modconf)) {
         Write-Verbose "Found ${ModulePath}\Modules.conf."
         # ignore blank and commented lines, trim misc. white space
-        $Modules = Get-Content $ModulePath\Modules.conf | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
-        foreach ($Module in $Modules) {
+        Get-Content $ModulePath\Modules.conf | Foreach-Object { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) } | Foreach-Object { $Module = $_
             # verify listed modules exist
             $ModuleScript = ($Module -split " ")[0]
             $ModuleArgs   = ($Module -split [regex]::escape($ModuleScript))[1].Trim()
@@ -376,7 +375,7 @@ Param(
         # $Modules = $FoundModules # deprecated, remove after testing
     } else {
         # we had no modules.conf
-        foreach($Module in (ls -r $ModulePath\Get-*.ps1)) {
+        ls -r "${ModulePath}\Get-*.ps1" | Foreach-Object { $Module = $_
             $ModuleHash.Add($Module, $null)
         }
     }
@@ -433,9 +432,9 @@ Param(
     if ($TargetList) {
         # user provided a list of targets
         if ($TargetCount -eq 0) {
-            $Targets = Get-Content $TargetList | % { $_.Trim() } | Where-Object { $_.Length -gt 0 }
+            $Targets = Get-Content $TargetList | Foreach-Object { $_.Trim() } | Where-Object { $_.Length -gt 0 }
         } else {
-            $Targets = Get-Content $TargetList | % { $_.Trim() } | Where-Object { $_.Length -gt 0 } | Select-Object -First $TargetCount
+            $Targets = Get-Content $TargetList | Foreach-Object { $_.Trim() } | Where-Object { $_.Length -gt 0 } | Select-Object -First $TargetCount
         }
     } else {
         # no target list provided, we'll query AD for it
@@ -502,8 +501,7 @@ Param(
         
         $DirectiveHash = @{}
 
-        $Directives = Get-Content $Module | Select-String -CaseSensitive -Pattern "OUTPUT|BINDEP|DATADIR"
-        foreach ($Directive in $Directives) {
+        Get-Content $Module | Select-String -CaseSensitive -Pattern "OUTPUT|BINDEP|DATADIR" | Foreach-Object { $Directive = $_
             if ( $Directive -match "(^OUTPUT|^# OUTPUT) (.*)" ) {
                 $DirectiveHash.Add("OUTPUT", $($matches[2]))
             }
@@ -550,7 +548,7 @@ Param(
         $Error.Clear()
     }
 
-    foreach($Module in $Modules.Keys) {
+    $Modules.Keys | Foreach-Object { $Module = $_
         $ModuleName  = $Module | Select-Object -ExpandProperty BaseName
         $Arguments   = @()
         $Arguments   += $($Modules.Get_Item($Module)) -split ","
@@ -600,7 +598,7 @@ Param(
         }
                             
         $Suppress = New-Item -Path $OutputPath -name ($GetlessMod + $ArgFileName) -ItemType Directory
-        foreach($ChildJob in $Job.ChildJobs) { 
+        $Job.ChildJobs | Foreach-Object { $ChildJob = $_
             $Recpt = Receive-Job $ChildJob
             
             # Log errors from child jobs, including module and host that failed.
@@ -621,11 +619,11 @@ Param(
             switch -Wildcard ($OutputMethod) {
                 "*csv" {
                     $Outfile = $Outfile + ".csv"
-                    $Recpt | ConvertTo-Csv -NoTypeInformation | % { $_ -replace "`"" } | Set-Content -Encoding $Encoding $Outfile
+                    $Recpt | ConvertTo-Csv -NoTypeInformation | Foreach-Object { $_ -replace "`"" } | Set-Content -Encoding $Encoding $Outfile
                 }
                 "*tsv" {
                     $Outfile = $Outfile + ".tsv"
-                    $Recpt | ConvertTo-Csv -NoTypeInformation -Delimiter "`t" | % { $_ -replace "`"" } | Set-Content -Encoding $Encoding $Outfile
+                    $Recpt | ConvertTo-Csv -NoTypeInformation -Delimiter "`t" | Foreach-Object { $_ -replace "`"" } | Set-Content -Encoding $Encoding $Outfile
                 }
                 "*xml" {
                     $Outfile = $Outfile + ".xml"
@@ -713,7 +711,8 @@ Param(
         Continue
     }
     Write-Verbose "Attempting to copy ${Bindep} to targets..."
-    foreach($Target in $Targets) {
+    $Targets | Foreach-Object { $Target = $_
+    Try {
         if ($Credential) {
             $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
             Copy-Item "$Bindep" "KansaDrive:"
@@ -723,7 +722,9 @@ Param(
             Copy-Item "$Bindep" "KansaDrive:"
             $suppress = Remove-PSDrive -Name "KansaDrive"
         }
-    
+    } Catch [Exception] {
+        "Caught: $_" | Add-Content -Encoding $Encoding $ErrorLog
+    }
         if ($Error) {
             "WARNING: Failed to copy ${Bindep} to ${Target}." | Add-Content -Encoding $Encoding $ErrorLog
             $Error | Add-Content -Encoding $Encoding $ErrorLog
@@ -754,7 +755,7 @@ Param(
     $Error.Clear()
     $Bindep = $Bindep.Substring($Bindep.LastIndexOf("\") + 1)
     Write-Verbose "Attempting to remove ${Bindep} from remote hosts."
-    foreach($Target in $Targets) {
+    $Targets | Foreach-Object { $Target = $_
         if ($Credential) {
             $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
             Remove-Item "KansaDrive:\$Bindep" 
@@ -782,13 +783,13 @@ Param(
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     $Error.Clear()
 
-    foreach ($dir in (ls $ModulePath)) {
+    ls $ModulePath | Foreach-Object { $dir = $_
         if ($dir.PSIsContainer -and ($dir.name -ne "bin" -or $dir.name -ne "Private")) {
-            foreach($file in (ls $ModulePath\$dir\Get-*)) {
+            ls "${ModulePath}\${dir}\Get-*" | Foreach-Object { $file = $_
                 $($dir.Name + "\" + (split-path -leaf $file))
             }
         } else {
-            foreach($file in (ls $ModulePath\Get-*)) {
+            ls "${ModulePath}\Get-*" | Foreach-Object { $file = $_
                 $file.Name
             }
         }
@@ -806,7 +807,7 @@ function Set-KansaPath {
     $Invocation = (Get-Variable MyInvocation -Scope 1).Value
     $kansapath = Split-Path $Invocation.MyCommand.Path
     $found = $False
-    foreach($path in ($env:path -split ";")) {
+    $env:path -split ";" | Foreach-Object { $path = $_
         if ([regex]::escape($kansapath) -match [regex]::escape($path)) {
             $found = $True
         }
@@ -835,14 +836,14 @@ Param(
 
     if (Get-Command -Name Logparser.exe) {
         $AnalysisScripts = @()
-        $AnalysisScripts = Get-Content "$StartingPath\Analysis\Analysis.conf" | % { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
+        $AnalysisScripts = Get-Content "$StartingPath\Analysis\Analysis.conf" | Foreach-Object { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
 
         $AnalysisOutPath = $OutputPath + "\AnalysisReports\"
         $Suppress = New-Item -Path $AnalysisOutPath -ItemType Directory -Force
 
         # Get our DATADIR directive
         $DirectivesHash  = @{}
-        foreach($AnalysisScript in $AnalysisScripts) {
+        $AnalysisScripts | Foreach-Object { $AnalysisScript = $_
             $DirectivesHash = Get-Directives $AnalysisScript -AnalysisPath
             $DataDir = $($DirectivesHash.Get_Item("DATADIR"))
             if ($DataDir) {

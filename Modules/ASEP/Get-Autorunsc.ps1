@@ -35,25 +35,8 @@ time stamps.
 #>
 
 if (Test-Path "$env:SystemRoot\Autorunsc.exe") {
-    & $env:SystemRoot\Autorunsc.exe /accepteula -a -v -c -f '*' 2> $null | Select-Object -Skip 1 | % {
-        $row = $_ -replace '(,)(?=(?:[^"]|"[^"]*")*$)', "`t" -replace "`""
-        $o = "" | Select-Object Time, EntryLocation, Entry, Enabled, Category, Description, Publisher, ImagePath, Version, LaunchString, MD5, SHA1, PESHA1, PESHA256, SHA256
-        $o.Time,
-        $o.EntryLocation, 
-        $o.Entry, 
-        $o.Enabled, 
-        $o.Category, 
-        $o.Description, 
-        $o.Publisher, 
-        $o.ImagePath, 
-        $o.Version, 
-        $o.LaunchString, 
-        $o.MD5, 
-        $o.SHA1, 
-        $o.PESHA1, 
-        $o.PESHA256, 
-        $o.SHA256 = ($row -split "`t")
-        $o
+    & $env:SystemRoot\Autorunsc.exe /accepteula -a * -c -h -s '*' 2> $null | ConvertFrom-Csv | ForEach-Object {
+        $_
     }
 } else {
     Write-Error "Autorunsc.exe not found in $env:SystemRoot."

@@ -20,7 +20,8 @@ function add-zip
     $shellApplication = New-Object -com shell.application
     $zipPackage = $shellApplication.NameSpace($zipfilename)
 
-    foreach($file in $input) {
+    $input | ForEach-Object { 
+        $file = $_
         $zipPackage.CopyHere($file.FullName)
         Start-Sleep -milliseconds 100
     }
@@ -29,7 +30,8 @@ function add-zip
 $zipfile = (($env:TEMP) + "\" + ($env:COMPUTERNAME) + "-PSProfiles.zip")
 if (Test-Path $zipfile) { rm $zipfile -Force }
 
-foreach($path in (Get-WmiObject win32_userprofile | select -ExpandProperty LocalPath)) {
+Get-WmiObject win32_userprofile | Select-Object -ExpandProperty LocalPath | ForEach-Object {
+    $path = $_
     $prfile = ($path + "\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1")
     if (Test-Path $prfile) {
         $thisProfile = ((Split-Path -Leaf $path) + "_" + "Microsoft.Powershell_profile.ps1")

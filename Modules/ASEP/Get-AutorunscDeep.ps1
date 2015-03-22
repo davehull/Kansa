@@ -68,47 +68,28 @@ Param(
         
     } else {
         "$FilePath is invalid or locked."
-        Write-Error -Message "Invalid input file or path specified. $FilePath" -Category InvalidArgument
+        Write-Error -Category InvalidArgument -Message ("Invalid input file or path specified. {0}" -f $FilePath)
     }
 }
 
 if (Test-Path "$env:SystemRoot\Autorunsc.exe") {
-    $extPattern = ".*\s+(?<scriptName>([A-Z]+\:\\|\\\\).*\.(bat|ps1|vbs))\s*"
-    & $env:SystemRoot\Autorunsc.exe /accepteula -a * -c -h -s '*' 2> $null | Select-Object -Skip 1 | % {
-        $row = $_ -replace '(,)(?=(?:[^"]|"[^"]*")*$)', "`t" -replace "`""
-        $o = "" | Select-Object Time, EntryLocation, Entry, Enabled, Category, Profile, Description, Publisher, ImagePath, Version, LaunchString, MD5, SHA1, PESHA1, PESHA256, SHA256, ScriptMD5
-        $o.Time,
-        $o.EntryLocation, 
-        $o.Entry, 
-        $o.Enabled, 
-        $o.Category, 
-        $o.Profile,
-        $o.Description, 
-        $o.Publisher, 
-        $o.ImagePath, 
-        $o.Version, 
-        $o.LaunchString, 
-        $o.MD5, 
-        $o.SHA1, 
-        $o.PESHA1, 
-        $o.PESHA256, 
-        $o.SHA256 = ($row -split "`t")
-        
-        <# 
-        Before we return data to Kansa, let's do a deeper dive on 
-        LaunchString and see if it contains .bat, .ps1 or .vbs files.
-        If it does, resolve those paths and generate hashes of those
-        files.
-        #>
-        
-        if ($o.LaunchString -match $extPattern) {
-            $o.ScriptMD5 = Compute-FileHash $($matches['scriptName'])
-            # $o.LaunchString
-        } else {
-            $o.ScriptMD5 = $null
-        }
+    $extPattern = "(?<scriptName>(([a-zA-Z]:|\\\\\w[ \w\.]*)(\\\w[ \w\.]*|\\%[ \w\.]+%+)+|%[ \w\.]+%(\\\w[ \w\.]*|\\%[ \w\.]+%+)*))"
+    & $env:SystemRoot\Autorunsc.exe /accepteula -a * -c -h -s '*' 2> $null | ConvertFrom-Csv | ForEach-Object {
+        $_ | Add-Member NoteProperty ScriptMD5 $null
 
-        $o
+        if ((($_."Launch String").ToLower() -match "\.bat|\.ps1|\.vbs") -and ($_."Launch String" -match $extPattern)) {
+            $scriptPath = $($matches['scriptName'])
+            if ($scriptPath -match "%userdnsdomain%") {
+                $scriptPath = "\\" + [System.Environment]::ExpandEnvironmentVariables($scriptPath)
+            } elseif ($matches['scriptName'] -match "%") {
+                $scriptPath = [System.Environment]::ExpandEnvironmentVariables($scriptPath)
+            } else {
+                $scriptPath = $($matches['scriptName'])
+            }
+
+            $_.ScriptMD5 = Compute-FileHash $scriptPath
+        }
+        $_
     }
 } else {
     Write-Error "Autorunsc.exe not found in $env:SystemRoot."

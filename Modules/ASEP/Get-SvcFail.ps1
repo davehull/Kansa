@@ -8,15 +8,17 @@ how to handle the ouput from this script.
 OUTPUT tsv
 #>
 
-$data = $($(foreach ($svc in (& $env:windir\system32\sc query)) { 
+$data = & $env:windir\system32\sc query | ForEach-Object {
+    $svc = $_
     if ($svc -match "SERVICE_NAME:\s(.*)") { 
-        & $env:windir\system32\sc qfailure $($matches[1])}}))
+        & $env:windir\system32\sc qfailure $($matches[1])
+    }
+}
 
 $ServiceName = $RstPeriod = $RebootMsg = $CmdLine = $FailAction1 = $FailAction2 = $FailAction3 = $False
-foreach($line in $data) {
-    if ($line.StartsWith("[SC]")) {
-        continue
-    }
+$data | ForEach-Object {
+    $line = $_
+
     $line = $line.Trim()
     if ($line -match "^S.*\:\s(?<SvcName>[-_A-Za-z0-9]+)") {
         if ($ServiceName) {
@@ -43,6 +45,7 @@ foreach($line in $data) {
         }
     }
 }
+
 $o = "" | Select-Object ServiceName, RstPeriod, RebootMsg, CmdLine, FailAction1, FailAction2, FailAction3
 $o.ServiceName, $o.RstPeriod, $o.RebootMsg, $o.CmdLine, $o.FailAction1, $o.FailAction2, $o.FailAction3 = `
     (($ServiceName,$RstPeriod,$RebootMsg,$CmdLine,$FailAction1,$FailAction2,$FailAction3) -replace "False", $null)

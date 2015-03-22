@@ -1,7 +1,8 @@
 Kansa
 =====
 
-A modular incident response framework in Powershell.
+A modular incident response framework in Powershell. Note there's a bug that's currently cropping
+up in PowerShell version 2 systems, but version 3 and later should be fine.
 
 More info:  
 http://trustedsignal.blogspot.com/search/label/Kansa  

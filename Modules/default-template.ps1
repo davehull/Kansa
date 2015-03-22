@@ -111,9 +111,10 @@ function add-zip
 
 # Expand-Zip does what the name implies, here for reference, used by Get-FlsBodyfile.ps1
 Function Expand-Zip ($zipfile, $destination) {
+	[int32]$copyOption = 16 # Yes to all
     $shell = New-Object -ComObject shell.application
     $zip = $shell.Namespace($zipfile)
     foreach($item in $zip.items()) {
-        $shell.Namespace($destination).copyhere($item)
+        $shell.Namespace($destination).copyhere($item, $copyOption)
     }
 }    

@@ -34,7 +34,6 @@ troublesome entries, one in particular is for items that don't have
 time stamps.
 #>
 
-
 function Compute-FileHash {
 Param(
     [Parameter(Mandatory = $true, Position=1)]
@@ -60,7 +59,7 @@ Param(
         $HashBytes = $hash.ComputeHash($fileData)
         $PaddedHex = ""
 
-        $HashBytes | ForEach-Object { $Byte = $_
+        foreach($Byte in $HashBytes) {
             $ByteInHex = [String]::Format("{0:X}", $Byte)
             $PaddedHex += $ByteInHex.PadLeft(2,"0")
         }
@@ -68,26 +67,81 @@ Param(
         
     } else {
         "$FilePath is invalid or locked."
-        Write-Error -Category InvalidArgument -Message ("Invalid input file or path specified. {0}" -f $FilePath)
+        Write-Error -Category InvalidArgument -Message ("{0} was invalid or locked." -f $FilePath)
+    }
+}
+
+function GetShannonEntropy {
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [string]$FilePath
+)
+    $fileEntropy = 0.0
+    $FrequencyTable = @{}
+    $ByteArrayLength = 0
+
+            
+    if(Test-Path $FilePath) {
+        $fileName = (ls $FilePath).FullName
+        Try {
+            $fileBytes = [System.IO.File]::ReadAllBytes($fileName)
+        } Catch {
+            Write-Error -Message ("Caught {0}." -f $_)
+        }
+
+        foreach($fileByte in $fileBytes) {
+            $FrequencyTable[$fileByte]++
+            $ByteArrayLength++
+        }
+
+        $byteMax = 255
+        for($byte = 0; $byte -le $byteMax; $byte++) {
+            $byteProb = ([double]$FrequencyTable[[byte]$byte])/$ByteArrayLength
+            if ($byteProb -gt 0) {
+                $fileEntropy += -$byteProb * [Math]::Log($byteProb, 2.0)
+            }
+        }
+        $fileEntropy
+    } else {
+        "$FilePath is invalid or locked. Could not calculate entropy."
+        Write-Error -Category InvalidArgument -Message ("{0} was invalid or locked." -f $FilePath)
+        return
     }
 }
 
 if (Test-Path "$env:SystemRoot\Autorunsc.exe") {
-    $extPattern = "(?<scriptName>(([a-zA-Z]:|\\\\\w[ \w\.]*)(\\\w[ \w\.]*|\\%[ \w\.]+%+)+|%[ \w\.]+%(\\\w[ \w\.]*|\\%[ \w\.]+%+)*))"
+    # This regex matches all of the path types I've encountered, but there may be some it misses, if you find some, please send a sample to kansa@trustedsignal.com
+    $fileRegex = New-Object System.Text.RegularExpressions.Regex "(([a-zA-Z]:|\\\\\w[ \w\.]*)(\\\w[- \w\.\\\{\}]*|\\%[ \w\.]+%+)+|%[ \w\.]+%(\\\w[ \w\.]*|\\%[ \w\.]+%+)*)"
     & $env:SystemRoot\Autorunsc.exe /accepteula -a * -c -h -s '*' 2> $null | ConvertFrom-Csv | ForEach-Object {
         $_ | Add-Member NoteProperty ScriptMD5 $null
+        $_ | Add-Member NoteProperty ShannonEntropy $null
 
-        if ((($_."Launch String").ToLower() -match "\.bat|\.ps1|\.vbs") -and ($_."Launch String" -match $extPattern)) {
-            $scriptPath = $($matches['scriptName'])
-            if ($scriptPath -match "%userdnsdomain%") {
-                $scriptPath = "\\" + [System.Environment]::ExpandEnvironmentVariables($scriptPath)
-            } elseif ($matches['scriptName'] -match "%") {
-                $scriptPath = [System.Environment]::ExpandEnvironmentVariables($scriptPath)
-            } else {
-                $scriptPath = $($matches['scriptName'])
+        if ($_."Image Path") {
+            $_.ShannonEntropy = GetShannonEntropy $_."Image Path"
+        }
+
+        $fileMatches = $False
+        if (($_."Image Path").ToLower() -match "\.bat|\.ps1|\.vbs") {
+            $fileMatches = $fileRegex.Matches($_."Image Path")
+        } elseif (($_."Launch String").ToLower() -match "\.bat|\.ps1|\.vbs") {
+            $fileMatches = $fileRegex.Matches($_."Launch String")
+        }
+
+        if ($fileMatches) {
+            for($i = 0; $i -lt $fileMatches.count; $i++) {
+                $file = $fileMatches[$i].value
+                if ($file -match "\.bat|\.ps1|\.vbs") {
+                    if ($file -match "%userdnsdomain%") {
+                        $scriptPath = "\\" + [System.Environment]::ExpandEnvironmentVariables($file)
+                    } elseif ($file -match "%") {
+                        $scriptPath = [System.Environment]::ExpandEnvironmentVariables($file)
+                    } else {
+                        $scriptPath = $file
+                    }
+                }
+                $scriptPath = $scriptPath.Trim()
+                $_.ScriptMD5 = Compute-FileHash $scriptPath
             }
-
-            $_.ScriptMD5 = Compute-FileHash $scriptPath
         }
         $_
     }

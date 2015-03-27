@@ -54,8 +54,8 @@ Param(
     }
 
     if (Test-Path $FilePath) {
-        $FileName = Get-ChildItem $FilePath | Select-Object -ExpandProperty Fullname
-        $fileData = [System.IO.File]::ReadAllBytes($FileName)
+        $File = Get-ChildItem $FilePath
+        $fileData = [System.IO.File]::ReadAllBytes($File.FullName)
         $HashBytes = $hash.ComputeHash($fileData)
         $PaddedHex = ""
 
@@ -64,9 +64,11 @@ Param(
             $PaddedHex += $ByteInHex.PadLeft(2,"0")
         }
         $PaddedHex
+        $File.LastWriteTimeUtc
         
     } else {
-        "$FilePath is invalid or locked."
+        "${FilePath} is invalid or locked."
+        "${FilePath} is invalid or locked."
         Write-Error -Category InvalidArgument -Message ("{0} was invalid or locked." -f $FilePath)
     }
 }
@@ -79,12 +81,11 @@ Param(
     $fileEntropy = 0.0
     $FrequencyTable = @{}
     $ByteArrayLength = 0
-
             
     if(Test-Path $FilePath) {
-        $fileName = (ls $FilePath).FullName
+        $file = (ls $FilePath)
         Try {
-            $fileBytes = [System.IO.File]::ReadAllBytes($fileName)
+            $fileBytes = [System.IO.File]::ReadAllBytes($file.FullName)
         } Catch {
             Write-Error -Message ("Caught {0}." -f $_)
         }
@@ -102,10 +103,10 @@ Param(
             }
         }
         $fileEntropy
+        
     } else {
-        "$FilePath is invalid or locked. Could not calculate entropy."
+        "${FilePath} is invalid or locked. Could not calculate entropy."
         Write-Error -Category InvalidArgument -Message ("{0} was invalid or locked." -f $FilePath)
-        return
     }
 }
 
@@ -114,6 +115,7 @@ if (Test-Path "$env:SystemRoot\Autorunsc.exe") {
     $fileRegex = New-Object System.Text.RegularExpressions.Regex "(([a-zA-Z]:|\\\\\w[ \w\.]*)(\\\w[- \w\.\\\{\}]*|\\%[ \w\.]+%+)+|%[ \w\.]+%(\\\w[ \w\.]*|\\%[ \w\.]+%+)*)"
     & $env:SystemRoot\Autorunsc.exe /accepteula -a * -c -h -s '*' 2> $null | ConvertFrom-Csv | ForEach-Object {
         $_ | Add-Member NoteProperty ScriptMD5 $null
+        $_ | Add-Member NoteProperty ScriptModTimeUTC $null
         $_ | Add-Member NoteProperty ShannonEntropy $null
 
         if ($_."Image Path") {
@@ -140,7 +142,7 @@ if (Test-Path "$env:SystemRoot\Autorunsc.exe") {
                     }
                 }
                 $scriptPath = $scriptPath.Trim()
-                $_.ScriptMD5 = Compute-FileHash $scriptPath
+                $_.ScriptMD5,$_.ScriptModTimeUTC = Compute-FileHash $scriptPath
             }
         }
         $_

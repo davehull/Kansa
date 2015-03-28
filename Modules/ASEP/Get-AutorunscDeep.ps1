@@ -1,9 +1,26 @@
 ﻿<#
 .SYNOPSIS
-Get-Autorunsc.ps1 returns output from the Sysinternals' Autorunsc.exe
+Get-AutorunscDeep.ps1 returns output from the Sysinternals' Autorunsc.exe
 utility, which pulls information about many well-known Auto-Start
 Extension Points from Windows systems. ASEPs are commonly used as
 persistence mechanisms for adversaries.
+
+But wait, there's more! 
+
+1. Get-AutorunscDeep.ps1 also calculates file entropy, recall that 
+malware commonly uses packers to obfuscate their internals and bypass
+AV signatures and those packers lead to higher byte entropy.
+
+2. Get-AutorunscDeep.ps1 also calculates MD5 hashes for scripts that 
+are called by common interpreters -- cmd.exe, PowerShell.exe and
+WScript.exe, whereas Autorunsc.exe only provices the hashes for the
+binaries themselves.
+
+3. Get-AutorunscDeep.ps1 also provides the LastWriteTime for the 
+scripts called by the interpreters above.
+
+All three of these additional pieces of information give the analyst
+deeper insight into the autoruns in their environments.
 
 This script does depend on Sysinternals' Autorunsc.exe, which is not
 packaged with Kansa. You will have to download it from Sysinternals and
@@ -26,12 +43,6 @@ OUTPUT tsv
 BINDEP .\Modules\bin\Autorunsc.exe
 
 !!THIS SCRIPT ASSUMES AUTORUNSC.EXE WILL BE IN $ENV:SYSTEMROOT!!
-
-Autorunsc output is a mess. Some of it is quoted csv, some is just csv.
-This script parses it pretty well, but there are still some things that
-are incorrectly parsed. As I have time, I'll see about resolving the 
-troublesome entries, one in particular is for items that don't have 
-time stamps.
 #>
 
 function Compute-FileHash {

@@ -1,7 +1,22 @@
 ﻿<#
 .SYNOPSIS
-Get-DataStack.ps1 is an interactive script that can be used to 
+Get-LogparserStack.ps1 is an interactive script that can be used to 
 calculate the frequency of data.
+.PARAMETER FilePattern
+A required parameter that will be used in Logparser's FROM clause.
+Examples: *Autorunsc.tsv, *.csv, *.tsv
+.PARAMETER Delimiter
+An optional parameter that specifies the delimiter for both input and
+output files. Default is "," for csv.
+.PARAMETER Direction
+An optional parameter that specifies whether the output should be 
+sorted in ascending or the default descending order.
+.PARAMETER OutFile
+An optional parameter, the name of a file where output will be written.
+.EXAMPLE
+Get-LogparserStack.ps1 -FilePattern *SigCheck.csv
+.EXAMPLE
+Get-LogparserStack.ps1 -FilePattern *.csv -Direction Ascending
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
@@ -153,6 +168,9 @@ Param(
         [string]$OutFile=$false
 )
     $BracketedFields = @()
+    if ($Direction -notmatch "DESC") {
+        $Direction = $null
+    }
     $Query = @"
 SELECT 
 `tCOUNT([$StackField]) as CNT
@@ -179,8 +197,6 @@ if (Get-Command logparser.exe) {
     $SelectFields = GetSelectFields -header $Header
 
     $Query = GetQuery -StackField $StackField -SelectFields $SelectFields -Direction $Direction -OutFile $OutFile
-
-    Write-Verbose ("{0}: Query is:`n {1}" -f (GetTimeStampUtc), $Query)
 
     if ($OutFile) {
         Write-Verbose ("{0}: Will attempt to write output to {1}." -f (GetTimeStampUtc), $OutFile)

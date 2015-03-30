@@ -1,0 +1,199 @@
+﻿<#
+.SYNOPSIS
+Get-DataStack.ps1 is an interactive script that can be used to 
+calculate the frequency of data.
+#>
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [string]$FilePattern,
+    [Parameter(Mandatory=$False,Position=1)]
+        [string]$Delimiter=",",
+    [Parameter(Mandatory=$False,Position=2)]
+        [string]$Direction="DESC",
+    [Parameter(Mandatory=$False,Position=3)]
+        [string]$OutFile
+)
+
+$ErrorActionPreference = "Stop"
+$VerbosePreference = "Continue"
+$Error.Clear()
+
+function GetTimeStampUtc {
+    Get-Date (Get-Date).ToUniversalTime() -Format "yyyy-MM-ddTHH:mm:ssZ"
+}
+
+function GetInputFiles {
+# Returns an array of files matching $FilePattern
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [String]$FilePattern
+)
+    Write-Verbose ("{0}: Building list of files matching {1}." -f (GetTimeStampUtc), $FilePattern)
+    $Files = @()
+    $Files += (Get-ChildItem *$FilePattern*)
+    $Files
+}
+
+function GetHeader {
+# Compare first two lines of each input file, if first two lines don't
+# match each other, assume the first is a header line. If header lines
+# from all files match, return header, else alert the user that some
+# files don't have matching headers
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [Array]$InputFiles,
+    [Parameter(Mandatory=$False,Position=1)]
+        [string]$Delimiter
+)
+    $header   = @()
+    $NumLines = 2
+
+    $InputFiles | ForEach-Object {
+        $line        = @()
+        $currentFile = $_
+        Try {
+            # Write-Verbose("{0}: Reading first two lines of {1}." -f (GetTimeStampUtc), $currentFile.Name)
+            $FileReader = New-Object System.IO.StreamReader($currentFile.FullName)
+            for($i=0; $i -lt $NumLines; $i++) {
+                $line += $FileReader.ReadLine()
+            }
+        } Catch {
+            ("{0}: Caught: {1}." -f (GetTimeStampUtc), $currentFile.FullName)
+        } Finally {
+            $FileReader.Close()
+        }
+
+        # Write-Verbose ("{0}: Checking for presence of header in {1}." -f (GetTimeStampUtc), $currentFile.Name)
+        if ($line[0] -ne $line[1]) {
+            # First two lines should not match, if one is a header
+
+            if ($header) {
+                # Do we have a header yet?
+
+                if ($header -eq $line[0]) {
+                    # $header should match $line[0], move on
+                    Write-Verbose ("{0}: Header match found in {1}." -f (GetTimeStampUtc), $currentFile.Name)
+                } else {
+                    # Files do not have matching header rows, may want to add an option in the future to discard files that don't have the expected header rather than quit.
+                    Write-Host ("{0}: ## ERROR ##" -f (GetTimeStampUtc)) -ForegroundColor Red
+                    Write-Host ("{0}: Header row of {1} does not match header row of {2}. Quitting." -f (GetTimeStampUtc), $currentFile.Name, $previousFile.Name) -ForegroundColor Red
+                    exit
+                }
+            } else {
+                # First header
+                Write-Verbose ("{0}: {1} appears to have a header on line one." -f (GetTimeStampUtc), $currentFile.Name)
+                $header = $line[0]
+            }
+        } else {
+            Write-Host ("{0}: The first two lines of {1} match each other. One of them should be a header. Quitting." -f (GetTimeStampUtc), $_.FullName)
+            exit
+        }
+        # Keep track of our previous file for error reporting
+        $previousFile = $currentFile
+    }
+    $header.split($Delimiter)
+}
+
+function GetSelectFields {
+# Returns an array of fields that will be in the SELECT statement
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [Array]$header
+)
+    $SelectFields = @()
+    $Field        = ""
+    While($Field -ne "quit") {
+        $Field = Read-Host ("[?] Enter the fields you want to GROUP BY, one per line. Enter `"quit`" when finished")
+        if ($header.Contains($Field)) {
+            if (!$SelectFields.Contains($Field)) {
+                $SelectFields += $Field
+            } else {
+                Write-Host -ForegroundColor red ("{0}: You've already entered {1}." -f (GetTimeStampUtc), $Field)
+            }
+        } elseif ($Field -ne "quit") {
+            Write-Host -ForegroundColor red ("{0}: You entered {1}, which is not a field in the header row." -f (GetTimeStampUtc), $Field)
+        }
+    }
+
+    if ($SelectFields.count) {
+        $SelectFields
+    } else {
+        Write-Host -ForegroundColor red ("[*] You didn't select any fields. Quitting.")
+        exit
+    }
+}
+
+function GetStackField {
+# Returns a field for frequency analysis
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [Array]$header
+)
+    $Field = $False
+    While(!($Field)) {
+        $Field = Read-Host ("[?] Enter the field to pass to COUNT()")
+        if ($header.Contains($Field)) {
+            $Field
+        } else {
+            Write-Host -ForegroundColor red ("{0}: You entered {1}, which is not a field in the header row." -f (GetTimeStampUtc), $Field)
+            $Field = $False
+        }
+    }
+}
+
+function GetQuery {
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [string]$StackField,
+    [Parameter(Mandatory=$True,Position=1)]
+        [Array]$SelectFields,
+    [Parameter(Mandatory=$False,Position=2)]
+        [string]$Direction="DESC",
+    [Parameter(Mandatory=$False,Position=3)]
+        [string]$OutFile=$false
+)
+    $BracketedFields = @()
+    $Query = @"
+SELECT 
+`tCOUNT([$StackField]) as CNT
+"@
+    $SelectFields | ForEach-Object {
+        $BracketedFields += "[$_]"
+    }
+    $Query += ",`n`t" + ($BracketedFields -join ",`n`t")
+    if ($OutFile) {
+        $Query += "`n INTO $OutFile"
+    }
+    $Query += "`nFROM $FilePattern`n"
+    $Query += "GROUP BY`n`t" + ($BracketedFields -join ",`n`t")
+    $Query += "`nORDER BY`n`t CNT $Direction"
+    $Query
+}
+
+if (Get-Command logparser.exe) {
+    $InputFiles = GetInputFiles -FilePattern $FilePattern
+    $Header = GetHeader -InputFiles $InputFiles -Delimiter $Delimiter
+    
+    Write-Host ("Header row is:`n`t" + ($Header -join ", "))
+    $StackField   = GetStackField -header $Header
+    $SelectFields = GetSelectFields -header $Header
+
+    $Query = GetQuery -StackField $StackField -SelectFields $SelectFields -Direction $Direction -OutFile $OutFile
+
+    Write-Verbose ("{0}: Query is:`n {1}" -f (GetTimeStampUtc), $Query)
+
+    if ($OutFile) {
+        Write-Verbose ("{0}: Will attempt to write output to {1}." -f (GetTimeStampUtc), $OutFile)
+        Try {
+            & logparser -stats:off -i:tsv -iSeparator:$Delimiter -dtlines:0 -fixedsep:on -o:tsv -oSeparator:$Delimiter $Query
+        } Catch {
+            ("{0}: Caught {1}." -f (GetTimeStampUtc), $_)
+        }
+    } else {
+        & logparser -stats:off -i:tsv -iSeparator:$Delimiter -dtlines:0 -fixedsep:on -rtp:-1 $Query
+    }
+
+} else {
+    $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)
+    "${ScriptName} requires logparser.exe in the path."
+}

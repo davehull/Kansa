@@ -13,6 +13,8 @@ An optional parameter that specifies whether the output should be
 sorted in ascending or the default descending order.
 .PARAMETER OutFile
 An optional parameter, the name of a file where output will be written.
+.PARAMETER SaveQuery
+An optional parameter, the name of a file where the query will be written.
 .EXAMPLE
 Get-LogparserStack.ps1 -FilePattern *SigCheck.csv
 .EXAMPLE
@@ -26,7 +28,9 @@ Param(
     [Parameter(Mandatory=$False,Position=2)]
         [string]$Direction="DESC",
     [Parameter(Mandatory=$False,Position=3)]
-        [string]$OutFile
+        [string]$OutFile,
+    [Parameter(Mandatory=$False,Position=4)]
+        [string]$SaveQueryTo
 )
 
 $ErrorActionPreference = "Stop"
@@ -106,7 +110,7 @@ Param(
         # Keep track of our previous file for error reporting
         $previousFile = $currentFile
     }
-    $header.split($Delimiter)
+    $header.split($Delimiter) -replace "`""
 }
 
 function GetSelectFields {
@@ -165,7 +169,9 @@ Param(
     [Parameter(Mandatory=$False,Position=2)]
         [string]$Direction="DESC",
     [Parameter(Mandatory=$False,Position=3)]
-        [string]$OutFile=$false
+        [string]$OutFile=$false,
+    [Parameter(Mandatory=$False,Position=4)]
+        [string]$SaveQueryTo=$false
 )
     $BracketedFields = @()
     if ($Direction -notmatch "DESC") {
@@ -185,6 +191,11 @@ SELECT
     $Query += "`nFROM $FilePattern`n"
     $Query += "GROUP BY`n`t" + ($BracketedFields -join ",`n`t")
     $Query += "`nORDER BY`n`t CNT $Direction"
+    
+    if ($SaveQueryTo) {
+        $Query | Set-Content -Encoding Ascii $SaveQueryTo
+    }
+
     $Query
 }
 
@@ -196,17 +207,29 @@ if (Get-Command logparser.exe) {
     $StackField   = GetStackField -header $Header
     $SelectFields = GetSelectFields -header $Header
 
-    $Query = GetQuery -StackField $StackField -SelectFields $SelectFields -Direction $Direction -OutFile $OutFile
+    $Query = GetQuery -StackField $StackField -SelectFields $SelectFields -Direction $Direction -OutFile $OutFile -SaveQueryTo $SaveQueryTo
+
+    switch ($Delimiter) {
+        "," {
+            $delim = "-i:csv"
+        }
+        "`t" {
+            $delim = "-i:tsv -fixedsep:on"
+        } default {
+            $delim = "i:tsv -iseparator:$Delimiter -fixedsep:on"
+        }
+    }
+
 
     if ($OutFile) {
         Write-Verbose ("{0}: Will attempt to write output to {1}." -f (GetTimeStampUtc), $OutFile)
         Try {
-            & logparser -stats:off -i:tsv -iSeparator:$Delimiter -dtlines:0 -fixedsep:on -o:tsv -oSeparator:$Delimiter $Query
+            & logparser -stats:off $delim -dtlines:0 -fixedsep:on -o:tsv -oSeparator:$Delimiter $Query
         } Catch {
             ("{0}: Caught {1}." -f (GetTimeStampUtc), $_)
         }
     } else {
-        & logparser -stats:off -i:tsv -iSeparator:$Delimiter -dtlines:0 -fixedsep:on -rtp:-1 $Query
+        & logparser -stats:off $delim -dtlines:0 -rtp:-1 $Query
     }
 
 } else {

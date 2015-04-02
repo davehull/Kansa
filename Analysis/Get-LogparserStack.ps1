@@ -224,7 +224,7 @@ if (Get-Command logparser.exe) {
     if ($OutFile) {
         Write-Verbose ("{0}: Will attempt to write output to {1}." -f (GetTimeStampUtc), $OutFile)
         Try {
-            & logparser -stats:off $delim -dtlines:0 -fixedsep:on -o:tsv -oSeparator:$Delimiter $Query
+            & logparser -stats:off $delim -dtlines:0 -o:tsv -oSeparator:$Delimiter $Query
         } Catch {
             ("{0}: Caught {1}." -f (GetTimeStampUtc), $_)
         }

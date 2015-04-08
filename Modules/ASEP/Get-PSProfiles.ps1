@@ -82,4 +82,5 @@ if (Test-Path $alluserprofilex86) {
 }
 
 Get-Content -Encoding Byte -Raw $zipfile
+Start-Sleep -Seconds 10 # Give a little time for the file handle to close... maybe
 $suppress = Remove-Item $zipfile

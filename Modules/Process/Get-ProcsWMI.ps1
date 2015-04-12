@@ -54,7 +54,11 @@ foreach($item in (Get-WmiObject -Query "Select * from win32_process")) {
     } else {
         $hash = "Get-WmiObject query returned no executable path."
     }
+    if ($username = $item.GetOwner().domain + "\" + $item.GetOwner().user) { } else { $username = "Unobtainable" }
+    if ($SId = $item.GetOwner().sid) { } else { $SId = "Unobtainable" }
     $item | Add-Member -Type NoteProperty -Name "Hash" -Value $hash
     $item.CommandLine = $item.CommandLine -Replace "`n", " " -replace '\s\s*', ' '
+	$item | Add-Member -Type NoteProperty -Name "Username" -Value $username
+	$item | Add-Member -Type NoteProperty -Name "SID" -Value  $SId
     $item
 }

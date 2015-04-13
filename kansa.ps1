@@ -806,14 +806,12 @@ function Set-KansaPath {
     # Update the path to inlcude Kansa analysis script paths, if they aren't already
     $Invocation = (Get-Variable MyInvocation -Scope 1).Value
     $kansapath = Split-Path $Invocation.MyCommand.Path
-    $found = $False
-    $env:path -split ";" | Foreach-Object { $path = $_
-        if ([regex]::escape($kansapath) -match [regex]::escape($path)) {
-            $found = $True
+    $Paths = ($env:Path).Split(";")
+    $AnalysisPaths = (ls -Recurse "$kansapath\Analysis" | Where-Object { $_.PSIsContainer } | Select-Object -ExpandProperty FullName)
+    $AnalysisPaths | ForEach-Object {
+        if (-not($Paths.Contains($_))) {
+            $env:Path = $env:Path + ";$_"
         }
-    }
-    if (-not($found)) {
-        $env:path = $env:path + ";$pwd\Analysis\ASEP;$pwd\Analysis\Config;$pwd\Analysis\Meta;$pwd\Analysis\Net;$pwd\Analysis\Process;$pwd\Analysis\Log;"
     }
 }
 

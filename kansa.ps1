@@ -807,6 +807,12 @@ function Set-KansaPath {
     $Invocation = (Get-Variable MyInvocation -Scope 1).Value
     $kansapath = Split-Path $Invocation.MyCommand.Path
     $Paths = ($env:Path).Split(";")
+
+    if (-not($Paths.Contains("$kansapath\Analysis"))) {
+        # We want this one and it's not covered below, so...
+        $env:Path = $env:Path + ";$kansapath\Analysis"
+    }
+
     $AnalysisPaths = (ls -Recurse "$kansapath\Analysis" | Where-Object { $_.PSIsContainer } | Select-Object -ExpandProperty FullName)
     $AnalysisPaths | ForEach-Object {
         if (-not($Paths.Contains($_))) {

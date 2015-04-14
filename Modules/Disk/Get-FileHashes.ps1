@@ -99,8 +99,9 @@ workflow Get-HashesWorkflow {
 		? -FilterScript { 
 			($_.Length -ge $MinB -and $_.Length -le $_.Length) -and 
 			($_.Extension -match $extRegex) 
-		} | 
+		} <#| 
 		Select-Object -ExpandProperty FullName
+        #>
 	)
 
 	foreach -parallel ($File in $Files) {
@@ -117,9 +118,9 @@ workflow Get-HashesWorkflow {
 				}
 
 				# -Message variable name required because workflows do not support possitional parameters.
-				Write-Debug -Message "Calculating hash of $using:File."
-				if (Test-Path -LiteralPath $using:File -PathType Leaf) {
-					$FileData = [System.IO.File]::ReadAllBytes($using:File)
+				Write-Debug -Message "Calculating hash of ${using:File.FullName}."
+				if (Test-Path -LiteralPath $using:File.Fullname -PathType Leaf) {
+					$FileData = [System.IO.File]::ReadAllBytes($using:File.FullName)
 					$HashBytes = $hash.ComputeHash($FileData)
 					$paddedHex = ""
 
@@ -136,7 +137,7 @@ workflow Get-HashesWorkflow {
 						$using:File
 					}
                     #>
-                    $($paddedHex + ":-:" + $using:File)
+                    $($paddedHex + ":-:" + $using:File.FullName + ":-:" + $using:File.Length + ":-:" + $using:File.LastWriteTime)
 				}
 			}
             if ($entry) {
@@ -174,8 +175,9 @@ function Get-Hashes {
 		? -FilterScript { 
 			($_.Length -ge $MinB -and $_.Length -le $_.Length) -and 
 			($_.Extension -match $extRegex) 
-		} | 
+		} <# | 
 		Select-Object -ExpandProperty FullName
+        #>
 	)
 	
 	switch -CaseSensitive ($HashType) {
@@ -189,9 +191,9 @@ function Get-Hashes {
 	
     foreach ($file in $Files) {
        
-		Write-Debug -Message "Calculating hash of $File."
-		if (Test-Path -LiteralPath $File -PathType Leaf) {
-			$FileData = [System.IO.File]::ReadAllBytes($File)
+		Write-Debug -Message "Calculating hash of ${File.FullName}."
+		if (Test-Path -LiteralPath $File.FullName -PathType Leaf) {
+			$FileData = [System.IO.File]::ReadAllBytes($File.FullName)
 			$HashBytes = $hash.ComputeHash($FileData)
 			$paddedHex = ""
 
@@ -202,7 +204,7 @@ function Get-Hashes {
                
 			Write-Debug -Message "Hash value was $paddedHex."
 
-            $hashList += $($paddedHex + ":-:" + $file)
+            $hashList += $($paddedHex + ":-:" + $file.FullName + ":-:" + $file.Length + ":-:" + $file.LastWriteTime)
 		}
 	}
 
@@ -248,10 +250,12 @@ function Get-Matches {
     if ($hashList) {
 		Write-Verbose "Found files matching hash $FileHash."    
         $hashList | ForEach-Object {
-            $hash,$file = $_ -split ":-:"
-            $o = "" | Select-Object File, Hash
+            $hash,$file,$length,$lastWritetime = $_ -split ":-:"
+            $o = "" | Select-Object File, Hash, Length, LastWritetime
             $o.File = $file
             $o.Hash = $hash
+            $o.Length = $length
+            $o.LastWriteTime = $lastWritetime
             $o
         }
     }

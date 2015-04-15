@@ -39,7 +39,7 @@ Param(
     [Parameter(Mandatory=$False,Position=1)]
         [String]$BasePaths,
     [Parameter(Mandatory=$False,Position=2)]
-        [String]$extRegex="\.(exe|sys|dll|ps1)$",
+        [String]$extRegex="\.(exe|sys|dll|ps1|vbs|bat|cmd)$",
     [Parameter(Mandatory=$False,Position=3)]
         [int]$MinB=4096,
     [Parameter(Mandatory=$False,Position=4)]
@@ -74,7 +74,7 @@ workflow Get-HashesWorkflow {
 		[Parameter(Mandatory=$False,Position=3)]
 			[int]$MaxB=10485760,
 		[Parameter(Mandatory=$False,Position=4)]
-			[string]$extRegex="\.(exe|sys|dll|ps1)$"
+			[string]$extRegex="\.(exe|sys|dll|ps1|vbs|bat|cmd)$"
 	)
 
 	# Workflows are how PowerShell does multi-threading. The parent process 
@@ -99,9 +99,7 @@ workflow Get-HashesWorkflow {
 		? -FilterScript { 
 			($_.Length -ge $MinB -and $_.Length -le $_.Length) -and 
 			($_.Extension -match $extRegex) 
-		} <#| 
-		Select-Object -ExpandProperty FullName
-        #>
+		} 
 	)
 
 	foreach -parallel ($File in $Files) {
@@ -131,12 +129,6 @@ workflow Get-HashesWorkflow {
 					}
                 
 					Write-Debug -Message "Hash value was $paddedHex."
-					
-                    <#
-                    if ($paddedHex -ieq $using:searchHash) {
-						$using:File
-					}
-                    #>
                     $($paddedHex + ":-:" + $using:File.FullName + ":-:" + $using:File.Length + ":-:" + $using:File.LastWriteTime)
 				}
 			}
@@ -162,7 +154,7 @@ function Get-Hashes {
 		[Parameter(Mandatory=$False,Position=3)]
 			[int]$MaxB=10485760,
 		[Parameter(Mandatory=$False,Position=4)]
-			[string]$extRegex="\.(exe|sys|dll|ps1)$"
+			[string]$extRegex="\.(exe|sys|dll|ps1|vbs|bat|cmd)$"
 	)
 
 	# Single-threaded option since we ran into a few situations while testing 
@@ -175,9 +167,7 @@ function Get-Hashes {
 		? -FilterScript { 
 			($_.Length -ge $MinB -and $_.Length -le $_.Length) -and 
 			($_.Extension -match $extRegex) 
-		} <# | 
-		Select-Object -ExpandProperty FullName
-        #>
+		} 
 	)
 	
 	switch -CaseSensitive ($HashType) {
@@ -211,7 +201,7 @@ function Get-Hashes {
 	return ,$hashList
 }
 
-function Get-Matches {
+function Get-Hash {
 	[CmdletBinding()]
 	Param (
 		[Parameter(Mandatory=$True,Position=0)]
@@ -224,7 +214,7 @@ function Get-Matches {
 		[Parameter(Mandatory=$False,Position=3)]
 			[int]$MaxB=10485760,
 		[Parameter(Mandatory=$False,Position=4)]
-			[string]$extRegex="\.(exe|sys|dll|ps1)$"
+			[string]$extRegex="\.(exe|sys|dll|ps1|vbs|bat|cmd)$"
 	)
 	
 	# Check if we're in a WOW64 situation. Thanks to MagicAndi on StackOverflow for this check.
@@ -246,22 +236,24 @@ function Get-Matches {
 		Write-Verbose -Message "Workflows not supported. Running in single-threaded mode."
 		$hashList = Get-Hashes -BasePath $BasePath -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
 	}
-    
+
+    $o = "" | Select-Object File, Hash, Length, LastWritetime
     if ($hashList) {
-		Write-Verbose "Found files matching hash $FileHash."    
         $hashList | ForEach-Object {
             $hash,$file,$length,$lastWritetime = $_ -split ":-:"
-            $o = "" | Select-Object File, Hash, Length, LastWritetime
             $o.File = $file
             $o.Hash = $hash
             $o.Length = $length
             $o.LastWriteTime = $lastWritetime
             $o
         }
+    } else {
+        $o.File = $null
+        $o.Hash = $null
+        $o.Length = $null
+        $o.LastWriteTime = $null
+        $o
     }
-	else {
-		Write-Verbose "Found no matching files."
-	}
 }
 
 if ($BasePaths.Length -eq 0) {
@@ -273,5 +265,5 @@ if ($BasePaths.Length -eq 0) {
 $BasePaths | ForEach-Object {
     $basePath = $_
     Write-Verbose "Getting file hashes for $basePath."
-    Get-Matches -BasePath $BasePath -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
+    Get-Hash -BasePath $BasePath -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
 }

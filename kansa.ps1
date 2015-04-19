@@ -625,6 +625,10 @@ Param(
                     $Outfile = $Outfile + ".tsv"
                     $Recpt | ConvertTo-Csv -NoTypeInformation -Delimiter "`t" | Foreach-Object { $_ -replace "`"" } | Set-Content -Encoding $Encoding $Outfile
                 }
+                "*json" {
+                    $Outfile = $Outfile + ".json"
+                    $Recpt | ConvertTo-Json -Depth ([int32]::MaxValue) | Set-Content -Encoding $Encoding $Outfile
+                }
                 "*xml" {
                     $Outfile = $Outfile + ".xml"
                     $Recpt | Export-Clixml $Outfile -Encoding $Encoding

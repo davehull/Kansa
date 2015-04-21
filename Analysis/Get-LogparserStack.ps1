@@ -102,6 +102,10 @@ Param(
                 # First header
                 Write-Verbose ("{0}: {1} appears to have a header on line one." -f (GetTimeStampUtc), $currentFile.Name)
                 $header = $line[0]
+                if ($Delimiter -match "`t" -and ($header -match "`"")) {
+                    Write-Host ("{0}: {1} appears to have quoted field names. Logparser doesn't support quoted tab delimited data. Quitting.`n" -f (GetTimeStampUtc), $currentFile.Name) -ForegroundColor Red
+                    exit
+                }
             }
         } else {
             Write-Host ("{0}: The first two lines of {1} match each other. One of them should be a header. Quitting." -f (GetTimeStampUtc), $_.FullName)

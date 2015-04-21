@@ -78,9 +78,9 @@ Param(
         $File.LastWriteTimeUtc
         
     } else {
-        "${FilePath} is invalid or locked."
-        "${FilePath} is invalid or locked."
-        Write-Error -Category InvalidArgument -Message ("{0} was invalid or locked." -f $FilePath)
+        "${FilePath} is locked or could not be found."
+        "${FilePath} is locked or could not be not found."
+        Write-Error -Category InvalidArgument -Message ("{0} is locked or could not be found." -f $FilePath)
     }
 }
 
@@ -116,8 +116,8 @@ Param(
         $fileEntropy
         
     } else {
-        "${FilePath} is invalid or locked. Could not calculate entropy."
-        Write-Error -Category InvalidArgument -Message ("{0} was invalid or locked." -f $FilePath)
+        "${FilePath} is locked or could not be found. Could not calculate entropy."
+        Write-Error -Category InvalidArgument -Message ("{0} is locked or could not be found." -f $FilePath)
     }
 }
 

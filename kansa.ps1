@@ -625,10 +625,6 @@ Param(
                     $Outfile = $Outfile + ".tsv"
                     $Recpt | ConvertTo-Csv -NoTypeInformation -Delimiter "`t" | Foreach-Object { $_ -replace "`"" } | Set-Content -Encoding $Encoding $Outfile
                 }
-                "*json" {
-                    $Outfile = $Outfile + ".json"
-                    $Recpt | ConvertTo-Json -Depth ([int32]::MaxValue) | Set-Content -Encoding $Encoding $Outfile
-                }
                 "*xml" {
                     $Outfile = $Outfile + ".xml"
                     $Recpt | Export-Clixml $Outfile -Encoding $Encoding
@@ -812,14 +808,14 @@ function Set-KansaPath {
     $kansapath = Split-Path $Invocation.MyCommand.Path
     $Paths = ($env:Path).Split(";")
 
-    if (-not($Paths.Contains("$kansapath\Analysis"))) {
+    if (-not($Paths -match [regex]::Escape("$kansapath\Analysis"))) {
         # We want this one and it's not covered below, so...
         $env:Path = $env:Path + ";$kansapath\Analysis"
     }
 
     $AnalysisPaths = (ls -Recurse "$kansapath\Analysis" | Where-Object { $_.PSIsContainer } | Select-Object -ExpandProperty FullName)
     $AnalysisPaths | ForEach-Object {
-        if (-not($Paths.Contains($_))) {
+        if (-not($Paths -match [regex]::Escape($_))) {
             $env:Path = $env:Path + ";$_"
         }
     }
@@ -1015,8 +1011,8 @@ if ($rmbin) {
 Exit
 # We're done. #
 
-# On some PSv2 systems, the outer Try/Finally caused issues. Commenting
-# this out fixed it.
+} Catch {
+    ("Caught: {0}" -f $_)
 } Finally {
     Exit-Script
 }

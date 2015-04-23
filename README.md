@@ -1,8 +1,12 @@
 Kansa
 =====
 
-A modular incident response framework in Powershell. Note there's a bug that's currently cropping
-up in PowerShell version 2 systems, but version 3 and later should be fine.
+A modular incident response framework in Powershell. It's been tested in PSv2 / .NET 2 and
+later and works mostly without issue, PSv2 doesn't support workflows and some collectors
+do use workflows. Trouble is, in PSv2, workflow code throws an error when the scripts are
+parsed, before execution begins. The fix, comment out the workflows. :(
+
+Really, upgrade to PSv3 or later. Be happy.
 
 More info:  
 http://trustedsignal.blogspot.com/search/label/Kansa  

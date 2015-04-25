@@ -127,8 +127,8 @@ Param(
     $Field        = ""
     While($Field -ne "quit") {
         $Field = Read-Host ("[?] Enter the fields you want to GROUP BY, one per line. Enter `"quit`" when finished")
-        if ($header.Contains($Field)) {
-            if (!$SelectFields.Contains($Field)) {
+        if ($header -Contains $Field) {
+            if ([array]::IndexOf($SelectFields, $Field) -lt 0) {
                 $SelectFields += $Field
             } else {
                 Write-Host -ForegroundColor red ("{0}: You've already entered {1}." -f (GetTimeStampUtc), $Field)
@@ -155,7 +155,7 @@ Param(
     $Field = $False
     While(!($Field)) {
         $Field = Read-Host ("[?] Enter the field to pass to COUNT()")
-        if ($header.Contains($Field)) {
+        if ($header -Contains $Field) {
             $Field
         } else {
             Write-Host -ForegroundColor red ("{0}: You entered {1}, which is not a field in the header row." -f (GetTimeStampUtc), $Field)

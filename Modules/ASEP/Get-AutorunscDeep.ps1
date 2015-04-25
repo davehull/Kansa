@@ -154,6 +154,7 @@ if (Test-Path "$env:SystemRoot\Autorunsc.exe") {
                 }
                 $scriptPath = $scriptPath.Trim()
                 $_.ScriptMD5,$_.ScriptModTimeUTC = Compute-FileHash $scriptPath
+                $scriptPath = $null
             }
         }
         $_

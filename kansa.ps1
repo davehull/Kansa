@@ -215,24 +215,28 @@ Param(
     [Parameter(Mandatory=$False,Position=4)]
         [System.Management.Automation.PSCredential]$Credential=$Null,
     [Parameter(Mandatory=$False,Position=5)]
-        [Switch]$Pushbin,
+    [ValidateSet("CSV","TSV","XML")]
+        [String]$OutputFormat="CSV",
     [Parameter(Mandatory=$False,Position=6)]
-        [Switch]$Rmbin,
+        [Switch]$Pushbin,
     [Parameter(Mandatory=$False,Position=7)]
-        [Int]$ThrottleLimit=0,
+        [Switch]$Rmbin,
     [Parameter(Mandatory=$False,Position=8)]
-        [Switch]$Ascii,
+        [Int]$ThrottleLimit=0,
     [Parameter(Mandatory=$False,Position=9)]
-        [Switch]$UpdatePath,
+    [ValidateSet("Ascii","BigEndianUnicode","Byte","Default","Oem","String","Unicode","Unknown","UTF32","UTF7","UTF8")]
+        [String]$Encoding="Unicode",
     [Parameter(Mandatory=$False,Position=10)]
-        [Switch]$ListModules,
+        [Switch]$UpdatePath,
     [Parameter(Mandatory=$False,Position=11)]
-        [Switch]$ListAnalysis,
+        [Switch]$ListModules,
     [Parameter(Mandatory=$False,Position=12)]
-        [Switch]$Analysis,
+        [Switch]$ListAnalysis,
     [Parameter(Mandatory=$False,Position=13)]
-        [Switch]$Transcribe,
+        [Switch]$Analysis,
     [Parameter(Mandatory=$False,Position=14)]
+        [Switch]$Transcribe,
+    [Parameter(Mandatory=$False,Position=15)]
         [Switch]$Quiet=$False
 )
 
@@ -481,10 +485,16 @@ function Get-Directives {
 <#
 .SYNOPSIS
 Returns a hashtable of directives found in the script
-As of this writing it will support both the legacy directives on the first two
-lines fo the script and the newer .SYNOPSIS/.NOTES based directives. After all
-collectors have been updated to use the newer method, the old code will be
-removed.
+Directives are used for two things:
+1) The BINDEP directive tells Kansa that a module depends on some 
+binary and what the name of the binary is. If Kansa is called with 
+-PushBin, the script will look in Modules\bin\ for the binary and 
+attempt to copy it to targets.
+2) The DATADIR directive tells Kansa what the output path is for
+the given module's data so that if it is called with the -Analysis
+flag, the analysis scripts can find the data.
+TK Some collector output paths are dynamically generated based on
+arguments, so this breaks for analysis. Solve.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
@@ -501,10 +511,7 @@ Param(
         
         $DirectiveHash = @{}
 
-        Get-Content $Module | Select-String -CaseSensitive -Pattern "OUTPUT|BINDEP|DATADIR" | Foreach-Object { $Directive = $_
-            if ( $Directive -match "(^OUTPUT|^# OUTPUT) (.*)" ) {
-                $DirectiveHash.Add("OUTPUT", $($matches[2]))
-            }
+        Get-Content $Module | Select-String -CaseSensitive -Pattern "BINDEP|DATADIR" | Foreach-Object { $Directive = $_
             if ( $Directive -match "(^BINDEP|^# BINDEP) (.*)" ) {
                 $DirectiveHash.Add("BINDEP", $($matches[2]))
             }
@@ -559,7 +566,6 @@ Param(
         # Get our directives both old and new style
         $DirectivesHash  = @{}
         $DirectivesHash = Get-Directives $Module
-        $OutputMethod = $($DirectivesHash.Get_Item("OUTPUT"))
         if ($Pushbin) {
             $bindep = $($DirectivesHash.Get_Item("BINDEP"))
             if ($bindep) {
@@ -616,14 +622,14 @@ Param(
             }
 
             # save the data
-            switch -Wildcard ($OutputMethod) {
+            switch -Wildcard ($OutputFormat) {
                 "*csv" {
                     $Outfile = $Outfile + ".csv"
-                    $Recpt | ConvertTo-Csv -NoTypeInformation | Foreach-Object { $_ -replace "`"" } | Set-Content -Encoding $Encoding $Outfile
+                    $Recpt | Export-Csv -NoTypeInformation -Encoding $Encoding $Outfile
                 }
                 "*tsv" {
                     $Outfile = $Outfile + ".tsv"
-                    $Recpt | ConvertTo-Csv -NoTypeInformation -Delimiter "`t" | Foreach-Object { $_ -replace "`"" } | Set-Content -Encoding $Encoding $Outfile
+                    $Recpt | Export-Csv -NoTypeInformation -Delimiter "`t" -Encoding $Encoding $Outfile
                 }
                 "*xml" {
                     $Outfile = $Outfile + ".xml"
@@ -632,6 +638,12 @@ Param(
                 "*bin" {
                     $Outfile = $Outfile + ".bin"
                     $Recpt | Set-Content -Encoding Byte $Outfile
+                    <#
+                    $Stream = New-Object System.IO.FileStream($Outfile)
+                    $BinWriter = New-Object System.IO.BinaryWriter($stream)
+                    $BinWriter.Write($Recpt)
+                    $BinWriter.Close()
+                    #>
                 }
                 "*zip" {
                     # Compression should be done in the collector
@@ -643,7 +655,6 @@ Param(
                 "*Default" {
                     # Default here means we let PowerShell figure out the output encoding
                     # Used by Get-File.ps1, which can grab arbitrary files
-                    $Outfile = $Outfile
                     $Recpt | Set-Content -Encoding Default $Outfile
                 }
                 default {
@@ -908,8 +919,8 @@ if (Test-Path($ErrorLog)) {
 
 
 # Set the output encoding #
-if ($Ascii) {
-    Set-Variable -Name Encoding -Value "Ascii" -Scope Script
+if ($Encoding) {
+    Set-Variable -Name Encoding -Value $Encoding -Scope Script
 } else {
     Set-Variable -Name Encoding -Value "Unicode" -Scope Script
 }

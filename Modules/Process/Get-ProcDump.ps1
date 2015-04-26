@@ -28,7 +28,7 @@ in. By default it dumps itself, which is probably not what you want.
 
 .NOTES
 Kansa.ps1 output and bindep directives follow:
-OUTPUT bin
+OUTPUT csv
 BINDEP .\Modules\bin\Procdump.exe
 #>
 
@@ -38,12 +38,41 @@ Param(
         [Int]$ProcId=$pid
 )
 
+$datestr = (Get-Date -Format "yyyyMMddHHmmss")
+$outfile = "${pwd}\" + ($env:COMPUTERNAME) + "_PId_" + ($pid) + "_${datestr}.dmp"
+$outgz   = $outfile + ".gz"
+
+$obj = "" | Select-Object PId,Base64EncodedGzippedBytes
+$obj.PId = $ProcId
+
 if (Test-Path "$env:SystemRoot\Procdump.exe") {
-    $PDOutput = & $env:SystemRoot\Procdump.exe /accepteula $ProcId 2> $null
-    foreach($line in $PDOutput) {
-        if ($line -match 'Writing dump file (.*\.dmp) ...') {
-            Get-Content -ReadCount 0 -Raw -Encoding Byte $($matches[1])
-            Remove-Item $($matches[1])
-        }
+    $Suppress = & $env:SystemRoot\Procdump.exe /accepteula $ProcId $outfile 2> $null
+    $File = ls $outfile           
+    Try {
+        $InputFile  = New-Object System.IO.FileStream $File, ([IO.FileMode]::Open), ([IO.FileAccess]::Read), ([IO.FileShare]::Read)
+        $buffer     = New-Object byte[]($InputFile.Length)
+
+        $suppress   = $InputFile.Read($buffer, 0, $InputFile.Length)
+
+        $DmpGZipped = New-Object System.IO.FileStream $outgz, ([IO.FileMode]::Create), ([IO.FileAccess]::Write), ([IO.FileShare]::None)
+        # $DmpGZipped = New-Object System.IO.MemoryStream
+        $gzipStream = New-Object System.IO.Compression.GzipStream $DmpGZipped, ([IO.Compression.CompressionMode]::Compress)
+        $gzipStream.Write($buffer, 0, $buffer.Length)
+        $gzipStream.Close()
+
+        $GZFile = ls $outgz
+
+        $buffer = [System.IO.File]::ReadAllBytes($GZFile)        
+        $obj.Base64EncodedGzippedBytes = [System.Convert]::ToBase64String($buffer)
+
+        # $obj.Bytes = [System.Convert]::ToBase64String($buffer)
+        # Get-Content -ReadCount 0 -Raw -Encoding Byte $File.FullName
+    } Catch {
+        Write-Error ("Caught Exception: {0}." -f $_)
+    } Finally {
+        $InputFile.Close()
+        Remove-Item $File
+        Remove-Item $GZFile
     }
+    $obj
 }

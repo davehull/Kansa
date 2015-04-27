@@ -1,7 +1,10 @@
 ﻿<#
 .SYNOPSIS
-Get-ProcDump.ps1 acquires a Sysinternal procdump of the specified 
-process
+Get-ProcDump.ps1 acquires memory dump of the specified process
+.DESCRIPTION
+Uses Sysinternal's procdump.exe to write a dmp file to disk. That file
+is read into a memory stream and compressed using GZipStream, then
+Base64 encoded and stored in an object property and returned.
 .PARAMETER ProcId
 A required parameter, the process id of the process you want to dump.
 .NOTES
@@ -17,8 +20,6 @@ shown here:
 
 Arguments passed via Modules\Modules.conf should not be quoted.
 
-Multiple arguments may be passed with comma separators.
-
 If you have procdump.exe in your Modules\bin\ path and run Kansa with 
 the -Pushbin flag, Kansa will attempt to copy the binary to the ADMIN$.
 Binaries aren't removed unless Kansa.ps1 is run with the -rmbin switch.
@@ -27,8 +28,7 @@ Also, you should configure this to dump the process you're interested
 in. By default it dumps itself, which is probably not what you want.
 
 .NOTES
-Kansa.ps1 output and bindep directives follow:
-OUTPUT csv
+Kansa.ps1 bindep directive follows:
 BINDEP .\Modules\bin\Procdump.exe
 #>
 
@@ -40,39 +40,36 @@ Param(
 
 $datestr = (Get-Date -Format "yyyyMMddHHmmss")
 $outfile = "${pwd}\" + ($env:COMPUTERNAME) + "_PId_" + ($pid) + "_${datestr}.dmp"
-$outgz   = $outfile + ".gz"
 
 $obj = "" | Select-Object PId,Base64EncodedGzippedBytes
 $obj.PId = $ProcId
 
 if (Test-Path "$env:SystemRoot\Procdump.exe") {
+    # Dump specified process memory to file on disk named $outfile
     $Suppress = & $env:SystemRoot\Procdump.exe /accepteula $ProcId $outfile 2> $null
-    $File = ls $outfile           
+    $File = ls $outfile # Create a file object         
     Try {
-        $InputFile  = New-Object System.IO.FileStream $File, ([IO.FileMode]::Open), ([IO.FileAccess]::Read), ([IO.FileShare]::Read)
-        $buffer     = New-Object byte[]($InputFile.Length)
+        # Read file object's contents into memory stream
+        $memFile = New-Object System.IO.MemoryStream (,[System.IO.File]::ReadAllBytes($File))
 
-        $suppress   = $InputFile.Read($buffer, 0, $InputFile.Length)
+        # Create an empty memory stream to store our GZipped bytes in
+        $memStrm = New-Object System.IO.MemoryStream
 
-        $DmpGZipped = New-Object System.IO.FileStream $outgz, ([IO.FileMode]::Create), ([IO.FileAccess]::Write), ([IO.FileShare]::None)
-        # $DmpGZipped = New-Object System.IO.MemoryStream
-        $gzipStream = New-Object System.IO.Compression.GzipStream $DmpGZipped, ([IO.Compression.CompressionMode]::Compress)
-        $gzipStream.Write($buffer, 0, $buffer.Length)
-        $gzipStream.Close()
+        # Create a GZipStream with $memStrm as its underlying storage
+        $gzStrm  = New-Object System.IO.Compression.GZipStream $memStrm, ([System.IO.Compression.CompressionMode]::Compress)
 
-        $GZFile = ls $outgz
+        # Pass $memFile's bytes through the GZipstream into the $memStrm
+        $gzStrm.Write($memFile.ToArray(), 0, $File.Length)
+        $gzStrm.Close()
+        $gzStrm.Dispose()
 
-        $buffer = [System.IO.File]::ReadAllBytes($GZFile)        
-        $obj.Base64EncodedGzippedBytes = [System.Convert]::ToBase64String($buffer)
-
-        # $obj.Bytes = [System.Convert]::ToBase64String($buffer)
-        # Get-Content -ReadCount 0 -Raw -Encoding Byte $File.FullName
+        # Base64 encode the compressed bytes, store them in our object
+        $obj.Base64EncodedGzippedBytes = [System.Convert]::ToBase64String($memStrm.ToArray())
     } Catch {
         Write-Error ("Caught Exception: {0}." -f $_)
     } Finally {
-        $InputFile.Close()
-        Remove-Item $File
-        Remove-Item $GZFile
+        Remove-Item $File # Delete our dmp file from disk
     }
-    $obj
+    # return our data
+    $obj 
 }

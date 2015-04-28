@@ -13,7 +13,7 @@ OUTPUT csv
 Try {
     Push-Location
     Set-Location Cert:
-    ls -r * | fl *
+    ls -r * | Select-Object PSParentPath,FriendlyName,NotAfter,NotBefore,SerialNumber,Thumbprint,Issuer,Subject
 } Catch {
     ("Caught exception: {0}." -f $_)
 } Finally {

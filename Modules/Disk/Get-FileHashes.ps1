@@ -39,7 +39,7 @@ Param(
     [Parameter(Mandatory=$False,Position=1)]
         [String]$BasePaths,
     [Parameter(Mandatory=$False,Position=2)]
-        [String]$extRegex="\.(exe|sys|dll|ps1|vbs|bat|cmd)$",
+        [String]$extRegex="\.(exe|sys|dll|ps1|psd1|psm1|vbs|bat|cmd)$",
     [Parameter(Mandatory=$False,Position=3)]
         [int]$MinB=4096,
     [Parameter(Mandatory=$False,Position=4)]
@@ -74,7 +74,7 @@ workflow Get-HashesWorkflow {
 		[Parameter(Mandatory=$False,Position=3)]
 			[int]$MaxB=10485760,
 		[Parameter(Mandatory=$False,Position=4)]
-			[string]$extRegex="\.(exe|sys|dll|ps1|vbs|bat|cmd)$"
+			[string]$extRegex="\.(exe|sys|dll|ps1|psd1|psm1|vbs|bat|cmd)$"
 	)
 
 	# Workflows are how PowerShell does multi-threading. The parent process 
@@ -154,7 +154,7 @@ function Get-Hashes {
 		[Parameter(Mandatory=$False,Position=3)]
 			[int]$MaxB=10485760,
 		[Parameter(Mandatory=$False,Position=4)]
-			[string]$extRegex="\.(exe|sys|dll|ps1|vbs|bat|cmd)$"
+			[string]$extRegex="\.(exe|sys|dll|ps1|psd1|psm1|vbs|bat|cmd)$"
 	)
 
 	# Single-threaded option since we ran into a few situations while testing 
@@ -214,7 +214,7 @@ function Get-Hash {
 		[Parameter(Mandatory=$False,Position=3)]
 			[int]$MaxB=10485760,
 		[Parameter(Mandatory=$False,Position=4)]
-			[string]$extRegex="\.(exe|sys|dll|ps1|vbs|bat|cmd)$"
+			[string]$extRegex="\.(exe|sys|dll|ps1|psd1|psm1|vbs|bat|cmd)$"
 	)
 	
 	# Check if we're in a WOW64 situation. Thanks to MagicAndi on StackOverflow for this check.

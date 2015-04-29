@@ -629,7 +629,8 @@ Param(
                 }
                 "*tsv" {
                     $Outfile = $Outfile + ".tsv"
-                    $Recpt | Export-Csv -NoTypeInformation -Delimiter "`t" -Encoding $Encoding $Outfile
+                    # LogParser can't handle quoted tab separated values, so we'll strip the quotes.
+                    $Recpt | Convert-Csv -NoTypeInformation -Delimiter "`t" | ForEach-Object { $_ -replace "`"" } | Set-Content -Encoding $Encoding $Outfile
                 }
                 "*xml" {
                     $Outfile = $Outfile + ".xml"

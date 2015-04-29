@@ -41,8 +41,9 @@ Param(
 $datestr = (Get-Date -Format "yyyyMMddHHmmss")
 $outfile = "${pwd}\" + ($env:COMPUTERNAME) + "_PId_" + ($pid) + "_${datestr}.dmp"
 
-$obj = "" | Select-Object PId,Base64EncodedGzippedBytes
+$obj = "" | Select-Object Path,PId,Base64EncodedGzippedBytes
 $obj.PId = $ProcId
+$obj.ProcessName = (Get-Process -Id $ProcId).Path
 
 if (Test-Path "$env:SystemRoot\Procdump.exe") {
     # Dump specified process memory to file on disk named $outfile

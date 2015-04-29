@@ -15,6 +15,11 @@ sorted in ascending or the default descending order.
 An optional parameter, the name of a file where output will be written.
 .PARAMETER SaveQuery
 An optional parameter, the name of a file where the query will be written.
+.Parameter Divorce
+An optional switch that if provided causes the script to create a new
+subdirectory where it will move files with different headers. You can
+then analyze files with common headers, then cd into the subdirectory
+and repeat the analysis.
 .EXAMPLE
 Get-LogparserStack.ps1 -FilePattern *SigCheck.csv
 .EXAMPLE
@@ -30,7 +35,9 @@ Param(
     [Parameter(Mandatory=$False,Position=3)]
         [string]$OutFile,
     [Parameter(Mandatory=$False,Position=4)]
-        [string]$SaveQueryTo
+        [string]$SaveQueryTo,
+    [Parameter(Mandatory=$False,Position=5)]
+        [switch]$Divorce
 )
 
 $ErrorActionPreference = "Stop"
@@ -92,11 +99,18 @@ Param(
                 if ($header -eq $line[0]) {
                     # $header should match $line[0], move on
                     Write-Verbose ("{0}: Header match found in {1}." -f (GetTimeStampUtc), $currentFile.Name)
-                } else {
+                } elseif (-not($Divorce)) {
                     # Files do not have matching header rows, may want to add an option in the future to discard files that don't have the expected header rather than quit.
                     Write-Host ("{0}: ## ERROR ##" -f (GetTimeStampUtc)) -ForegroundColor Red
-                    Write-Host ("{0}: Header row of {1} does not match header row of {2}. Quitting." -f (GetTimeStampUtc), $currentFile.Name, $previousFile.Name) -ForegroundColor Red
+                    Write-Host ("{0}: Header row of {1} does not match header row of {2}. Consider running again with the -Divorce flag. Quitting." -f (GetTimeStampUtc), $currentFile.Name, $previousFile.Name) -ForegroundColor Red
                     exit
+                } elseif ($Divorce) {
+                    # File does not have a matching header, make a new subdirectory and move it.
+                    Write-Host ("{0}: Moving {1} to Divorced path." -f (GetTimeStampUtc), $currentFile.Name) -ForegroundColor Red
+                    if (-not(Test-Path "${pwd}\Divorced")) {
+                        New-Item -Path $pwd -Name Divorce -ItemType Directory
+                    }
+                    Move-Item $currentFile.FullName Divorce
                 }
             } else {
                 # First header

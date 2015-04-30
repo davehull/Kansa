@@ -1,86 +1,83 @@
 ﻿<#
 .SYNOPSIS
-Get-PSProfiles.ps1 returns copies of all Powershell profiles.
-.NOTES
-Refactor this too much duped code -- 2014-07-30 dahull
-The following line is used by Kansa.ps1 to determine how to treat the
-ouput from this script.
-OUTPUT zip
+Get-PSProfiles.ps1 returns location, ownership and contents of local
+PowerShell profiles.
+.DESCRIPTION
+Get-PSProfiles.ps1 returns custom objects with the following properties:
+ProfilePath : Contains profile's path
+SID         : Contains a SID for the profile or a description
+Script      : Contains a base64 encoded string of a GZipped stream of
+              the profile's contents
+.INPUTS
+None
+.OUTPUTS
+System.Management.Automation.PSCustomObject
+.EXAMPLE
+Get-PSProfiles.ps1
+ProfilePath                                                                                SID                            Script
+-----------                                                                                ---                            ------
+C:\Users\MSSQLSERVER\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1          S-1-5-nn-nnnnnnnnnn-nnnnnnnnnn
+C:\Users\foo\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1                  S-1-5-nn-nnnnnnnnnn-nnnnnnnnnn H4sIAAAAAAAEAMVabU/byBb+Xqn/YeRGwrnEXgJtt
+C:\Users\Administrator\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1        S-1-5-nn-nnnnnnnnnn-nnnnnnnnnn
+C:\Users\UpdatusUser\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1          S-1-5-nn-nnnnnnnnnn-nnnnnnnnnn
+C:\Users\UpdatusUser\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1          S-1-5-nn-nnnnnnnnnn-nnnnnnnnnn
+C:\Windows\ServiceProfiles\NetworkService\Documents\WindowsPowershell\Microsoft.Powersh... S-1-5-20
+C:\Windows\ServiceProfiles\LocalService\Documents\WindowsPowershell\Microsoft.Powershel... S-1-5-19
+C:\WINDOWS\system32\config\systemprofile\Documents\WindowsPowershell\Microsoft.Powershe... S-1-5-18                       H4sIAAAAAAAEAMVabU/byBb+Xqn/YeRGwrnEXgJtt
+C:\Windows\System32\WindowsPowerShell\v1.0\profile.ps1                                     AllUsersAllHosts
+C:\Windows\System32\WindowsPowerShell\v1.0\Microsoft.PowerShell_profile.ps1                AllUsersCurrentHost
+C:\Users\dahull\Documents\WindowsPowerShell\profile.ps1                                    CurrentUserAllHosts
+C:\Users\dahull\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1               CurrentUserCurrentHost         H4sIAAAAAAAEAMVabU/byBb+Xqn/YeRGwrnEXgJtt
 #>
 
-function add-zip
-{
-    param([string]$zipfilename)
 
-    if (-not (Test-Path($zipfilename))) {
-        Set-Content $zipfilename ("PK" + [char]5 + [char]6 + ("$([char]0)" * 18))
-        (dir $zipfilename).IsReadOnly = $false
-    }
 
-    $shellApplication = New-Object -com shell.application
-    $zipPackage = $shellApplication.NameSpace($zipfilename)
+function GetBase64GzippedStream {
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [System.IO.FileInfo]$File
+)
+    # Read profile into memory stream
+    $memFile = New-Object System.IO.MemoryStream (,[System.IO.File]::ReadAllBytes($File))
+        
+    # Create an empty memory stream to store our GZipped bytes in
+    $memStrm = New-Object System.IO.MemoryStream
 
-    $input | ForEach-Object { 
-        $file = $_
-        $zipPackage.CopyHere($file.FullName)
-        Start-Sleep -milliseconds 100
-    }
+    # Create a GZipStream with $memStrm as its underlying storage
+    $gzStrm  = New-Object System.IO.Compression.GZipStream $memStrm, ([System.IO.Compression.CompressionMode]::Compress)
+
+    # Pass $memFile's bytes through the GZipstream into the $memStrm
+    $gzStrm.Write($memFile.ToArray(), 0, $File.Length)
+    $gzStrm.Close()
+    $gzStrm.Dispose()
+
+    # Return Base64 Encoded GZipped stream
+    [System.Convert]::ToBase64String($memStrm.ToArray())   
+
 }
 
-$zipfile = (($env:TEMP) + "\" + ($env:COMPUTERNAME) + "-PSProfiles.zip")
-if (Test-Path $zipfile) { rm $zipfile -Force }
+$obj = "" | Select-Object ProfilePath,SID,Script
 
-Get-WmiObject win32_userprofile | Select-Object -ExpandProperty LocalPath | ForEach-Object {
-    $path = $_
-    $prfile = ($path + "\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1")
-    if (Test-Path $prfile) {
-        $thisProfile = ((Split-Path -Leaf $path) + "_" + "Microsoft.Powershell_profile.ps1")
-        $suppress = Copy-Item $prfile $env:TEMP\$thisProfile
-        ls $env:TEMP\$thisprofile | add-zip $zipfile
-        Remove-Item $env:TEMP\$thisProfile -Force
-    }
+Get-WmiObject win32_userprofile | ForEach-Object {
+    $obj.ProfilePath,$obj.SID,$obj.Script = $null
+
+    $obj.ProfilePath = $_.LocalPath + "\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1"
+    $obj.SID  = $_.SID
     
-    $prfile = ($path + "\Documents\WindowsPowershell\profile.ps1")
-    if (Test-Path $prfile) {
-        $thisProfile = ((Split-Path -Leaf $path) + "_" + "Microsoft.Powershell_profile.ps1")
-        $suppress = Copy-Item $prfile $env:TEMP\$thisProfile
-        ls $env:TEMP\$thisprofile | add-zip $zipfile
-        Remove-Item $env:TEMP\$thisProfile -Force
+    if (Test-Path $obj.ProfilePath) {
+        # Path is valid, get the content as a Base64 Encoded GZipped stream
+        $obj.Script = GetBase64GzippedStream (Get-Item $obj.ProfilePath)
     }
+    $obj
 }
 
-$alluserprofile = ($env:windir + "\System32\WindowsPowershell\v1.0\Microsoft.Powershell_profile.ps1")
-if (Test-Path $alluserprofile) {
-    $thisProfile = "Default_Microsoft.Powershell_profile.ps1"
-    $suppress = Copy-Item $alluserprofile $env:TEMP\$thisProfile
-    ls $env:TEMP\$thisprofile | add-zip $zipfile
-    Remove-Item $env:TEMP\$thisProfile -Force
-}
+"AllUsersAllHosts", "AllUsersCurrentHost", "CurrentUserAllHosts", "CurrentUserCurrentHost" | ForEach-Object {
+    $obj.ProfilePath,$obj.SID,$obj.Script = $null
 
-$alluserprofile = ($env:windir + "\System32\WindowsPowershell\v1.0\profile.ps1")
-if (Test-Path $alluserprofile) {
-    $thisProfile = "Default_Microsoft.Powershell_profile.ps1"
-    $suppress = Copy-Item $alluserprofile $env:TEMP\$thisProfile
-    ls $env:TEMP\$thisprofile | add-zip $zipfile
-    Remove-Item $env:TEMP\$thisProfile -Force
+    $obj.ProfilePath = ($profile.$_)
+    $obj.SID = $_
+    if (Test-Path $obj.ProfilePath) {
+        $obj.Script = GetBase64GzippedStream (Get-Item $obj.ProfilePath)
+    }
+    $obj
 }
-
-$alluserprofilex86 = ($env:windir + "\SysWOW64\WindowsPowershell\v1.0\Microsoft.Powershell_profile.ps1")
-if (Test-Path $alluserprofilex86) {
-    $thisProfile = "SysWow64Default_Microsoft.Powershell_profile.ps1"
-    $suppress = Copy-Item $alluserprofilex86 $env:TEMP\$thisProfile
-    ls $env:TEMP\$thisprofile | add-zip $zipfile
-    Remove-Item $env:TEMP\$thisProfile -Force
-}
-
-$alluserprofilex86 = ($env:windir + "\SysWOW64\WindowsPowershell\v1.0\profile.ps1")
-if (Test-Path $alluserprofilex86) {
-    $thisProfile = "SysWow64Default_Microsoft.Powershell_profile.ps1"
-    $suppress = Copy-Item $alluserprofilex86 $env:TEMP\$thisProfile
-    ls $env:TEMP\$thisprofile | add-zip $zipfile
-    Remove-Item $env:TEMP\$thisProfile -Force
-}
-
-Get-Content -Encoding Byte -Raw $zipfile
-Start-Sleep -Seconds 10 # Give a little time for the file handle to close... maybe
-$suppress = Remove-Item $zipfile

@@ -5,7 +5,9 @@ PowerShell profiles.
 .DESCRIPTION
 Get-PSProfiles.ps1 returns custom objects with the following properties:
 ProfilePath : Contains profile's path
-SID         : Contains a SID for the profile or a description
+SID         : Contains a SID for the profile where applicable
+Name        : Contains the name for the profile derived from the path
+              or the NoteProperty on $profile
 Script      : Contains a base64 encoded string of a GZipped stream of
               the profile's contents
 .INPUTS
@@ -14,20 +16,20 @@ None
 System.Management.Automation.PSCustomObject
 .EXAMPLE
 Get-PSProfiles.ps1
-ProfilePath                                                                                SID                            Script
------------                                                                                ---                            ------
-C:\Users\MSSQLSERVER\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1          S-1-5-nn-nnnnnnnnnn-nnnnnnnnnn
-C:\Users\foo\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1                  S-1-5-nn-nnnnnnnnnn-nnnnnnnnnn H4sIAAAAAAAEAMVabU/byBb+Xqn/YeRGwrnEXgJtt
-C:\Users\Administrator\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1        S-1-5-nn-nnnnnnnnnn-nnnnnnnnnn
-C:\Users\UpdatusUser\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1          S-1-5-nn-nnnnnnnnnn-nnnnnnnnnn
-C:\Users\UpdatusUser\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1          S-1-5-nn-nnnnnnnnnn-nnnnnnnnnn
-C:\Windows\ServiceProfiles\NetworkService\Documents\WindowsPowershell\Microsoft.Powersh... S-1-5-20
-C:\Windows\ServiceProfiles\LocalService\Documents\WindowsPowershell\Microsoft.Powershel... S-1-5-19
-C:\WINDOWS\system32\config\systemprofile\Documents\WindowsPowershell\Microsoft.Powershe... S-1-5-18                       H4sIAAAAAAAEAMVabU/byBb+Xqn/YeRGwrnEXgJtt
-C:\Windows\System32\WindowsPowerShell\v1.0\profile.ps1                                     AllUsersAllHosts
-C:\Windows\System32\WindowsPowerShell\v1.0\Microsoft.PowerShell_profile.ps1                AllUsersCurrentHost
-C:\Users\dahull\Documents\WindowsPowerShell\profile.ps1                                    CurrentUserAllHosts
-C:\Users\dahull\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1               CurrentUserCurrentHost         H4sIAAAAAAAEAMVabU/byBb+Xqn/YeRGwrnEXgJtt
+ProfilePath                                                          SID           Name                   Script
+-----------                                                          ---           ----                   ------
+C:\Users\MSSQLSERVER\Documents\WindowsPowershell\Microsoft.Powers... S-1-5-80-3... MSSQLSERVER
+C:\Users\foo\Documents\WindowsPowershell\Microsoft.Powershell_...    S-1-5-21-2... foo                    H4sIAAAAAAAEAMVabU/byBb+Xqn/YeRGwrnEXgJtt5cKqRBgiRZKRKBdLaDKsSfJ...
+C:\Users\Administrator\Documents\WindowsPowershell\Microsoft.Powe... S-1-5-21-1... Administrator         
+C:\Users\UpdatusUser\Documents\WindowsPowershell\Microsoft.Powers... S-1-5-21-1... UpdatusUser
+C:\Users\UpdatusUser\Documents\WindowsPowershell\Microsoft.Powers... S-1-5-21-1... UpdatusUser
+C:\Windows\ServiceProfiles\NetworkService\Documents\WindowsPowers... S-1-5-20      NetworkService
+C:\Windows\ServiceProfiles\LocalService\Documents\WindowsPowershe... S-1-5-19      LocalService
+C:\WINDOWS\system32\config\systemprofile\Documents\WindowsPowersh... S-1-5-18      systemprofile          H4sIAAAAAAAEAMVabU/byBb+Xqn/YeRGwrnEXgJtt5cKqRBgiRZKRKBdLaDKsSfJ...
+C:\Windows\System32\WindowsPowerShell\v1.0\profile.ps1                             AllUsersAllHosts
+C:\Windows\System32\WindowsPowerShell\v1.0\Microsoft.PowerShell_p...               AllUsersCurrentHost
+C:\Users\foo\Documents\WindowsPowerShell\profile.ps1                               CurrentUserAllHosts   
+C:\Users\foo\Documents\WindowsPowerShell\Microsoft.PowerShell_...                  CurrentUserCurrentHost H4sIAAAAAAAEAMVabU/byBb+Xqn/YeRGwrnEXgJtt5cKqRBgiRZKRKBdLaDKsSfJ...
 #>
 
 
@@ -53,16 +55,26 @@ Param(
 
     # Return Base64 Encoded GZipped stream
     [System.Convert]::ToBase64String($memStrm.ToArray())   
-
 }
 
-$obj = "" | Select-Object ProfilePath,SID,Script
+function GetName {
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [String]$LocalPath
+)
+    $Start = $LocalPath.LastIndexOf("\") + 1
+    $End   = $LocalPath.Length - $Start
+    $LocalPath.Substring($Start, $End)    
+}
+
+$obj = "" | Select-Object ProfilePath,SID,Name,Script
 
 Get-WmiObject win32_userprofile | ForEach-Object {
-    $obj.ProfilePath,$obj.SID,$obj.Script = $null
+    $obj.ProfilePath,$obj.SID,$obj.Script,$obj.Name = $null
 
     $obj.ProfilePath = $_.LocalPath + "\Documents\WindowsPowershell\Microsoft.Powershell_profile.ps1"
     $obj.SID  = $_.SID
+    $obj.Name = GetName $_.LocalPath
     
     if (Test-Path $obj.ProfilePath) {
         # Path is valid, get the content as a Base64 Encoded GZipped stream
@@ -72,10 +84,11 @@ Get-WmiObject win32_userprofile | ForEach-Object {
 }
 
 "AllUsersAllHosts", "AllUsersCurrentHost", "CurrentUserAllHosts", "CurrentUserCurrentHost" | ForEach-Object {
-    $obj.ProfilePath,$obj.SID,$obj.Script = $null
+    $obj.ProfilePath,$obj.SID,$obj.Script,$obj.Name = $null
 
     $obj.ProfilePath = ($profile.$_)
-    $obj.SID = $_
+    $obj.SID  = $null
+    $obj.Name = $_
     if (Test-Path $obj.ProfilePath) {
         $obj.Script = GetBase64GzippedStream (Get-Item $obj.ProfilePath)
     }

@@ -6,6 +6,8 @@ Get-CertStore.ps1 uses PowerShell's Certificate provider to access and
 enumerate information about certificates on the host.
 #>
 
+$ErrorActionPreference = "Continue"
+
 Try {
     Push-Location
     Set-Location Cert:

@@ -45,6 +45,7 @@ BINDEP .\Modules\bin\Autorunsc.exe
 !!THIS SCRIPT ASSUMES AUTORUNSC.EXE WILL BE IN $ENV:SYSTEMROOT!!
 #>
 
+
 function Compute-FileHash {
 Param(
     [Parameter(Mandatory = $true, Position=1)]

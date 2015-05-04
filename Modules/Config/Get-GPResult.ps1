@@ -44,7 +44,7 @@ Param(
     $gzStrm.Dispose()
 
     # Return Base64 Encoded GZipped stream
-    [System.Convert]::ToBase64String($memStrm.ToArray())   
+    [System.Convert]::ToBase64String($memStrm.ToArray())
 }
 
 $Comp = $env:COMPUTERNAME

@@ -1,34 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="en-us">
   <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
-
+    <meta charset="UTF-8">
     <title>Kansa by davehull</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
   </head>
-
   <body>
+    <section class="page-header">
+      <h1 class="project-name">Kansa</h1>
+      <h2 class="project-tagline">A Powershell incident response framework</h2>
+      <a href="https://github.com/davehull/Kansa" class="btn">View on GitHub</a>
+      <a href="https://github.com/davehull/Kansa/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/davehull/Kansa/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
 
-    <header>
-      <div class="container">
-        <h1>Kansa</h1>
-        <h2>A Powershell incident response framework</h2>
-
-        <section id="downloads">
-          <a href="https://github.com/davehull/Kansa/zipball/master" class="btn">Download as .zip</a>
-          <a href="https://github.com/davehull/Kansa/tarball/master" class="btn">Download as .tar.gz</a>
-          <a href="https://github.com/davehull/Kansa" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
-        </section>
-      </div>
-    </header>
-
-    <div class="container">
-      <section id="main_content">
-        <h1>
+    <section class="main-content">
+      <h1>
 <a id="kansa" class="anchor" href="#kansa" aria-hidden="true"><span class="octicon octicon-link"></span></a>Kansa</h1>
 
 <p>A modular incident response framework in Powershell. </p>
@@ -36,73 +27,47 @@
 <h2>
 <a id="what-does-it-do" class="anchor" href="#what-does-it-do" aria-hidden="true"><span class="octicon octicon-link"></span></a>What does it do?</h2>
 
-<p>It uses Powershell Remoting to run user contributed, ahem, user contri-<br>
-buted modules across hosts in an enterprise to collect data for use<br>
-during incident response, breach hunts, or for building an environmental<br>
-baseline.</p>
+<p>It uses Powershell Remoting to run user contributed, ahem, user contributed modules across hosts in an enterprise to collect data for use during incident response, breach hunts, or for building an environmental baseline.  </p>
 
 <h2>
 <a id="how-do-you-use-it" class="anchor" href="#how-do-you-use-it" aria-hidden="true"><span class="octicon octicon-link"></span></a>How do you use it?</h2>
 
-<p>Here's a very simple command line example you can run on your own local<br>
-host.  </p>
+<p>Here's a very simple command line example you can run on your own local host.  </p>
 
 <ol>
-<li> After downloading the project and unzipping it, you'll likely need<br>
-to "unblock" the ps1 files. The easiest way to do this if you're using<br>
-Powershell v3 or later is to cd to the directory where Kansa resides<br>
-and do:<br>
+<li> After downloading the project and unzipping it, you'll likely need to "unblock" the ps1 files. The easiest way to do this if you're using Powershell v3 or later is to cd to the directory where Kansa resides and do:<br>
 </li>
 </ol>
 
 <div class="highlight highlight-Powershell"><pre>ls <span class="pl-k">-</span>r <span class="pl-k">*</span>.ps1 <span class="pl-k">|</span> <span class="pl-c1">Unblock-File</span></pre></div>
 
-<p>If you're not running PS v3 or later, Sysinternal's Streams utility can<br>
-be used to remove the alternate data streams that Powershell uses to<br>
-determine if files came from the Internet. Once you've removed those<br>
-ADSes, you'll be able to run the scripts without issue.  </p>
+<p>If you're not running PS v3 or later, Sysinternal's Streams utility can be used to remove the alternate data streams that Powershell uses to determine if files came from the Internet. Once you've removed those ADSes, you'll be able to run the scripts without issue.  </p>
 
-<p>I've not run into any issues running the downloaded scripts via Windows<br>
-Remote Management / Powershell Remoting through Kansa, so you shouldn't<br>
-have to do anything if you want to run the scripts via remoting.  </p>
+<p>I've not run into any issues running the downloaded scripts via Windows Remote Management / Powershell Remoting through Kansa, so you shouldn't have to do anything if you want to run the scripts via remoting.  </p>
 
 <ol>
-<li><p>Open an elevated Powershell Prompt (Right-click Run As Administrator)  </p></li>
-<li><p>At the command prompt, enter: </p></li>
+<li> Open an elevated Powershell Prompt (Right-click Run As Administrator)<br>
+</li>
+<li> At the command prompt, enter: </li>
 </ol>
 
 <div class="highlight highlight-Powershell"><pre>.\<span class="pl-c1">kansa.ps1</span> <span class="pl-k">-</span>Target localhost <span class="pl-k">-</span>ModulePath .\Modules <span class="pl-k">-</span>Verbose  </pre></div>
 
-<p>The script should start collecting data or you may see an error about<br>
-not having Windows Remote Management enabled. If so, do a little<br>
-searching online, it's easy to turn on. Turn it on and try again. When<br>
-it finishes running, you'll have a new Output_timestamp subdirectory,<br>
-with subdirectories for data collected by each module. You can cd into<br>
-those subdirectories and checkout the data. There are some analysis<br>
-scripts in the Analysis directory, but many of those won't make sense<br>
-on a collection of data from a single host. Kansa was written for<br>
-collection and analysis of data from dozens, hundreds, thousands, tens<br>
-of thousands of systems.  </p>
+<p>The script should start collecting data or you may see an error about not having Windows Remote Management enabled. If so, do a little searching online, it's easy to turn on. Turn it on and try again. When it finishes running, you'll have a new Output_timestamp subdirectory, with subdirectories for data collected by each module. You can cd into those subdirectories and checkout the data. There are some analysis scripts in the Analysis directory, but many of those won't make sense<br>
+on a collection of data from a single host. Kansa was written for collection and analysis of data from dozens, hundreds, thousands, tens of thousands of systems.  </p>
 
 <h2>
 <a id="running-modules-standalone" class="anchor" href="#running-modules-standalone" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running Modules Standalone</h2>
 
-<p>Kansa modules can be run as standalone utilities outside of the Kansa<br>
-framework. Why might you want to do this? Consider netstat -naob, the<br>
-output of the command line utility is ugly and doesn't easily lend<br>
-itself to analysis. Running  </p>
+<p>Kansa modules can be run as standalone utilities outside of the Kansa framework. Why might you want to do this? Consider netstat -naob, the output of the command line utility is ugly and doesn't easily lend itself to analysis. Running  </p>
 
 <div class="highlight highlight-Powershell"><pre><span class="pl-c1">Modules\Net\Get-Netstat.ps1</span></pre></div>
 
-<p>as a standalone script will call netstat -naob, but it will return<br>
-Powershell objects in an easy to read, easy to analyze format. You can<br>
-easily convert its output to CSV, TSV or XML using normal Powershell<br>
-cmdlets. Here's an example:  </p>
+<p>as a standalone script will call netstat -naob, but it will return Powershell objects in an easy to read, easy to analyze format. You can easily convert its output to CSV, TSV or XML using normal Powershell cmdlets. Here's an example:  </p>
 
 <div class="highlight highlight-Powershell"><pre>.<span class="pl-c1">\Get-Netstat.ps1</span> <span class="pl-k">|</span> <span class="pl-c1">ConvertTo-CSV</span> <span class="pl-k">-</span>Delimiter <span class="pl-s">"<span class="pl-cce">`t</span>"</span> <span class="pl-k">-</span>NoTypeInformation <span class="pl-k">|</span> <span class="pl-k">%</span> { <span class="pl-k">$</span><span class="pl-c1">_</span> <span class="pl-k">-replace</span> <span class="pl-s">"<span class="pl-cce">`"</span>"</span> } <span class="pl-k">|</span> <span class="pl-c1">Set-Content</span> netstat.tsv</pre></div>
 
-<p>the result of the above will be a file called netstat.tsv containing<br>
-unquoted, tab separate values for netstat -naob's ouput.</p>
+<p>the result of the above will be a file called netstat.tsv containing unquoted, tab separate values for netstat -naob's output.</p>
 
 <h2>
 <a id="caveats" class="anchor" href="#caveats" aria-hidden="true"><span class="octicon octicon-link"></span></a>Caveats:</h2>
@@ -110,28 +75,31 @@ unquoted, tab separate values for netstat -naob's ouput.</p>
 <p>Powershell relies on the Windows API. Your adversary may use subterfuge.*</p>
 
 <ul>
-<li>Collectors can be written to bypass the Windows API as well.<br>
-Get-RekallPslist.ps1 for example.</li>
+<li>Collectors can be written to bypass the Windows API as well -- Get-RekallPslist.ps1 for example.</li>
 </ul>
 
 <h2>
 <a id="version-notes" class="anchor" href="#version-notes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Version notes:</h2>
 
-<p>It's been tested in PSv2 / .NET 2 and
-later and works mostly without issue, PSv2 doesn't support workflows and some collectors
-do use workflows. Trouble is, in PSv2, workflow code throws an error when the scripts are
-parsed, before execution begins. The fix, comment out the workflows. :(</p>
+<p>It's been tested in PSv2 / .NET 2 and later and works mostly without issue, PSv2 doesn't support workflows and some collectors do use workflows. Trouble is, in PSv2, workflow code throws an error when the scripts are parsed, before execution begins. The fix, comment out the workflows. :(  </p>
 
-<p>Really, upgrade to PSv3 or later. Be happy.</p>
+<p>Really, upgrade to PSv3 or later. Be happy.  </p>
 
 <h2>
 <a id="more-info" class="anchor" href="#more-info" aria-hidden="true"><span class="octicon octicon-link"></span></a>More info:</h2>
 
 <p><a href="http://trustedsignal.blogspot.com/search/label/Kansa">http://trustedsignal.blogspot.com/search/label/Kansa</a><br>
-<a href="http://www.powershellmagazine.com/2014/07/18/kansa-a-powershell-based-incident-response-framework/">http://www.powershellmagazine.com/2014/07/18/kansa-a-powershell-based-incident-response-framework/</a>  </p>
-      </section>
-    </div>
+<a href="http://www.powershellmagazine.com/2014/07/18/kansa-a-powershell-based-incident-response-framework/">http://www.powershellmagazine.com/2014/07/18/kansa-a-powershell-based-incident-response-framework/</a></p>
 
-    
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/davehull/Kansa">Kansa</a> is maintained by <a href="https://github.com/davehull">davehull</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
   </body>
 </html>
+

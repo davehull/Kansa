@@ -444,6 +444,21 @@ Param(
         } else {
             $Targets = Get-ADComputer -Filter * -ResultSetSize $TargetCount | Select-Object -ExpandProperty Name
         }
+        # Iterate through targets, cleaning up AD Replication errors
+        # In some AD environments, when there are duplicate object names, AD will add the objectGUID to the Name
+        # displayed in the format of "hostname\0ACNF:ObjectGUID".  If you expand the property Name, you get 2 lines
+        # returned, the hostname, and then CNF:ObjectGUID. This code will look for hosts with more than one line and return
+        # the first line which is assumed to be the host name.
+        foreach ($item in $Targets) {
+            $numlines = $item | Measure-Object -Line
+            if ($numlines.Lines -gt 1) {
+                $lines = $item.Split("`n")
+                $i = [array]::IndexOf($targets, $item)
+                $targets[$i] = $lines[0]
+            }
+        }
+        $TargetList = "hosts.txt"
+        Set-Content -Path $TargetList -Value $Targets -Encoding $Encoding
     }
 
     if ($Targets) {

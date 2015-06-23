@@ -357,7 +357,7 @@ Param(
     # Need to maintain the order for "order of volatility"
     $ModuleHash = New-Object System.Collections.Specialized.OrderedDictionary
 
-    if (!(ls $ModuleScript).PSIsContainer -eq $True) {
+    if (!(ls $ModuleScript | Select-Object -ExpandProperty PSIsContainer)) {
         # User may have provided full path to a .ps1 module, which is how you run a single module explicitly
         $ModuleHash.Add((ls $ModuleScript), $ModuleArgs)
 

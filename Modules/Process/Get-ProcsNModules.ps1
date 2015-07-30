@@ -59,7 +59,7 @@ Get-Process | % {
     $currPID = $_.Id
  
     foreach($Module in $Modules) {
-        $o = "" | Select-Object Name, ParentPath, Hash, ProcessName, ProcPID
+        $o = "" | Select-Object Name, ParentPath, Hash, ProcessName, ProcPID, CreateUTC, LastAccessUTC, LastWriteUTC
         $o.Name = $Module.Substring($Module.LastIndexOf("\") + 1)
         $o.ParentPath = $Module.Substring(0, $Module.LastIndexOf("\"))
         if ($hashtable.get_item($Module)) {
@@ -71,6 +71,9 @@ Get-Process | % {
         # $o.ProcessName = $MM
         $o.ProcessName = ($MM.Split('\'))[-1]
         $o.ProcPID = $currPID
+        $o.CreateUTC = (Get-Item $Module).CreationTimeUtc
+        $o.LastAccessUTC = (Get-Item $Module).LastAccessTimeUtc
+        $o.LastWriteUTC = (Get-Item $Module).LastWriteTimeUtc
         $o
     }
 }

@@ -145,6 +145,8 @@ certificates deployed. If this flag is used and certificates are
 deployed, connections will be made over HTTPS and will be encrypted.
 Without this flag traffic passes in the clear. Note authentication is
 done via Kerberos regardless of whether or not SSL is used.
+.PARAMETER Port
+An optional parameter if WinRM is listening on a non-standard port.
 .INPUTS
 None
 You cannot pipe objects to this cmdlet
@@ -245,7 +247,10 @@ Param(
     [Parameter(Mandatory=$False,Position=15)]
         [Switch]$Quiet=$False,
     [Parameter(Mandatory=$False,Position=16)]
-        [Switch]$UseSSL
+        [Switch]$UseSSL,
+    [Parameter(Mandatory=$False,Position=17)]
+        [ValidateRange(0,65535)]
+        [uint16]$Port=5985
 )
 
 # Opening with a Try so the Finally block at the bottom will always call
@@ -555,17 +560,17 @@ Param(
     # Create our sessions with targets
     if ($Credential) {
         if ($UseSSL) {
-            $PSSessions = New-PSSession -ComputerName $Targets -UseSSL -Authentication Kerberos -SessionOption (New-PSSessionOption -NoMachineProfile) -Credential $Credential
+            $PSSessions = New-PSSession -ComputerName $Targets -Port $Port -UseSSL -Authentication Kerberos -SessionOption (New-PSSessionOption -NoMachineProfile) -Credential $Credential
         } else {
-            $PSSessions = New-PSSession -ComputerName $Targets -Authentication Kerberos -SessionOption (New-PSSessionOption -NoMachineProfile) -Credential $Credential
+            $PSSessions = New-PSSession -ComputerName $Targets -Port $Port -Authentication Kerberos -SessionOption (New-PSSessionOption -NoMachineProfile) -Credential $Credential
         }
         $Error | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()
     } else {
         if ($UseSSL) {
-            $PSSessions = New-PSSession -ComputerName $Targets -UseSSL -Authentication Kerberos -SessionOption (New-PSSessionOption -NoMachineProfile)
+            $PSSessions = New-PSSession -ComputerName $Targets -Port $Port -UseSSL -Authentication Kerberos -SessionOption (New-PSSessionOption -NoMachineProfile)
         } else {
-            $PSSessions = New-PSSession -ComputerName $Targets -Authentication Kerberos -SessionOption (New-PSSessionOption -NoMachineProfile)
+            $PSSessions = New-PSSession -ComputerName $Targets -Port $Port -Authentication Kerberos -SessionOption (New-PSSessionOption -NoMachineProfile)
         }
         $Error | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()

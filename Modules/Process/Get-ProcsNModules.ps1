@@ -56,9 +56,10 @@ $hashtable = @{}
 Get-Process | % { 
     $MM = $_.MainModule | Select-Object -ExpandProperty FileName
     $Modules = $($_.Modules | Select-Object -ExpandProperty FileName)
+    $currPID = $_.Id
  
     foreach($Module in $Modules) {
-        $o = "" | Select-Object Name, ParentPath, Hash, ProcessName
+        $o = "" | Select-Object Name, ParentPath, Hash, ProcessName, ProcPID
         $o.Name = $Module.Substring($Module.LastIndexOf("\") + 1)
         $o.ParentPath = $Module.Substring(0, $Module.LastIndexOf("\"))
         if ($hashtable.get_item($Module)) {
@@ -68,6 +69,8 @@ Get-Process | % {
             $hashtable.Add($Module, $o.Hash)
         }
         # $o.ProcessName = $MM
+        $o.ProcessName = ($MM.Split('\'))[-1]
+        $o.ProcPID = $currPID
         $o
     }
 }

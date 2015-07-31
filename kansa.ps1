@@ -155,6 +155,9 @@ Default, Digest, Kerberos, Negotiate, NegotiateWithImplicitCredential.
 Whereever possible, you should use Kerberos, some of these options are
 considered dangerous, so be careful and read up on the different
 methods before using an alternate.
+.PARAMETER JSONDepth
+An optional parameter specifying how many levels of contained objects
+are included in the JSON representation. Default is 10.
 .INPUTS
 None
 You cannot pipe objects to this cmdlet
@@ -231,7 +234,7 @@ Param(
     [Parameter(Mandatory=$False,Position=4)]
         [System.Management.Automation.PSCredential]$Credential=$Null,
     [Parameter(Mandatory=$False,Position=5)]
-    [ValidateSet("CSV","TSV","XML")]
+    [ValidateSet("CSV","JSON","TSV","XML")]
         [String]$OutputFormat="CSV",
     [Parameter(Mandatory=$False,Position=6)]
         [Switch]$Pushbin,
@@ -261,7 +264,9 @@ Param(
         [uint16]$Port=5985,
     [Parameter(Mandatory=$False,Position=18)]
         [ValidateSet("Basic","CredSSP","Default","Digest","Kerberos","Negotiate","NegotiateWithImplicitCredential")]
-        [String]$Authentication="Kerberos"
+        [String]$Authentication="Kerberos",
+    [Parameter(Mandatory=$false,Position=19)]
+        [int32]$JSONDepth="10"
 )
 
 # Opening with a Try so the Finally block at the bottom will always call
@@ -659,6 +664,10 @@ Param(
                     $Outfile = $Outfile + ".csv"
                     $Recpt | Export-Csv -NoTypeInformation -Encoding $Encoding $Outfile
                 }
+                "*json" {
+                    $Outfile = $Outfile + ".json"
+                    $Recpt | ConvertTo-Json -Depth $JSONDepth | Set-Content -Encoding $Encoding $Outfile
+                }
                 "*tsv" {
                     $Outfile = $Outfile + ".tsv"
                     # LogParser can't handle quoted tab separated values, so we'll strip the quotes.
@@ -668,15 +677,10 @@ Param(
                     $Outfile = $Outfile + ".xml"
                     $Recpt | Export-Clixml $Outfile -Encoding $Encoding
                 }
+                <# Following output formats are no longer supported in Kansa
                 "*bin" {
                     $Outfile = $Outfile + ".bin"
                     $Recpt | Set-Content -Encoding Byte $Outfile
-                    <#
-                    $Stream = New-Object System.IO.FileStream($Outfile)
-                    $BinWriter = New-Object System.IO.BinaryWriter($stream)
-                    $BinWriter.Write($Recpt)
-                    $BinWriter.Close()
-                    #>
                 }
                 "*zip" {
                     # Compression should be done in the collector
@@ -685,14 +689,10 @@ Param(
                     $Outfile = $Outfile + ".zip"
                     $Recpt | Set-Content -Encoding Byte $Outfile
                 }
-                "*Default" {
-                    # Default here means we let PowerShell figure out the output encoding
-                    # Used by Get-File.ps1, which can grab arbitrary files
-                    $Recpt | Set-Content -Encoding Default $Outfile
-                }
+                #>
                 default {
-                    $Outfile = $Outfile + ".txt"
-                    $Recpt | Set-Content -Encoding $Encoding $Outfile
+                    $Outfile = $Outfile + ".csv"
+                    $Recpt | Export-Csv -NoTypeInformation -Encoding $Encoding $Outfile
                 }
             }
         }

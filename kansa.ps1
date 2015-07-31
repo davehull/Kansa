@@ -147,6 +147,14 @@ Without this flag traffic passes in the clear. Note authentication is
 done via Kerberos regardless of whether or not SSL is used.
 .PARAMETER Port
 An optional parameter if WinRM is listening on a non-standard port.
+.PARAMETER Authentication
+An optional parameter specifying what authentication method should be 
+used. The default is Kerberos, but that won't work for authenticating
+against local administrator accounts. Valide options: Basic, CredSSP,
+Default, Digest, Kerberos, Negotiate, NegotiateWithImplicitCredential.
+Whereever possible, you should use Kerberos, some of these options are
+considered dangerous, so be careful and read up on the different
+methods before using an alternate.
 .INPUTS
 None
 You cannot pipe objects to this cmdlet
@@ -253,7 +261,7 @@ Param(
         [uint16]$Port=5985,
     [Parameter(Mandatory=$False,Position=18)]
         [ValidateSet("Basic","CredSSP","Default","Digest","Kerberos","Negotiate","NegotiateWithImplicitCredential")]
-        [String]$AuthN="Kerberos"
+        [String]$Authentication="Kerberos"
 )
 
 # Opening with a Try so the Finally block at the bottom will always call
@@ -563,17 +571,17 @@ Param(
     # Create our sessions with targets
     if ($Credential) {
         if ($UseSSL) {
-            $PSSessions = New-PSSession -ComputerName $Targets -Port $Port -UseSSL -Authentication $AuthN -SessionOption (New-PSSessionOption -NoMachineProfile) -Credential $Credential
+            $PSSessions = New-PSSession -ComputerName $Targets -Port $Port -UseSSL -Authentication $Authentication -SessionOption (New-PSSessionOption -NoMachineProfile) -Credential $Credential
         } else {
-            $PSSessions = New-PSSession -ComputerName $Targets -Port $Port -Authentication $AuthN -SessionOption (New-PSSessionOption -NoMachineProfile) -Credential $Credential
+            $PSSessions = New-PSSession -ComputerName $Targets -Port $Port -Authentication $Authentication -SessionOption (New-PSSessionOption -NoMachineProfile) -Credential $Credential
         }
         $Error | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()
     } else {
         if ($UseSSL) {
-            $PSSessions = New-PSSession -ComputerName $Targets -Port $Port -UseSSL -Authentication $AuthN -SessionOption (New-PSSessionOption -NoMachineProfile)
+            $PSSessions = New-PSSession -ComputerName $Targets -Port $Port -UseSSL -Authentication $Authentication -SessionOption (New-PSSessionOption -NoMachineProfile)
         } else {
-            $PSSessions = New-PSSession -ComputerName $Targets -Port $Port -Authentication $AuthN -SessionOption (New-PSSessionOption -NoMachineProfile)
+            $PSSessions = New-PSSession -ComputerName $Targets -Port $Port -Authentication $Authentication -SessionOption (New-PSSessionOption -NoMachineProfile)
         }
         $Error | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()

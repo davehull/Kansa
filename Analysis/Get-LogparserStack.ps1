@@ -218,6 +218,7 @@ SELECT
 }
 
 if (Get-Command logparser.exe) {
+    $CallArgs = @('-stats:off')
     $InputFiles = GetInputFiles -FilePattern $FilePattern
     $Header = GetHeader -InputFiles $InputFiles -Delimiter $Delimiter
     
@@ -229,25 +230,35 @@ if (Get-Command logparser.exe) {
 
     switch ($Delimiter) {
         "," {
-            $delim = "-i:csv"
+            $CallArgs += "-i:csv"
         }
         "`t" {
-            $delim = "-i:tsv -fixedsep:on"
+            $CallArgs += "-i:tsv"
+            $CallArgs += "-fixedsep:on"
         } default {
-            $delim = "i:tsv -iseparator:$Delimiter -fixedsep:on"
+            $CallArgs += "i:tsv"
+            $CallArgs += "-iseparator:$Delimiter"
+            $CallArgs += "-fixedsep:on"
         }
     }
 
 
     if ($OutFile) {
+        $CallArgs += "-dtlines:0"
+        $CallArgs += "-o:tsv"
+        $CallArgs += "-oSeparator:$Delimiter"
+        $CallArgs += "$Query"
         Write-Verbose ("{0}: Will attempt to write output to {1}." -f (GetTimeStampUtc), $OutFile)
         Try {
-            & logparser -stats:off $delim -dtlines:0 -o:tsv -oSeparator:$Delimiter $Query
+            & 'logparser' $CallArgs
         } Catch {
             ("{0}: Caught {1}." -f (GetTimeStampUtc), $_)
         }
     } else {
-        & logparser -stats:off $delim -dtlines:0 -rtp:-1 $Query
+        $CallArgs += "-dtlines:0"
+        $CallArgs += "-rtp:-1"
+        $CallArgs += "$Query"
+        & 'logparser' $CallArgs
     }
 
 } else {

@@ -45,6 +45,7 @@ BINDEP .\Modules\bin\Autorunsc.exe
 !!THIS SCRIPT ASSUMES AUTORUNSC.EXE WILL BE IN $ENV:SYSTEMROOT!!
 #>
 
+
 function Compute-FileHash {
 Param(
     [Parameter(Mandatory = $true, Position=1)]
@@ -76,6 +77,7 @@ Param(
         }
         $PaddedHex
         $File.LastWriteTimeUtc
+        $File.Length
         
     } else {
         "${FilePath} is locked or could not be found."
@@ -128,6 +130,7 @@ if (Test-Path "$env:SystemRoot\Autorunsc.exe") {
         $_ | Add-Member NoteProperty ScriptMD5 $null
         $_ | Add-Member NoteProperty ScriptModTimeUTC $null
         $_ | Add-Member NoteProperty ShannonEntropy $null
+        $_ | Add-Member NoteProperty ScriptLength $null
 
         if ($_."Image Path") {
             $_.ShannonEntropy = GetShannonEntropy $_."Image Path"
@@ -153,7 +156,7 @@ if (Test-Path "$env:SystemRoot\Autorunsc.exe") {
                     }
                 }
                 $scriptPath = $scriptPath.Trim()
-                $_.ScriptMD5,$_.ScriptModTimeUTC = Compute-FileHash $scriptPath
+                $_.ScriptMD5,$_.ScriptModTimeUTC,$_.ScriptLength = Compute-FileHash $scriptPath
                 $scriptPath = $null
             }
         }

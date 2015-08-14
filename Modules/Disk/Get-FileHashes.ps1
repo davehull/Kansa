@@ -39,7 +39,7 @@ Param(
     [Parameter(Mandatory=$False,Position=1)]
         [String]$BasePaths,
     [Parameter(Mandatory=$False,Position=2)]
-        [String]$extRegex="\.(exe|sys|dll|ps1|vbs|bat|cmd)$",
+        [String]$extRegex="\.(exe|sys|dll|ps1|psd1|psm1|vbs|bat|cmd)$",
     [Parameter(Mandatory=$False,Position=3)]
         [int]$MinB=4096,
     [Parameter(Mandatory=$False,Position=4)]
@@ -74,7 +74,7 @@ workflow Get-HashesWorkflow {
 		[Parameter(Mandatory=$False,Position=3)]
 			[int]$MaxB=10485760,
 		[Parameter(Mandatory=$False,Position=4)]
-			[string]$extRegex="\.(exe|sys|dll|ps1|vbs|bat|cmd)$"
+			[string]$extRegex="\.(exe|sys|dll|ps1|psd1|psm1|vbs|bat|cmd|jpg|aspx|asp|class|java|war|tmp)$"
 	)
 
 	# Workflows are how PowerShell does multi-threading. The parent process 
@@ -95,7 +95,7 @@ workflow Get-HashesWorkflow {
 	$hashList = @()
 	
 	$Files = (
-		Get-ChildItem -Path $basePath -Recurse -ErrorAction SilentlyContinue | 
+		Get-ChildItem -Path $basePath -Recurse -Force -ErrorAction SilentlyContinue | 
 		? -FilterScript { 
 			($_.Length -ge $MinB -and $_.Length -le $_.Length) -and 
 			($_.Extension -match $extRegex) 
@@ -154,7 +154,7 @@ function Get-Hashes {
 		[Parameter(Mandatory=$False,Position=3)]
 			[int]$MaxB=10485760,
 		[Parameter(Mandatory=$False,Position=4)]
-			[string]$extRegex="\.(exe|sys|dll|ps1|vbs|bat|cmd)$"
+			[string]$extRegex="\.(exe|sys|dll|ps1|psd1|psm1|vbs|bat|cmd)$"
 	)
 
 	# Single-threaded option since we ran into a few situations while testing 
@@ -163,7 +163,7 @@ function Get-Hashes {
 	$hashList = @()
 	
 	$Files = (
-		Get-ChildItem -Path $basePath -Recurse -ErrorAction SilentlyContinue | 
+		Get-ChildItem -Path $basePath -Recurse -Force -ErrorAction SilentlyContinue | 
 		? -FilterScript { 
 			($_.Length -ge $MinB -and $_.Length -le $_.Length) -and 
 			($_.Extension -match $extRegex) 
@@ -214,7 +214,7 @@ function Get-Hash {
 		[Parameter(Mandatory=$False,Position=3)]
 			[int]$MaxB=10485760,
 		[Parameter(Mandatory=$False,Position=4)]
-			[string]$extRegex="\.(exe|sys|dll|ps1|vbs|bat|cmd)$"
+			[string]$extRegex="\.(exe|sys|dll|ps1|psd1|psm1|vbs|bat|cmd)$"
 	)
 	
 	# Check if we're in a WOW64 situation. Thanks to MagicAndi on StackOverflow for this check.
@@ -229,13 +229,18 @@ function Get-Hash {
 
 	$HashType = $HashType.ToUpper()
 
-	try {
-		$hashList = Get-HashesWorkflow -BasePath $BasePath -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
-	}
-	catch {
-		Write-Verbose -Message "Workflows not supported. Running in single-threaded mode."
+    if ($psversiontable.version.major -gt 2.0) {
+    	try {
+	    	$hashList = Get-HashesWorkflow -BasePath $BasePath -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
+	    }
+	    catch {
+		    Write-Verbose -Message "Workflows not supported. Running in single-threaded mode."
+		    $hashList = Get-Hashes -BasePath $BasePath -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
+	    }
+    } else {
+        Write-Verbose -Message "Workflows not supported. Running in single-threaded mode."
 		$hashList = Get-Hashes -BasePath $BasePath -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
-	}
+    }
 
     $o = "" | Select-Object File, Hash, Length, LastWritetime
     if ($hashList) {

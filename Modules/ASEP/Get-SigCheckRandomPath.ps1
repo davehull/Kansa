@@ -1,6 +1,14 @@
 <#
 .SYNOPSIS
-Get-Sigcheck.ps1 returns output from the Sysinternals' sigcheck.exe utility.
+Get-SigcheckRandom.ps1 returns output from the Sysinternals' 
+sigcheck.exe utility for PE binaries in one of six random paths.
+.DESCRIPTION
+Get-SigcheckRandom.ps1 was written for sampling systems at scale. Its
+sister script or big brother, Get-Sigcheck.ps1 will return data for all
+PE binaries on the given target. This can take hours to run. This
+version of the script only reutrns data for PE binaries in one path
+chosen from the list of six paths in this script. Use it for sampling
+large environments in a more timely manner.
 
 .NOTES
 The following lines are required by Kansa.ps1. They are directives that

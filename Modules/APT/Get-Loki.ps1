@@ -12,17 +12,13 @@ Requires loki.zip file in Modules\Bin\
 Put loki.exe and signatures folder in loki.zip
 
 .NOTES
-Next two lines are required by kansa for proper handling of output and 
-when used with -Pushbin, the BINDEP directive below tells Kansa where
-to find the third-party code.
-OUTPUT txt
 BINDEP .\Modules\bin\loki.zip
 #>
 
 [CmdletBinding()]
 Param(
     [Parameter(Mandatory=$False,Position=0)]
-        [String]$ScanPath="C:\Windows"
+        [String]$ScanPath="C:\Windows\System32"
 )
 
 Function Expand-Zip ($zipfile, $destination) {
@@ -38,19 +34,29 @@ $lokipath = ($env:SystemRoot + "\loki.zip")
 
 
 if (Test-Path ($lokipath)) {
-    $suppress = New-Item -Name loki -ItemType Directory -Path $env:Temp -Force
+    $null = New-Item -Name loki -ItemType Directory -Path $env:Temp -Force
     $lokidest = ($env:Temp + "\loki\")
     Expand-Zip $lokipath $lokidest
     if (Test-Path($lokidest + "loki.exe")) {
         # Disk scan
         if (Test-Path($ScanPath)) { 
-                    & $lokidest\loki.exe --noindicator --dontwait -p $ScanPath
-                }
-            }
-        $suppress = Remove-Item $lokidest -Force -Recurse
+            $lokioutput = ( & ${lokidest}\loki.exe --noindicator --dontwait -p $ScanPath 2>&1 )
+
+            # return data
+            $o = "" | Select-Object LokiOutput
+            $o.LokiOutput = $lokioutput
+            $o
+
+            # cleanup
+            Start-Sleep -Seconds 10
+            $null = Remove-Item $lokidest -Force -Recurse
+
+        } else {
+            Write-Error ("{0}: scanpath of {1} not found." -f $env:COMPUTERNAME, $ScanPath)
+        }
     } else {
-        "loki.zip found, but not unzipped."
+        Write-Error ("{0}: loki.zip found, but not unzipped." -f $env:COMPUTERNAME)
     }
- else {
-    "loki.zip not found on $env:COMPUTERNAME"
+} else {
+    Write-Error ("{0}: loki.zip not found" -f $env:COMPUTERNAME)
 }

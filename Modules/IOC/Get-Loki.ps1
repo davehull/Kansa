@@ -40,12 +40,14 @@ if (Test-Path ($lokipath)) {
     if (Test-Path($lokidest + "loki.exe")) {
         # Disk scan
         if (Test-Path($ScanPath)) { 
-            $lokioutput = ( & ${lokidest}\loki.exe --noindicator --dontwait -p $ScanPath 2>&1 )
+            ( & ${lokidest}\loki.exe --csv --noindicator --dontwait -p $ScanPath 2>&1 ) | ConvertFrom-Csv -Header Timestamp,hostname,message_type,message | Select-Object Timestamp,message_type,message
 
+            <# 
             # return data
             $o = "" | Select-Object LokiOutput
             $o.LokiOutput = $lokioutput
             $o
+            #>
 
             # cleanup
             Start-Sleep -Seconds 10

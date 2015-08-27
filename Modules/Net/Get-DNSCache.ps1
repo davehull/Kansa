@@ -1,11 +1,8 @@
 ﻿<#
 .SYNOPSIS
 Get-DNSCache.ps1 acquires DNS cache entries from the target host.
-.NOTES
-Next line tells Kansa.ps1 how to format this script's output.
-OUTPUT csv
 #>
-# I hate Microsoft
+
 # Convert function from https://xaegr.wordpress.com/2007/01/24/decoder/
 # If you try to use old cmd commands such as net, schtask etc.
 # and remote OS is other than English you will ran into problem

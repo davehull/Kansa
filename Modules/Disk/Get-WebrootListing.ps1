@@ -37,7 +37,7 @@ http://en.wiktionary.org/wiki/Shannon_entropy
 
 Param(
     [Parameter(Mandatory=$False,Position=0)]
-        [string]$BasePath="C:\inetpub\wwwroot",
+        [string[]]$BasePaths=$null,
     [Parameter(Mandatory=$False,Position=1)]
         [string]$extRegex="\..*$",
     [Parameter(Mandatory=$False,Position=2)]
@@ -46,50 +46,62 @@ Param(
         [long]$MaxB=281474976645120
 )
 
-if (Test-Path $BasePath -PathType Container) {
+if ($null -eq $BasePaths) {
+    try {
+        Import-Module WebAdministration
+        $BasePaths = Get-WebApplication | % { [System.Environment]::ExpandEnvironmentVariables($($_.PhysicalPath)) }
+    }
+    catch {
+        Write-Error -Message "Failed to generate list of base paths."
+    }
+}
 
-        $files = (
-            Get-ChildItem -Path $BasePath -Recurse -ErrorAction SilentlyContinue |
-            ? -FilterScript {
-                ($_.Extension -match $extRegex) -and
-                ($_.Length -ge $MinB -and $_.Length -le $MaxB)
-            }
-        )
-
-        foreach ($childItem in $files) {
-            $fileEntropy = 0.0
-            $byteCounts = @{}
-            $byteTotal = 0
-            
-            # Folders don't really have entropy, so we'll skip calculating it for them.
-            if(Test-Path $childItem.FullName -PathType Leaf) {
-                $fileName = $childItem.FullName
-                $fileBytes = [System.IO.File]::ReadAllBytes($fileName)
-
-                foreach ($fileByte in $fileBytes) {
-                    $byteCounts[$fileByte]++
-                    $byteTotal++
+foreach ($BasePath in $BasePaths) {
+    if (Test-Path $BasePath -PathType Container) {
+    
+            $files = (
+                Get-ChildItem -Path $BasePath -Recurse -ErrorAction SilentlyContinue |
+                ? -FilterScript {
+                    ($_.Extension -match $extRegex) -and
+                    ($_.Length -ge $MinB -and $_.Length -le $MaxB)
                 }
-
-                foreach($byte in 0..255) {
-                    $byteProb = ([double]$byteCounts[[byte]$byte])/$byteTotal
-                    if ($byteProb -gt 0) {
-                        $fileEntropy += (-1 * $byteProb) * [Math]::Log($byteProb, 2.0)
+            )
+    
+            foreach ($childItem in $files) {
+                $fileEntropy = 0.0
+                $byteCounts = @{}
+                $byteTotal = 0
+                
+                # Folders don't really have entropy, so we'll skip calculating it for them.
+                if(Test-Path $childItem.FullName -PathType Leaf) {
+                    $fileName = $childItem.FullName
+                    $fileBytes = [System.IO.File]::ReadAllBytes($fileName)
+    
+                    foreach ($fileByte in $fileBytes) {
+                        $byteCounts[$fileByte]++
+                        $byteTotal++
+                    }
+    
+                    foreach($byte in 0..255) {
+                        $byteProb = ([double]$byteCounts[[byte]$byte])/$byteTotal
+                        if ($byteProb -gt 0) {
+                            $fileEntropy += (-1 * $byteProb) * [Math]::Log($byteProb, 2.0)
+                        }
                     }
                 }
+            
+                $o = "" | Select-Object FullName, Length, CreationTimeUtc, LastAccessTimeUtc, LastWriteTimeUtc, Entropy
+                $o.FullName = $childItem.FullName
+                $o.Length   = $childItem.Length
+                $o.CreationTimeUtc = $childItem.CreationTimeUtc
+                $o.LastAccesstimeUtc = $childItem.LastAccessTimeUtc
+                $o.LastWriteTimeUtc = $childItem.LastWriteTimeUtc
+                $o.Entropy = $fileEntropy
+    
+                $o
             }
-        
-            $o = "" | Select-Object FullName, Length, CreationTimeUtc, LastAccessTimeUtc, LastWriteTimeUtc, Entropy
-            $o.FullName = $childItem.FullName
-            $o.Length   = $childItem.Length
-            $o.CreationTimeUtc = $childItem.CreationTimeUtc
-            $o.LastAccesstimeUtc = $childItem.LastAccessTimeUtc
-            $o.LastWriteTimeUtc = $childItem.LastWriteTimeUtc
-            $o.Entropy = $fileEntropy
-
-            $o
-        }
-}
-else {
-    Write-Error -Message "Invalid path specified: $BasePath"
+    }
+    else {
+        Write-Error -Message "Invalid path specified: $BasePath"
+    }
 }

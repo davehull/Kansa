@@ -332,7 +332,7 @@ Exit the script somewhat gracefully, closing any open transcript.
 #>
     Set-Location $StartingPath
     if ($Transcribe) {
-        $Suppress = Stop-Transcript
+        $null = Stop-Transcript
     }
 
     if ($Error) {
@@ -348,7 +348,7 @@ Exit the script somewhat gracefully, closing any open transcript.
     if (!(Get-ChildItem $OutputPath)) {
         # $OutputPath is empty, nuke it
         "Output path was created, but Kansa finished with no hits, no runs and no errors. Nuking the folder."
-        $suppress = Remove-Item $OutputPath -Force
+        $null = Remove-Item $OutputPath -Force
     }
 
     Exit
@@ -655,7 +655,7 @@ Param(
             }
         }
                             
-        $Suppress = New-Item -Path $OutputPath -name ($GetlessMod + $ArgFileName) -ItemType Directory
+        $null = New-Item -Path $OutputPath -name ($GetlessMod + $ArgFileName) -ItemType Directory
         $Job.ChildJobs | Foreach-Object { $ChildJob = $_
             $Recpt = Receive-Job $ChildJob
             
@@ -773,13 +773,13 @@ Param(
     $Targets | Foreach-Object { $Target = $_
     Try {
         if ($Credential) {
-            $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
+            $null = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
             Copy-Item "$Bindep" "KansaDrive:"
-            $suppress = Remove-PSDrive -Name "KansaDrive"
+            $null = Remove-PSDrive -Name "KansaDrive"
         } else {
-            $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
+            $null = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
             Copy-Item "$Bindep" "KansaDrive:"
-            $suppress = Remove-PSDrive -Name "KansaDrive"
+            $null = Remove-PSDrive -Name "KansaDrive"
         }
     } Catch [Exception] {
         "Caught: $_" | Add-Content -Encoding $Encoding $ErrorLog
@@ -816,13 +816,13 @@ Param(
     Write-Verbose "Attempting to remove ${Bindep} from remote hosts."
     $Targets | Foreach-Object { $Target = $_
         if ($Credential) {
-            $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
+            $null = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
             Remove-Item "KansaDrive:\$Bindep" 
-            $suppress = Remove-PSDrive -Name "KansaDrive"
+            $null = Remove-PSDrive -Name "KansaDrive"
         } else {
-            $suppress = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
+            $null = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
             Remove-Item "KansaDrive:\$Bindep"
-            $suppress = Remove-PSDrive -Name "KansaDrive"
+            $null = Remove-PSDrive -Name "KansaDrive"
         }
         
         if ($Error) {
@@ -902,7 +902,7 @@ Param(
         $AnalysisScripts = Get-Content "$StartingPath\Analysis\Analysis.conf" | Foreach-Object { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
 
         $AnalysisOutPath = $OutputPath + "\AnalysisReports\"
-        $Suppress = New-Item -Path $AnalysisOutPath -ItemType Directory -Force
+        $null = New-Item -Path $AnalysisOutPath -ItemType Directory -Force
 
         # Get our DATADIR directive
         $DirectivesHash  = @{}
@@ -952,11 +952,11 @@ $StartingPath = Get-Location | Select-Object -ExpandProperty Path
 # errors in the error log of the output directory. We may create #
 $Runtime = ([String] (Get-Date -Format yyyyMMddHHmmss))
 $OutputPath = $StartingPath + "\Output_$Runtime\"
-$Suppress = New-Item -Path $OutputPath -ItemType Directory -Force 
+$null = New-Item -Path $OutputPath -ItemType Directory -Force 
 
 If ($Transcribe) {
     $TransFile = $OutputPath + ([string] (Get-Date -Format yyyyMMddHHmmss)) + ".log"
-    $Suppress = Start-Transcript -Path $TransFile
+    $null = Start-Transcript -Path $TransFile
 }
 Set-Variable -Name ErrorLog -Value ($OutputPath + "Error.Log") -Scope Script
 
@@ -1042,7 +1042,7 @@ if ($TargetList) {
     $Targets = $Target
 } else {
     Write-Verbose "No Targets specified. Building one requires RAST and will take some time."
-    $suppress = Load-AD
+    $null = Load-AD
     $Targets  = Get-Targets -TargetCount $TargetCount
 }
 # Done getting targets #

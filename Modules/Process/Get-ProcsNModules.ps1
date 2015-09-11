@@ -34,7 +34,7 @@ Param(
     }
 
     if (Test-Path $FilePath) {
-        $FileName = Get-ChildItem $FilePath | Select-Object -ExpandProperty Fullname
+        $FileName = Get-ChildItem $FilePath -Force | Select-Object -ExpandProperty Fullname
         $fileData = [System.IO.File]::ReadAllBytes($FileName)
         $HashBytes = $hash.ComputeHash($fileData)
         $PaddedHex = ""
@@ -71,9 +71,9 @@ Get-Process | % {
         # $o.ProcessName = $MM
         $o.ProcessName = ($MM.Split('\'))[-1]
         $o.ProcPID = $currPID
-        $o.CreateUTC = (Get-Item $Module).CreationTimeUtc
-        $o.LastAccessUTC = (Get-Item $Module).LastAccessTimeUtc
-        $o.LastWriteUTC = (Get-Item $Module).LastWriteTimeUtc
+        $o.CreateUTC = (Get-Item $Module -Force).CreationTimeUtc
+        $o.LastAccessUTC = (Get-Item $Module -Force).LastAccessTimeUtc
+        $o.LastWriteUTC = (Get-Item $Module -Force).LastWriteTimeUtc
         $o
     }
 }

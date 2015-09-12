@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 Get-SvcFailCmdLineStack.ps1
 Requires logparser.exe in path
@@ -25,7 +25,7 @@ if (Get-Command logparser.exe) {
         ct ASC
 "@
 
-    & logparser -stats:off -i:tsv -fixedsep:on -dtlines:0 -rtp:-1 $lpquery
+    & logparser -stats:off -i:csv -fixedsep:on -dtlines:0 -rtp:-1 $lpquery
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

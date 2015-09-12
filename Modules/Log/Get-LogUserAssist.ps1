@@ -150,7 +150,7 @@ Param(
 )
     Push-Location
     Set-Location -Path "Registry::$Path"
-    Get-Item . | Select-Object -ExpandProperty Property | 
+    Get-Item -Force . | Select-Object -ExpandProperty Property | 
     Foreach-Object {
         New-Object psobject -Property @{"property" = $_;
             "value" = (Get-ItemProperty -Path . -Name $_).$_

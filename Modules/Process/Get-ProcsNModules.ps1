@@ -71,9 +71,9 @@ Get-Process | % {
         # $o.ProcessName = $MM
         $o.ProcessName = ($MM.Split('\'))[-1]
         $o.ProcPID = $currPID
-        $o.CreateUTC = (Get-Item $Module).CreationTimeUtc
-        $o.LastAccessUTC = (Get-Item $Module).LastAccessTimeUtc
-        $o.LastWriteUTC = (Get-Item $Module).LastWriteTimeUtc
+        $o.CreateUTC = (Get-Item -Force $Module).CreationTimeUtc
+        $o.LastAccessUTC = (Get-Item -Force $Module).LastAccessTimeUtc
+        $o.LastWriteUTC = (Get-Item -Force $Module).LastWriteTimeUtc
         $o
     }
 }

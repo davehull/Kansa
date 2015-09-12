@@ -919,7 +919,7 @@ function Send-File
 						
 						[IO.File]::WriteAllBytes($fileDest, $destBytes)
 						
-						Get-Item $fileDest
+						Get-Item -Force $fileDest
 						[GC]::Collect()
 					}
 					

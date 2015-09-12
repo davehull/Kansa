@@ -78,7 +78,7 @@ Get-WmiObject win32_userprofile | ForEach-Object {
     
     if (Test-Path $obj.ProfilePath) {
         # Path is valid, get the content as a Base64 Encoded GZipped stream
-        $obj.Script = GetBase64GzippedStream (Get-Item $obj.ProfilePath)
+        $obj.Script = GetBase64GzippedStream (Get-Item -Force $obj.ProfilePath)
     }
     $obj
 }
@@ -90,7 +90,7 @@ Get-WmiObject win32_userprofile | ForEach-Object {
     $obj.SID  = $null
     $obj.Name = $_
     if (Test-Path $obj.ProfilePath) {
-        $obj.Script = GetBase64GzippedStream (Get-Item $obj.ProfilePath)
+        $obj.Script = GetBase64GzippedStream (Get-Item -Force $obj.ProfilePath)
     }
     $obj
 }

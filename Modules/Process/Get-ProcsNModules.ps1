@@ -34,7 +34,7 @@ Param(
     }
 
     if (Test-Path $FilePath) {
-        $FileName = Get-ChildItem $FilePath | Select-Object -ExpandProperty Fullname
+        $FileName = Get-ChildItem -Force $FilePath | Select-Object -ExpandProperty Fullname
         $fileData = [System.IO.File]::ReadAllBytes($FileName)
         $HashBytes = $hash.ComputeHash($fileData)
         $PaddedHex = ""

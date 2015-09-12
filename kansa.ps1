@@ -345,7 +345,7 @@ Exit the script somewhat gracefully, closing any open transcript.
         Write-Output "Script completed with warnings or errors. See ${ErrorLog} for details."
     }
 
-    if (!(Get-ChildItem $OutputPath)) {
+    if (!(Get-ChildItem -Force $OutputPath)) {
         # $OutputPath is empty, nuke it
         "Output path was created, but Kansa finished with no hits, no runs and no errors. Nuking the folder."
         $null = Remove-Item $OutputPath -Force
@@ -622,7 +622,7 @@ Param(
             $bindep = $($DirectivesHash.Get_Item("BINDEP"))
             if ($bindep) {
                 # Push-Bindep -Targets $Targets -Module $Module -Bindep $bindep -Credential $Credential
-                $RemoteWindir = Invoke-Command -Session $PSSessions -ScriptBlock { Get-ChildItem env: | Where-Object { $_.Name -match "windir" } | Select-Object -ExpandProperty value }
+                $RemoteWindir = Invoke-Command -Session $PSSessions -ScriptBlock { Get-ChildItem -Force env: | Where-Object { $_.Name -match "windir" } | Select-Object -ExpandProperty value }
                 $null = Send-File -Path (ls $bindep).FullName -Destination $RemoteWindir -Session $PSSessions
             }
         }
@@ -857,7 +857,7 @@ function Send-File
 				if (Test-Path -Path $p -PathType Container)
 				{
 					Write-Log -Source $MyInvocation.MyCommand -Message "[$($p)] is a folder. Sending all files"
-					$files = Get-ChildItem -Path $p -File -Recurse
+					$files = Get-ChildItem -Force -Path $p -File -Recurse
 					$sendFileParamColl = @()
 					foreach ($file in $Files)
 					{

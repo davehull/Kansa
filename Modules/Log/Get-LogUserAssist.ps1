@@ -164,7 +164,7 @@ Param(
     [Parameter(Mandatory=$True,Position=0)]
         [String]$Path
 )
-    Get-ChildItem "Registry::$Path" | Select-Object -ExpandProperty LastWriteTime
+    Get-ChildItem -Force "Registry::$Path" | Select-Object -ExpandProperty LastWriteTime
 }
 
 function Resolve-KnownFolderGuid {
@@ -290,7 +290,7 @@ Param(
 )
     Set-Location $regpath
     if (Test-Path("UserAssist")) {
-        foreach ($key in (Get-ChildItem "UserAssist")) {
+        foreach ($key in (Get-ChildItem -Force "UserAssist")) {
             $o = "" | Select-Object UserAcct, UserPath, Subkey, KeyLastWriteTime, Value, KnownFolder, Count
             $o.UserAcct = $useracct
             $o.UserPath = $userpath

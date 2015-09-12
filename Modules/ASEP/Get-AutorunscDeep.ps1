@@ -66,7 +66,7 @@ Param(
     }
 
     if (Test-Path $FilePath) {
-        $File = Get-ChildItem $FilePath
+        $File = Get-ChildItem -Force $FilePath
         $fileData = [System.IO.File]::ReadAllBytes($File.FullName)
         $HashBytes = $hash.ComputeHash($fileData)
         $PaddedHex = ""

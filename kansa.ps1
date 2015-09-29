@@ -3,48 +3,30 @@
 Kansa is a Powershell based incident response framework for Windows 
 environments.
 .DESCRIPTION
-In this modular version of Mal-Seine, Kansa looks for a modules.conf
-file in the -Modules directory. If one is found, it will control which 
-modules execute and in what order. If no modules.conf is found, all 
-modules will be executed in the order that ls reads them.
+Kansa is a modular, PowerShell based incident response framework for
+Windows environments that have Windows Remote Management enabled.
 
-After parsing modules.conf or the -Modules path, Kansa will execute
-each module on each target (remote hosts) and write the output to a
-folder named for each module in the -Output path. Each target will have
-its data written to separate files.
+Kansa looks for a modules.conf file in the .\Modules directory. If one
+is found, it controls which modules execute and in what order. If no 
+modules.conf is found, all modules will be executed in the order that 
+ls reads them.
+
+After parsing modules.conf or the -ModulesPath parameter argument, 
+Kansa will execute each module on each target (remote host) and 
+write the output to a folder named for each module in a time stamped
+output path. Each target will have its data written to separate files.
 
 For example, the Get-PrefetchListing.ps1 module data will be written
 to Output_timestamp\PrefetchListing\Hostname-PrefetchListing.txt.
 
-If a module returns Powershell objects, its data can be written out in
-one of several file formats, including csv, tsv and xml. Modules that
-return objects should specify how they want Kansa to handle their 
-output via an OUTPUT directive in the .SYNOPSIS .NOTES section.
-
-Directives must appear on a line by themselves, must begin the line
-and must be written in all capital letters. Here's an example:
-
-OUTPUT tsv
-
-This directive, instructs Kansa to treat the data returned by the 
-given module as tab separated values and the data will be saved
-to disk accordingly.
-
-Modules that don't include an OUPUT directive will have their data
-treated as text.
-
-There are a few special OUTPUT directives: bin, zip and Default.
-OUPUT bin would be used for binary data (i.e. memory dumps)
-OUTPUT zip would be used for zip files, modules must compress the
-data themselves, Kansa.ps1 will not do the compression. The default
-module template includes code for compressing data and is meant to
-serve as a reference.
-OUTPUT Default should be used to let Powershell auto-detect the data
-type and treat it accordingly.
-
+All modules should return Powershell objects. Kansa converts those
+objects into one of several file formats, including csv, json, tsv and
+xml. The default output format is csv. Kansa's user may specify 
+alternate output formats at the command line via the -OutputFormat 
+parameter argument.
 
 Kansa.ps1 was written to avoid the need for CredSSP, therefore 
-"second-hops" must be avoided. For more details on this see:
+"second-hops" should be avoided. For more details on this see:
 
 http://trustedsignal.blogspot.com/2014/04/kansa-modular-live-response-tool-for.html
 
@@ -66,14 +48,16 @@ are not supported, however, ModulePath may point directly to a specific
 module and if that module takes a parameter, you should have a space 
 between the path to the script and its first argument, put the whole 
 thing in quotes. See example.
-This parameter will eventually be deprecated and the module path will
-be hardcoded to .\Modules\. A new parameter will be added for 
-specifying a single module from the command line.
+
 .PARAMETER TargetList
-An optional argument, the name of a file containing a list of servers 
-from the current forest to collect data from.
+An optional parameter, the name of a file containing a list of servers 
+to collect data from. If these hosts are outside the current forest, 
+fully qualified domain names are required. In general, it is advised to
+use FQDNs.
+
 PARAMETER Target
-An optional argument, the name of a single system to collect data from.
+An optional parameter, the name of a single system to collect data from.
+
 .PARAMETER TargetCount
 An optional parameter that specifies the maximum number of targets.
 
@@ -85,90 +69,114 @@ automatically.
 .PARAMETER Credential
 An optional credential that the script will use for execution. Use the
 $Credential = Get-Credential convention to populate a suitable variable.
+
 .PARAMETER Pushbin
 An optional flag that causes Kansa to push required binaries to the 
 ADMIN$ shares of targets. Modules that require third-party binaries, 
 must include the "BINDEP <binary>" directive.
 
-For example, the Get-Autorunsc.ps1 collector has a binary dependency on
-Sysinternals Autorunsc.exe. The Get-Autorunsc.ps1 collector contains a
-special line called a "directive" that instructs Kansa.ps1 to copy the
-Autorunsc.exe binary to remote systems when called with -Pushbin.
+For example, the Get-AutorunscDeep.ps1 collector has a dependency on
+Sysinternals Autorunsc.exe. The Get-AutorunscDeep.ps1 collector 
+contains a special line called a "directive" that instructs Kansa.ps1
+to copy the Autorunsc.exe binary to remote systems when called with the
+-Pushbin flag. The user executing Kansa is responsible for downloading
+any required binaries, they are not distributed with Kansa.
 
-Kansa does not ship with third-party binaries. Users must place them in
-the Modules\bin\ path and the BINDEP directive should reference the 
-binary via its path relative to Kansa.ps1.
+Kansa does not ship with third-party binaries. Conventionally, 
+third-party binaries are placed in the .\Modules\bin\ path. The BINDEP
+directive should reference the binary via its path relative to 
+Kansa.ps1.
 
 Directives should be placed in module's .SYNOPSIS sections under .NOTES
     * Directives must appear on a line by themselves
     * Directives must start the line 
     # Directives must be in all capital letters
 
-For example, the directive for Get-Autorunsc.ps1 as of this writing is
+For example, the directive for Get-AutorunscDeep.ps1 as of this writing is
 BINDEP .\Modules\bin\Autorunsc.exe
 
 If your required binaries are already present on each target and in the 
 path where the modules expect them to be, you can omit the -Pushbin 
 flag and save the step of copying binaries.
+
 .PARAMETER Rmbin
 An optional switch for removing binaries that may have been pushed to
 remote hosts via -Pushbin either on this run, or during a previous run.
+
 .PARAMETER Ascii
 An optional switch that tells Kansa you want all text output (i.e. txt,
-csv and tsv) and errors be written as Ascii. Unicode is the default.
+csv and tsv) and errors written as Ascii. Unicode is the default.
+
 .PARAMETER UpdatePath
-An option switch that adds Analysis script paths to the user's path and
-then exits. Kansa will automatically add Analysis script paths to the 
-user's path when run normally, this switch is just for convenience when
+An optional switch that adds Analysis script paths to the user's path 
+and then exits. Kansa will automatically add Analysis script paths to
+the user's path when run normally, this switch is for convenience when
 coming back to the data for analysis.
+
 .PARAMETER ListModules
 An optional switch that lists the available modules. Useful for
 constructing a modules.conf file. Kansa exits after listing.
 You'll likely want to sort the according to the order of volatility.
+
 .PARAMETER ListAnalysis
 An optional switch that lists the available analysis scripts. Useful 
 for constructing an analysis.conf file. Kansa exits after listing. If 
 you use this switch to build an analysis.conf file, you'll likely want 
 to edit the list so you're only running the analysis scripts you want 
 to run.
+
 .PARAMETER Analysis
 An optional switch that causes Kansa to run automated analysis based on
 the contents of the Analysis\Analysis.conf file.
+
 .PARAMETER Transcribe
 An optional flag that causes Start-Transcript to run at the start
 of the script, writing to $OutputPath\yyyyMMddhhmmss.log
+
 .PARAMETER Quiet
 An optional flag that overrides Kansa's default of running with -Verbose.
+
 .PARAMETER UseSSL
 An optional flag for use in environments that have authentication
 certificates deployed. If this flag is used and certificates are
 deployed, connections will be made over HTTPS and will be encrypted.
 Without this flag traffic passes in the clear. Note authentication is
-done via Kerberos regardless of whether or not SSL is used.
+done via Kerberos regardless of whether or not SSL is used. Alternate
+authentication methods are available via the -Authentication parameter
+argument.
+
 .PARAMETER Port
 An optional parameter if WinRM is listening on a non-standard port.
+
 .PARAMETER Authentication
 An optional parameter specifying what authentication method should be 
 used. The default is Kerberos, but that won't work for authenticating
-against local administrator accounts. Valide options: Basic, CredSSP,
-Default, Digest, Kerberos, Negotiate, NegotiateWithImplicitCredential.
+against local administrator accounts or for scenarios with non-domain
+joined systems. 
+
+Valid options: Basic, CredSSP, Default, Digest, Kerberos, Negotiate, 
+NegotiateWithImplicitCredential.
+
 Whereever possible, you should use Kerberos, some of these options are
 considered dangerous, so be careful and read up on the different
 methods before using an alternate.
+
 .PARAMETER JSONDepth
 An optional parameter specifying how many levels of contained objects
 are included in the JSON representation. Default is 10.
+
 .INPUTS
 None
+
 You cannot pipe objects to this cmdlet
 .OUTPUTS
 Various and sundry.
+
 .NOTES
 In the absence of a configuration file, specifying which modules to run, 
 this script will run each module across all hosts.
 
-Each module should return objects, ideally, though text is supported. 
-See the discussion above about OUTPUT formats.
+Each module should return objects.
 
 Because modules should only COLLECT data from remote hosts, their 
 filenames must begin with "Get-". Examples:
@@ -177,7 +185,7 @@ Get-Netstat.ps1
 
 Any module not beginning with "Get-" will be ignored.
 
-Note this read-only aspect is unenforced, therefore Kansa can be used 
+Note this read-only aspect is unenforced, therefore, Kansa can be used 
 to make changes to remote hosts. As a result, it can be used to 
 facilitate remediation.
 

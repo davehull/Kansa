@@ -279,10 +279,6 @@ Param(
 
 # Opening with a Try so the Finally block at the bottom will always call
 # the Exit-Script function and clean up things as needed.
-# Saw this cause an issue in an environment with PSv2. If you run into
-# an issue where the script is exiting without really doing anything,
-# comment out this and the Finally a the botom of the script, the error
-# handling, won't be as robust, but the script should work.
 Try {
 
 # Long paths prevent data from being written, this is used to test their length
@@ -340,7 +336,7 @@ Exit the script somewhat gracefully, closing any open transcript.
 #>
     Set-Location $StartingPath
     if ($Transcribe) {
-        $null = Stop-Transcript
+        [void] (Stop-Transcript)
     }
 
     if ($Error) {
@@ -356,7 +352,7 @@ Exit the script somewhat gracefully, closing any open transcript.
     if (!(Get-ChildItem $OutputPath)) {
         # $OutputPath is empty, nuke it
         "Output path was created, but Kansa finished with no hits, no runs and no errors. Nuking the folder."
-        $null = Remove-Item $OutputPath -Force
+        [void] (Remove-Item $OutputPath -Force)
     }
 
     Exit
@@ -663,7 +659,7 @@ Param(
             }
         }
                             
-        $null = New-Item -Path $OutputPath -name ($GetlessMod + $ArgFileName) -ItemType Directory
+        [void] (New-Item -Path $OutputPath -name ($GetlessMod + $ArgFileName) -ItemType Directory)
         $Job.ChildJobs | Foreach-Object { $ChildJob = $_
             $Recpt = Receive-Job $ChildJob
             
@@ -781,13 +777,13 @@ Param(
     $Targets | Foreach-Object { $Target = $_
     Try {
         if ($Credential) {
-            $null = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
+            [void] (New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential)
             Copy-Item "$Bindep" "KansaDrive:"
-            $null = Remove-PSDrive -Name "KansaDrive"
+            [void] (Remove-PSDrive -Name "KansaDrive")
         } else {
-            $null = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
+            [void] (New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$")
             Copy-Item "$Bindep" "KansaDrive:"
-            $null = Remove-PSDrive -Name "KansaDrive"
+            [void] (Remove-PSDrive -Name "KansaDrive")
         }
     } Catch [Exception] {
         "Caught: $_" | Add-Content -Encoding $Encoding $ErrorLog
@@ -824,13 +820,13 @@ Param(
     Write-Verbose "Attempting to remove ${Bindep} from remote hosts."
     $Targets | Foreach-Object { $Target = $_
         if ($Credential) {
-            $null = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential
+            [void] (New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$" -Credential $Credential)
             Remove-Item "KansaDrive:\$Bindep" 
-            $null = Remove-PSDrive -Name "KansaDrive"
+            [void] (Remove-PSDrive -Name "KansaDrive")
         } else {
-            $null = New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$"
+            [void] (New-PSDrive -PSProvider FileSystem -Name "KansaDrive" -Root "\\$Target\ADMIN$")
             Remove-Item "KansaDrive:\$Bindep"
-            $null = Remove-PSDrive -Name "KansaDrive"
+            [void] (Remove-PSDrive -Name "KansaDrive")
         }
         
         if ($Error) {
@@ -872,8 +868,8 @@ Param(
 function Set-KansaPath {
     # Update the path to inlcude Kansa analysis script paths, if they aren't already
     $Invocation = (Get-Variable MyInvocation -Scope 1).Value
-    $kansapath = Split-Path $Invocation.MyCommand.Path
-    $Paths = ($env:Path).Split(";")
+    $kansapath  = Split-Path $Invocation.MyCommand.Path
+    $Paths      = ($env:Path).Split(";")
 
     if (-not($Paths -match [regex]::Escape("$kansapath\Analysis"))) {
         # We want this one and it's not covered below, so...
@@ -910,7 +906,7 @@ Param(
         $AnalysisScripts = Get-Content "$StartingPath\Analysis\Analysis.conf" | Foreach-Object { $_.Trim() } | ? { $_ -gt 0 -and (!($_.StartsWith("#"))) }
 
         $AnalysisOutPath = $OutputPath + "\AnalysisReports\"
-        $null = New-Item -Path $AnalysisOutPath -ItemType Directory -Force
+        [void] (New-Item -Path $AnalysisOutPath -ItemType Directory -Force)
 
         # Get our DATADIR directive
         $DirectivesHash  = @{}
@@ -960,11 +956,11 @@ $StartingPath = Get-Location | Select-Object -ExpandProperty Path
 # errors in the error log of the output directory. We may create #
 $Runtime = ([String] (Get-Date -Format yyyyMMddHHmmss))
 $OutputPath = $StartingPath + "\Output_$Runtime\"
-$null = New-Item -Path $OutputPath -ItemType Directory -Force 
+[void] (New-Item -Path $OutputPath -ItemType Directory -Force) 
 
 If ($Transcribe) {
     $TransFile = $OutputPath + ([string] (Get-Date -Format yyyyMMddHHmmss)) + ".log"
-    $null = Start-Transcript -Path $TransFile
+    [void] (Start-Transcript -Path $TransFile)
 }
 Set-Variable -Name ErrorLog -Value ($OutputPath + "Error.Log") -Scope Script
 
@@ -1050,7 +1046,7 @@ if ($TargetList) {
     $Targets = $Target
 } else {
     Write-Verbose "No Targets specified. Building one requires RAST and will take some time."
-    $null = Load-AD
+    [void] (Load-AD)
     $Targets  = Get-Targets -TargetCount $TargetCount
 }
 # Done getting targets #

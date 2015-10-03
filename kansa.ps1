@@ -372,6 +372,8 @@ Param(
         [String]$ModulePath
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
+    $Error.Clear()
+
     Write-Debug "`$ModulePath is ${ModulePath}."
 
     # User may have passed a full path to a specific module, posibly with an argument

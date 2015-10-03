@@ -373,6 +373,7 @@ Param(
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     $Error.Clear()
+    # ToDo: There should probably be some error handling in this function.
 
     Write-Debug "`$ModulePath is ${ModulePath}."
 
@@ -436,6 +437,7 @@ function Load-AD {
         }
     } else {
         "ERROR: Could not load the required Active Directory module. Please install the Remote Server Administration Tool for AD. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
+        $Error.Clear()
         Exit
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
@@ -454,6 +456,7 @@ function Get-Forest {
         # Write the $Error to the $Errorlog
         $Error | Add-Content -Encoding $Encoding $ErrorLog
         "ERROR: Get-Forest could not find current forest. Quitting." | Add-Content -Encoding $Encoding $ErrorLog
+        $Error.Clear()
         Exit
     }
 }
@@ -510,6 +513,7 @@ Param(
     if ($Error) { # if we make it here, something went wrong
         $Error | Add-Content -Encoding $Encoding $ErrorLog
         "ERROR: Get-Targets function could not get a list of targets. Quitting."
+        $Error.Clear()
         Exit
     }
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
@@ -553,6 +557,7 @@ Param(
         [Switch]$AnalysisPath
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
+    $Error.Clear()
     if ($AnalysisPath) {
         $Module = ".\Analysis\" + $Module
     }
@@ -601,14 +606,16 @@ Param(
         } else {
             $PSSessions = New-PSSession -ComputerName $Targets -Port $Port -Authentication $Authentication -SessionOption (New-PSSessionOption -NoMachineProfile) -Credential $Credential
         }
-        $Error | Add-Content -Encoding $Encoding $ErrorLog
-        $Error.Clear()
     } else {
         if ($UseSSL) {
             $PSSessions = New-PSSession -ComputerName $Targets -Port $Port -UseSSL -Authentication $Authentication -SessionOption (New-PSSessionOption -NoMachineProfile)
         } else {
             $PSSessions = New-PSSession -ComputerName $Targets -Port $Port -Authentication $Authentication -SessionOption (New-PSSessionOption -NoMachineProfile)
         }
+    }
+
+    # Check for and log errors
+    if ($Error) {
         $Error | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()
     }
@@ -730,8 +737,11 @@ Param(
 
     }
     Remove-PSSession $PSSessions
-    $Error | Add-Content -Encoding $Encoding $ErrorLog
-    $Error.Clear()
+
+    if ($Error) {
+        $Error | Add-Content -Encoding $Encoding $ErrorLog
+        $Error.Clear()
+    }
     
     Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
@@ -805,6 +815,9 @@ function Remove-Bindep {
 .SYNOPSIS
 Attempts to remove binaries from targets when Kansa.ps1 is run with 
 -rmbin switch.
+ToDo: Fix this so it works even when Admin$ is not a valid share, as
+is the case with default Azure VM configuration. Maybe more reliable
+to Enter-PSSession for the host and Remove-Item.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
@@ -868,6 +881,9 @@ Param(
 }
 
 function Set-KansaPath {
+    Write-Debug "Entering $($MyInvocation.MyCommand)"
+    $Error.Clear()
+
     # Update the path to inlcude Kansa analysis script paths, if they aren't already
     $Invocation = (Get-Variable MyInvocation -Scope 1).Value
     $kansapath  = Split-Path $Invocation.MyCommand.Path
@@ -884,6 +900,12 @@ function Set-KansaPath {
             $env:Path = $env:Path + ";$_"
         }
     }
+    if ($Error) {
+        # Write the $Error to the $Errorlog
+        $Error | Add-Content -Encoding $Encoding $ErrorLog
+        $Error.Clear()
+    }
+    Write-Debug "Exiting $($MyInvocation.MyCommand)"    
 }
 
 

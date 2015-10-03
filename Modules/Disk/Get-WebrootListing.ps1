@@ -49,7 +49,7 @@ Param(
 if (Test-Path $BasePath -PathType Container) {
 
         $files = (
-            Get-ChildItem -Path $BasePath -Recurse -ErrorAction SilentlyContinue |
+            Get-ChildItem -Force -Path $BasePath -Recurse -ErrorAction SilentlyContinue |
             ? -FilterScript {
                 ($_.Extension -match $extRegex) -and
                 ($_.Length -ge $MinB -and $_.Length -le $MaxB)

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 Get-WebrootListingEntropyOutliers.ps1
 
@@ -80,7 +80,7 @@ function Get-EntropyOutliers {
                 EXTRACT_EXTENSION(FullName) = '$extension'
 "@
         
-        $lp_files = & logparser -stats:off -i:tsv -o:csv -dtlines:0 -fixedsep:on "$lp_query" | ConvertFrom-Csv
+        $lp_files = & logparser -stats:off -i:csv -o:csv -dtlines:0 -fixedsep:on "$lp_query" | ConvertFrom-Csv
         $ext_MAD  = Get-MedianAbsoluteDeviation ($lp_files).Entropy
 
         foreach ($lp_file in $lp_files) {
@@ -107,7 +107,7 @@ if (Get-Command logparser.exe) {
 "@
 
     # Get file extensions with entropy (excludes directories).
-    $lp_results = & logparser -stats:off -i:tsv -o:csv -dtlines:0 -fixedsep:on "$lp_query" | ConvertFrom-Csv
+    $lp_results = & logparser -stats:off -i:csv -o:csv -dtlines:0 -fixedsep:on "$lp_query" | ConvertFrom-Csv
 
     # Find the outliers.
     $outliers = Get-EntropyOutliers $lp_results
@@ -144,3 +144,4 @@ if (Get-Command logparser.exe) {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)
     "${ScriptName} requires logparser.exe in the path."
 }
+

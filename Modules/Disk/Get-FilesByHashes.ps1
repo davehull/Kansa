@@ -1,6 +1,9 @@
-﻿<# 
+<# 
 .SYNOPSIS
-Get-FileHashes.ps1 hashes all files in the provided path.
+Get-FilesByHash.ps1 scans the provided paths for files matching the provided hash.
+.PARAMETER FileHash
+Required. The file hash you are searching for.  For example cmd.exe's hash (on 
+Windows 8.1) is 0B9BC863E2807B6886760480083E51BA8A66118659F4FF274E7B73944D2219F5
 .PARAMETER HashType
 Optional. Defaults to SHA-256.
 .PARAMETER BasePaths
@@ -17,10 +20,7 @@ Optional. Maximum size of files to check in bytes. Defaults to 10485760.
 OUTPUT TSV
 When passing specific modules with parameters via Kansa.ps1's -ModulePath 
 parameter, be sure to quote the entire string, like shown here:
-.\kansa.ps1 -ModulePath ".\Modules\Disk\Get-FileHashes.ps1 MD5,C:\,\.ps1$"
-
-As with all modules that take command line parameters, you should not put
-quotes around the entry in the Modules.conf file.
+.\kansa.ps1 -ModulePath ".\Modules\Disk\Get-FilesByHash.ps1 9E2639ECE5631BAB3A41E3495C1DC119,MD5,C:\,\.ps1$"
 
 As a note of warning, when reading files from %windir%\System32, if you are 
 running in a 32-bit PowerShell instance on a 64-bit system the Windows 
@@ -33,16 +33,18 @@ http://msdn.microsoft.com/en-us/library/windows/desktop/aa384187(v=vs.85).aspx).
 
 [CmdletBinding()]
 Param(
-    [Parameter(Mandatory=$False,Position=0)]
+    [Parameter(Mandatory=$True,Position=1)]
+        [String[]]$FileHashes,
+    [Parameter(Mandatory=$False,Position=2)]
         [ValidateSet("MD5","SHA1","SHA256","SHA384","SHA512","RIPEMD160")]
         [string]$HashType = "SHA256",
-    [Parameter(Mandatory=$False,Position=1)]
-        [String]$BasePaths,
-    [Parameter(Mandatory=$False,Position=2)]
-        [String]$extRegex="\.(exe|sys|dll|ps1|psd1|psm1|vbs|bat|cmd)$",
     [Parameter(Mandatory=$False,Position=3)]
-        [int]$MinB=4096,
+        [String]$BasePaths,
     [Parameter(Mandatory=$False,Position=4)]
+        [String]$extRegex="\.(exe|sys|dll|ps1)$",
+    [Parameter(Mandatory=$False,Position=5)]
+        [int]$MinB=4096,
+    [Parameter(Mandatory=$False,Position=6)]
         [int]$MaxB=10485760
 ) 
 
@@ -51,8 +53,7 @@ $ErrorActionPreference = "Continue"
 function Get-LocalDrives
 {
     # DriveType 3 is localdisk as opposed to removeable. Details: http://msdn.microsoft.com/en-us/library/aa394173%28v=vs.85%29.aspx
-    Get-WmiObject win32_logicaldisk -Filter "DriveType=3" | Select-Object -ExpandProperty DeviceID | ForEach-Object {
-        $disk = $_
+    foreach ($disk in (Get-WmiObject win32_logicaldisk -Filter "DriveType=3" | Select-Object -ExpandProperty DeviceID)) {
         [string[]]$drives += "$disk\"
     }
     
@@ -67,14 +68,16 @@ workflow Get-HashesWorkflow {
 		[Parameter(Mandatory=$True,Position=0)]
 			[String]$BasePath,
 		[Parameter(Mandatory=$True,Position=1)]
+			[string[]]$SearchHashes,
+		[Parameter(Mandatory=$True,Position=2)]
 			[ValidateSet("MD5","SHA1","SHA256","SHA384","SHA512","RIPEMD160")]
 			[string]$HashType = "SHA256",
-		[Parameter(Mandatory=$False,Position=2)]
-			[int]$MinB=4096,
 		[Parameter(Mandatory=$False,Position=3)]
-			[int]$MaxB=10485760,
+			[int]$MinB=4096,
 		[Parameter(Mandatory=$False,Position=4)]
-			[string]$extRegex="\.(exe|sys|dll|ps1|psd1|psm1|vbs|bat|cmd|jpg|aspx|asp|class|java|war|tmp)$"
+			[int]$MaxB=10485760,
+		[Parameter(Mandatory=$False,Position=5)]
+			[string]$extRegex="\.(exe|sys|dll|ps1)$"
 	)
 
 	# Workflows are how PowerShell does multi-threading. The parent process 
@@ -92,14 +95,15 @@ workflow Get-HashesWorkflow {
 	#   http://blogs.technet.com/b/heyscriptingguy/archive/2013/01/02/powershell-workflows-restrictions.aspx
 	#   http://blogs.technet.com/b/heyscriptingguy/archive/2013/01/09/powershell-workflows-nesting.aspx
 	
-	$hashList = @()
+	$hashList = "" | Select-Object -Property File,Hash
 	
 	$Files = (
-		Get-ChildItem -Force -Path $basePath -Recurse -Force -ErrorAction SilentlyContinue | 
+		Get-ChildItem -Force -Path $basePath -Recurse -ErrorAction SilentlyContinue | 
 		? -FilterScript { 
 			($_.Length -ge $MinB -and $_.Length -le $_.Length) -and 
 			($_.Extension -match $extRegex) 
-		} 
+		} | 
+		Select-Object -ExpandProperty FullName
 	)
 
 	foreach -parallel ($File in $Files) {
@@ -116,24 +120,30 @@ workflow Get-HashesWorkflow {
 				}
 
 				# -Message variable name required because workflows do not support possitional parameters.
-				Write-Debug -Message "Calculating hash of ${using:File.FullName}."
-				if (Test-Path -LiteralPath $using:File.Fullname -PathType Leaf) {
-					$FileData = [System.IO.File]::ReadAllBytes($using:File.FullName)
+				Write-Debug -Message "Calculating hash of $using:File."
+				if (Test-Path -LiteralPath $using:File -PathType Leaf) {
+					$FileData = [System.IO.File]::ReadAllBytes($using:File)
 					$HashBytes = $hash.ComputeHash($FileData)
 					$paddedHex = ""
 
-                    $HashBytes | ForEach-Object {
-                        $byte = $_
+					foreach( $byte in $HashBytes ) {
 						$byteInHex = [String]::Format("{0:X}", $byte)
 						$paddedHex += $byteInHex.PadLeft(2,"0")
 					}
                 
 					Write-Debug -Message "Hash value was $paddedHex."
-                    $($paddedHex + ":-:" + $using:File.FullName + ":-:" + $using:File.Length + ":-:" + $using:File.LastWriteTime)
+                    $hashes = $using:searchHashes
+					# if ($paddedHex -ieq $using:searchHashes) {
+                    $index = $hashes.IndexOf($paddedHex)
+                    if ($index -gt -1) {
+                        $hashList.File = $using:File
+                        $hashList.Hash = $hashes[$index]
+                        $hashList
+					}
 				}
 			}
             if ($entry) {
-			    $workflow:hashList += ,$entry
+			    $workflow:hashList += $entry
             }
 		}
     }
@@ -147,27 +157,30 @@ function Get-Hashes {
 		[Parameter(Mandatory=$True,Position=0)]
 			[String]$BasePath,
 		[Parameter(Mandatory=$True,Position=1)]
+			[string[]]$SearchHash,
+		[Parameter(Mandatory=$True,Position=2)]
 			[ValidateSet("MD5","SHA1","SHA256","SHA384","SHA512","RIPEMD160")]
 			[string]$HashType = "SHA256",
-		[Parameter(Mandatory=$False,Position=2)]
-			[int]$MinB=4096,
 		[Parameter(Mandatory=$False,Position=3)]
-			[int]$MaxB=10485760,
+			[int]$MinB=4096,
 		[Parameter(Mandatory=$False,Position=4)]
-			[string]$extRegex="\.(exe|sys|dll|ps1|psd1|psm1|vbs|bat|cmd)$"
+			[int]$MaxB=10485760,
+		[Parameter(Mandatory=$False,Position=5)]
+			[string]$extRegex="\.(exe|sys|dll|ps1)$"
 	)
 
 	# Single-threaded option since we ran into a few situations while testing 
 	# where workflows aren't available.
 
-	$hashList = @()
+	$hashList = "" | Select-Object File,Hash
 	
 	$Files = (
-		Get-ChildItem -Force -Path $basePath -Recurse -Force -ErrorAction SilentlyContinue | 
+		Get-ChildItem -Force -Path $basePath -Recurse -ErrorAction SilentlyContinue | 
 		? -FilterScript { 
 			($_.Length -ge $MinB -and $_.Length -le $_.Length) -and 
 			($_.Extension -match $extRegex) 
-		} 
+		} | 
+		Select-Object -ExpandProperty FullName
 	)
 	
 	switch -CaseSensitive ($HashType) {
@@ -179,42 +192,47 @@ function Get-Hashes {
 		"RIPEMD160" { $hash = [System.Security.Cryptography.RIPEMD160]::Create() }
 	}
 	
-    foreach ($file in $Files) {
+	foreach ($File in $Files) {
        
-		Write-Debug -Message "Calculating hash of ${File.FullName}."
-		if (Test-Path -LiteralPath $File.FullName -PathType Leaf) {
-			$FileData = [System.IO.File]::ReadAllBytes($File.FullName)
+		Write-Debug -Message "Calculating hash of $File."
+		if (Test-Path -LiteralPath $File -PathType Leaf) {
+			$FileData = [System.IO.File]::ReadAllBytes($File)
 			$HashBytes = $hash.ComputeHash($FileData)
 			$paddedHex = ""
 
-            foreach ($byte in $HashBytes) {
+			foreach( $byte in $HashBytes ) {
 				$byteInHex = [String]::Format("{0:X}", $byte)
 				$paddedHex += $byteInHex.PadLeft(2,"0")
 			}
                
 			Write-Debug -Message "Hash value was $paddedHex."
-
-            $hashList += $($paddedHex + ":-:" + $file.FullName + ":-:" + $file.Length + ":-:" + $file.LastWriteTime)
+            $index = $searchHashes.IndexOf($paddedHex)
+			if ($index -gt -1) {
+                $hashList.File = $Files
+                $hashList.Hash = $hashes[$index]
+                $objs += $hashList
+			}
 		}
 	}
-
-	return ,$hashList
+    $objs
 }
 
-function Get-Hash {
+function Get-Matches {
 	[CmdletBinding()]
 	Param (
 		[Parameter(Mandatory=$True,Position=0)]
 			[String]$BasePath,
 		[Parameter(Mandatory=$True,Position=1)]
+			[string[]]$SearchHash,
+		[Parameter(Mandatory=$True,Position=2)]
 			[ValidateSet("MD5","SHA1","SHA256","SHA384","SHA512","RIPEMD160")]
 			[string]$HashType = "SHA256",
-		[Parameter(Mandatory=$False,Position=2)]
-			[int]$MinB=4096,
 		[Parameter(Mandatory=$False,Position=3)]
-			[int]$MaxB=10485760,
+			[int]$MinB=4096,
 		[Parameter(Mandatory=$False,Position=4)]
-			[string]$extRegex="\.(exe|sys|dll|ps1|psd1|psm1|vbs|bat|cmd)$"
+			[int]$MaxB=10485760,
+		[Parameter(Mandatory=$False,Position=5)]
+			[string]$extRegex="\.(exe|sys|dll|ps1)$"
 	)
 	
 	# Check if we're in a WOW64 situation. Thanks to MagicAndi on StackOverflow for this check.
@@ -229,36 +247,26 @@ function Get-Hash {
 
 	$HashType = $HashType.ToUpper()
 
-    if ($psversiontable.version.major -gt 2.0) {
-    	try {
-	    	$hashList = Get-HashesWorkflow -BasePath $BasePath -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
-	    }
-	    catch {
-		    Write-Verbose -Message "Workflows not supported. Running in single-threaded mode."
-		    $hashList = Get-Hashes -BasePath $BasePath -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
-	    }
-    } else {
-        Write-Verbose -Message "Workflows not supported. Running in single-threaded mode."
-		$hashList = Get-Hashes -BasePath $BasePath -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
-    }
-
-    $o = "" | Select-Object File, Hash, Length, LastWritetime
+	try {
+		$hashList = Get-HashesWorkflow -BasePath $BasePath -SearchHash $FileHashes -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
+	}
+	catch {
+		Write-Verbose -Message "Workflows not supported. Running in single-threaded mode."
+		$hashList = Get-Hashes -BasePath $BasePath -SearchHash $FileHashes -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
+	}
+    
     if ($hashList) {
-        $hashList | ForEach-Object {
-            $hash,$file,$length,$lastWritetime = $_ -split ":-:"
-            $o.File = $file
-            $o.Hash = $hash
-            $o.Length = $length
-            $o.LastWriteTime = $lastWritetime
+		Write-Verbose "Found files matching hash $FileHash (TK)."    
+		foreach($entry in $hashList) {
+            $o = "" | Select-Object File, Hash
+            $o.File = $entry
+            $o.Hash = $FileHash # TK
             $o
         }
-    } else {
-        $o.File = $null
-        $o.Hash = $null
-        $o.Length = $null
-        $o.LastWriteTime = $null
-        $o
     }
+	else {
+		Write-Verbose "Found no matching files."
+	}
 }
 
 if ($BasePaths.Length -eq 0) {
@@ -266,9 +274,7 @@ if ($BasePaths.Length -eq 0) {
     $BasePaths = Get-LocalDrives
 }
 
-
-$BasePaths | ForEach-Object {
-    $basePath = $_
+foreach ($basePath in $BasePaths) {
     Write-Verbose "Getting file hashes for $basePath."
-    Get-Hash -BasePath $BasePath -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
+    Get-Matches -BasePath $BasePath -SearchHash $FileHashes -HashType $HashType -extRegex $extRegex -MinB $MinB -MaxB $MaxB
 }

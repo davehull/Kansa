@@ -1,4 +1,4 @@
-﻿<#
+<#
 Get-NetstatDistinctLocal16.ps1
 Requires logparser.exe in path
 Pulls distinct /16 local network addresses. Useful for building the 
@@ -21,7 +21,7 @@ if (Get-Command logparser.exe) {
         Local/16
 "@
 
-    & logparser -stats:off -i:tsv -fixedsep:on -dtlines:0 -rtp:-1 $lpquery
+    & logparser -stats:off -i:csv -fixedsep:on -dtlines:0 -rtp:-1 $lpquery
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

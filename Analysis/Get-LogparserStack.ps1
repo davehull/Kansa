@@ -56,7 +56,7 @@ Param(
 )
     Write-Verbose ("{0}: Building list of files matching {1}." -f (GetTimeStampUtc), $FilePattern)
     $Files = @()
-    $Files += (Get-ChildItem *$FilePattern*)
+    $Files += (Get-ChildItem -Force *$FilePattern*)
     $Files
 }
 

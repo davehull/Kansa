@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 Get-ASEPImagePathLaunchStringStack.ps1
 Requires logparser.exe in path
@@ -30,9 +30,10 @@ if (Get-Command logparser.exe) {
         ct ASC
 "@
 
-    & logparser -stats:off -i:tsv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"
+    & logparser -stats:off -i:csv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)
     "${ScriptName} requires logparser.exe in the path."
 }
+

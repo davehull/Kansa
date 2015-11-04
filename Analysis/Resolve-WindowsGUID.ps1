@@ -170,6 +170,51 @@ Param(
             "F38BF404-1D43-42F2-9305-67DE0B28FC23" = "Windows"
         }
 
+        # Netsh show helper GUIDs
+        $NetshShowHelperGUIDHT = @{
+            "00770721-44EA-11D5-93BA-00B0D022DD1F" = "HNETMON.DLL bridge"
+            "02BC1F81-D927-4EC5-8CBC-8DD65E3E38E8" = "AUTHFWCFG.DLL advfirewall"
+            "0705ECA1-7AAC-11D2-89DC-006008B0E5B9" = "IFMON.DLL interface, ras"
+            "0BFDC146-56A3-4311-A7D5-7D9953F8326E" = "WHHELPER.DLL winhttp"
+            "13D12A78-D0FB-11D2-9B76-00104BCA495B" = "RASMONTR.DLL ip"
+            "1C151866-F35B-4780-8CD2-E1924E9F03E1" = "NETIOHLP.DLL 6to4, isatap, portproxy, teredo"
+            "1D8240C7-48B9-47CC-9E40-4F7A0A390E71" = "DOT3CFG.DLL lan"
+            "1DD4935A-E587-4D16-AE27-14E40385AB12" = "P2PNETSH.DLL cloud"
+            "35342B49-83B4-4FCC-A90D-278533D5BEA2" = "AUTHFWCFG.DLL firewall"
+            "36B3EF76-94C1-460F-BD6F-DF0178D90EAC" = "RASMONTR.DLL ipv6"
+            "3BB6DA1D-AC0C-4972-AC05-B22F49DEA9B6" = "NSHWFP.DLL wfp"
+            "42E3CC21-098C-11D3-8C4D-00104BCA495B" = "RASMONTR.DLL aaaa"
+            "44F3288B-DBFF-4B31-A86E-633F50D706B3" = "NSHHTTP.DLL http"
+            "4BD827F7-1E83-462D-B893-F33A80C5DE1D" = "AUTHFWCFG.DLL mainmode"
+            "4D0FEFCB-8C3E-4CDE-B39B-325933727297" = "AUTHFWCFG.DLL monitor"
+            "500F32FD-7064-476B-8FD6-2171EA46428F" = "NETIOHLP.DLL ipv6"
+            "555EA58E-72B1-4F0A-9055-779D0F5400B2" = "PEERDISTSH.DLL smb"
+            "592852F7-5F6F-470B-9097-C5D33B612975" = "RPCNSH.DLL rpc"
+            "6DC31EC5-3583-4901-9E28-37C28113656A" = "DHCPCMONITOR.DLL dhcpclient"
+            "6EC05238-F6A3-4801-967A-5C9D6F6CAC50" = "P2PNETSH.DLL peer"
+            "725588AC-7A11-4220-A121-C92C915E8B73" = "NETIOHLP.DLL ipv4"
+            "78197B47-2BEF-49CA-ACEB-D8816371BAA8" = "NETIOHLP.DLL tcp"
+            "8A6D23B3-0AF2-4101-BC6E-8114B325FE17" = "NETIOHLP.DLL dnsclient"
+            "8B3A0D7F-1F30-4402-B753-C4B2C7607C97" = "FWCFG.DLL firewall"
+            "90E1CBE1-01D9-4174-BB4D-EB97F3F6150D" = "NETIOHLP.DLL 6to4, isatap"
+            "90FE6CFC-B6A2-463B-AA12-25E615EC3C66" = "RASMONTR.DLL diagnostics"
+            "931852E2-597D-40B9-B927-55FFC81A6104" = "NETIOHLP.DLL netio"
+            "97C192DB-A774-43E6-BE78-1FABD795EEAB" = "NETIOHLP.DLL httpstunnel"
+            "9AA625FC-7E31-4679-B5B5-DFC67A3510AB" = "P2PNETSH.DLL database"
+            "9E0D63D6-4644-476B-9DAC-D64F96E01376" = "P2PNETSH.DLL pnrp"
+            "A31CB05A-1213-4F4E-B420-0EE908B896CB" = "PEERDISTSH.DLL branchcache"
+            "AD1D76C9-434B-48E0-9D2C-31FA93D9635A" = "P2PNETSH.DLL diagnostics"
+            "B2C0EEF4-CCE5-4F55-934E-ABF60F3DCF56" = "WSHELPER.DLL winsock"
+            "B341E8BA-13AA-4E08-8CF1-A6F2D8B0C229" = "NETIOHLP.DLL namespace"
+            "B7BE4347-E851-4EEC-BC65-B0C0E87B86E3" = "P2PNETSH.DLL p2p"
+            "C07E293F-9531-4426-8E5C-D7EBBA50F693" = "RPCNSH.DLL filter"
+            "D424E730-1DB7-4287-8C9B-0774F5AD0576" = "WLANCFG.DLL wlan"
+            "E35A9D1F-61E8-4CF5-A46C-0F715A9303B8" = "P2PNETSH.DLL group"
+            "F7E0BC27-BA6E-4145-A123-012F1922F3F1" = "NSHIPSEC.DLL ipsec, static, dynamic"
+            "FB10CBCA-5430-46CE-B732-079B4E23BE24" = "AUTHFWCFG.DLL consec"
+            "FBFC037E-D455-4B8D-80A5-B379002DBCAD" = "P2PNETSH.DLL idmgr"
+        }
+
         # @EricRZimmerman's GUIDs shared here:
         # https://gist.github.com/davehull/50c09b5160dfceb5bb13#comment-1439249
         $EZGuidHT = @{
@@ -591,7 +636,7 @@ Param(
 
         } # End Add-Type conditional
                     
-        $Obj = "" | Select-Object GUID,Shell32,"Microsoft Documented",LogProvider,EricRZimmerman
+        $Obj = "" | Select-Object GUID,Shell32,"Microsoft Documented",LogProvider,"Netsh Show Helper",EricRZimmerman
 
     }
     Process {
@@ -603,6 +648,12 @@ Param(
             $Obj."Microsoft Documented" = $HumanReadableValue
         } else {
             $Obj."Microsoft Documented" = "Not found."
+        }
+
+        if ($HumanReadableValue = $NetshShowHelperGUIDHT[$GUID]) {
+            $Obj."Netsh Show Helper" = $HumanReadableValue
+        } else {
+            $Obj."Netsh Show Helper" = "Not found."
         }
 
         if ($HumanReadableValue = $EZGuidHT[$GUID]) {

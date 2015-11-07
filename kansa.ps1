@@ -274,7 +274,9 @@ Param(
         [ValidateSet("Basic","CredSSP","Default","Digest","Kerberos","Negotiate","NegotiateWithImplicitCredential")]
         [String]$Authentication="Kerberos",
     [Parameter(Mandatory=$false,Position=19)]
-        [int32]$JSONDepth="10"
+        [int32]$JSONDepth="10",
+    [Parameter(Mandatory=$false,Position=20)]
+        [int32]$BatchSize=0
 )
 
 # Opening with a Try so the Finally block at the bottom will always call
@@ -581,19 +583,17 @@ Param(
 }
 
 
-function Get-TargetData {
+function Get-PSSessions {
 <#
 .SYNOPSIS
-Runs each module against each target. Writes out the returned data to host where Kansa is run from.
+Opens sessions with targets and returns an object of those sessions.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
         [Array]$Targets,
-    [Parameter(Mandatory=$True,Position=1)]
-        [System.Collections.Specialized.OrderedDictionary]$Modules,
-    [Parameter(Mandatory=$False,Position=2)]
+    [Parameter(Mandatory=$False,Position=1)]
         [System.Management.Automation.PSCredential]$Credential=$False,
-    [Parameter(Mandatory=$False,Position=3)]
+    [Parameter(Mandatory=$False,Position=2)]
         [Int]$ThrottleLimit
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
@@ -619,6 +619,22 @@ Param(
         $Error | Add-Content -Encoding $Encoding $ErrorLog
         $Error.Clear()
     }
+    $PSSessions
+}
+
+function Get-TargetData {
+<#
+.SYNOPSIS
+Runs each module against each target. Writes out the returned data to host where Kansa is run from.
+#>
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [System.Collections.Specialized.OrderedDictionary]$Modules,
+    [Parameter(Mandatory=$True,Position=1)]
+        [Array]$PSSessions
+)
+    Write-Debug "Entering $($MyInvocation.MyCommand)"
+    $Error.Clear()
 
     $Modules.Keys | Foreach-Object { $Module = $_
         $ModuleName  = $Module | Select-Object -ExpandProperty BaseName
@@ -1222,7 +1238,8 @@ if ($TargetList) {
 
 
 # Finally, let's gather some data. #
-Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential -ThrottleLimit $ThrottleLimit
+$PSSessions = Get-PSSessions -Targets $Targets -Credential $Credential -ThrottleLimit $ThrottleLimit
+Get-TargetData -Modules $Modules -PSSessions $PSSessions
 # Done gathering data. #
 
 # Are we running analysis scripts? #

@@ -592,9 +592,7 @@ Param(
     [Parameter(Mandatory=$True,Position=0)]
         [Array]$Targets,
     [Parameter(Mandatory=$False,Position=1)]
-        [System.Management.Automation.PSCredential]$Credential=$False,
-    [Parameter(Mandatory=$False,Position=2)]
-        [Int]$ThrottleLimit
+        [System.Management.Automation.PSCredential]$Credential=$False
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     $Error.Clear()
@@ -631,7 +629,9 @@ Param(
     [Parameter(Mandatory=$True,Position=0)]
         [System.Collections.Specialized.OrderedDictionary]$Modules,
     [Parameter(Mandatory=$True,Position=1)]
-        [Array]$PSSessions
+        [Array]$PSSessions,
+    [Parameter(Mandatory=$False,Position=2)]
+        [Int]$ThrottleLimit
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     $Error.Clear()
@@ -1238,8 +1238,8 @@ if ($TargetList) {
 
 
 # Finally, let's gather some data. #
-$PSSessions = Get-PSSessions -Targets $Targets -Credential $Credential -ThrottleLimit $ThrottleLimit
-Get-TargetData -Modules $Modules -PSSessions $PSSessions
+$PSSessions = Get-PSSessions -Targets $Targets -Credential $Credential
+Get-TargetData -Modules $Modules -PSSessions $PSSessions -ThrottleLimit $ThrottleLimit
 # Done gathering data. #
 
 # Are we running analysis scripts? #

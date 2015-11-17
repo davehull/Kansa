@@ -620,6 +620,29 @@ Param(
     $PSSessions
 }
 
+function Get-ArgFileName {
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [System.IO.FileSystemInfo]$Module,
+    [Parameter(Mandatory=$True,Position=0)]
+        [System.Collections.Specialized.OrderedDictionary]$Modules
+)
+    Write-Debug "Entering $($MyInvocation.MyCommand)"
+    $Error.Clear()
+
+    $Arguments  = @()
+    $Arguments += $($Modules.Get_Item($Module)) -split ","
+    if ($Arguments) 
+    {
+        $ArgFileName = Get-LegalFileName $Arguments
+    } 
+    else 
+    { 
+        $ArgFileName = "" 
+    }
+    $ArgFileName, $Arguments
+}
+
 function Get-TargetData {
 <#
 .SYNOPSIS
@@ -637,13 +660,9 @@ Param(
     $Error.Clear()
 
     $Modules.Keys | Foreach-Object { $Module = $_
-        $ModuleName  = $Module | Select-Object -ExpandProperty BaseName
-        $Arguments   = @()
-        $Arguments   += $($Modules.Get_Item($Module)) -split ","
-        if ($Arguments) {
-            $ArgFileName = Get-LegalFileName $Arguments
-        } else { $ArgFileName = "" }
-            
+        $ModuleName = $Module | Select-Object -ExpandProperty BaseName
+        $ArgFileName, $Arguments = Get-ArgFileName -Module $Module -Modules $Modules
+                
         # Get our directives both old and new style
         $DirectivesHash  = @{}
         $DirectivesHash = Get-Directives $Module
@@ -1238,6 +1257,12 @@ if ($TargetList) {
 
 
 # Finally, let's gather some data. #
+<#
+$Modules.Keys | ForEach-Object { $Module = $_
+    $Module.GetType()
+}
+#>
+
 $PSSessions = Get-PSSessions -Targets $Targets -Credential $Credential
 Get-TargetData -Modules $Modules -PSSessions $PSSessions -ThrottleLimit $ThrottleLimit
 # Done gathering data. #

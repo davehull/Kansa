@@ -41,13 +41,7 @@ Foreach ($user_SID in $user_SIDs.sid){
 				if (test-path -Path Registry::$office_app_key) {
 
 					# since the subkey has a random name, we need to cycle through each entry
-					$office_app_mru_key = Get-ChildItem -Path Registry::$office_app_key; 
-
-					# this subkey should contain the File and Place MRU entries we want
-					# to extract the data from
-					ForEach ($mru_key in (Get-ChildItem -Path Registry::$office_app_mru_key)){
-						Get-ItemProperty -Path Registry::$mru_key
-					}
+					Get-ChildItem -Path Registry::$office_app_key -Recurse; 
 				}
 			}
 		}

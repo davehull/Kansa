@@ -1,8 +1,11 @@
 <#
 .SYNOPSIS
 Get-OfficeMRU.ps1 acquires Microsoft Office MRU from registry
-and reformats on the target as tsv output.
 #>
+
+
+$Error.Clear()
+$ErrorActionPreference = "SilentlyContinue"
 
 # versions of Microsoft office
 $office_versions = @("15.0", #2013
@@ -11,9 +14,6 @@ $office_versions = @("15.0", #2013
 				"10.0", #2002
 				"9.0" #2000
 				)
-
-Write-Debug "Entering $($MyInvocation.MyCommand)"
-$Error.Clear()
 
 # get a list of all users on the computer
 $user_SIDs = gwmi win32_userprofile | select sid
@@ -50,7 +50,8 @@ Foreach ($user_SID in $user_SIDs.sid){
 
 if ($Error) {
 	# Write the $Error to the $Errorlog
-	$Error | Add-Content -Encoding $Encoding $ErrorLog
+    Write-Error "Get-OfficeMRU Error on $env:COMPUTERNAME"
+    Write-Error $Error
 	$Error.Clear()
 }
 Write-Debug "Exiting $($MyInvocation.MyCommand)" 

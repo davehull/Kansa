@@ -660,13 +660,17 @@ Param(
     $Error.Clear()
 
     $Modules.Keys | Foreach-Object { $Module = $_
+
+        # Get legal output filename for module and its arguments
         $ModuleName = $Module | Select-Object -ExpandProperty BaseName
         $ArgFileName, $Arguments = Get-ArgFileName -Module $Module -Modules $Modules
                 
         # Get our directives both old and new style
         $DirectivesHash  = @{}
         $DirectivesHash = Get-Directives $Module
+
         if ($Pushbin) {
+            # Get set to copy third-party binaries to remote systems
             $bindep = $($DirectivesHash.Get_Item("BINDEP"))
             if ($bindep) {
                 # Push-Bindep -Targets $Targets -Module $Module -Bindep $bindep -Credential $Credential

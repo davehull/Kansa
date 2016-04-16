@@ -49,8 +49,13 @@ Param(
     }
 }
 
-$RecentApps = Get-WmiObject -Namespace "root\CCM\SoftwareMeteringAgent" `
-                -Query "Select * from CCM_RecentlyUsedApps"
+try {
+    $RecentApps = Get-WmiObject -Namespace "root\CCM\SoftwareMeteringAgent" `
+                    -Query "Select * from CCM_RecentlyUsedApps" -ErrorAction Stop
+}
+catch [System.Management.ManagementException] {
+    throw 'WMI Namespace root\CCM\SoftwareMeteringAgent does not exist.'
+}
 
 # Set up the time format template.
 $time_format = "yyyyMMddHHmmss.ffffffzzz"

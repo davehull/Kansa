@@ -21,7 +21,7 @@ from the query...
 !! YOU WILL LIKELY WANT TO ADJUST THIS QUERY !!
 
 This script exepcts files matching the pattern 
-*netstat.tsv to be in the current working
+*netstat.csv to be in the current working
 directory
 .NOTES
 DATADIR Netstat
@@ -42,7 +42,7 @@ if (Get-Command logparser.exe) {
         Component,
         Process
     FROM
-        *netstat.tsv
+        *netstat.csv
     WHERE
         ConPid not in ('0'; '4') and
         ForeignAddress not like '10.%' and
@@ -60,7 +60,7 @@ if (Get-Command logparser.exe) {
         ct desc
 "@
 
-    & logparser -stats:off -i:csv -fixedsep:on -dtlines:0 -rtp:-1 $lpquery
+    & logparser -stats:off -i:csv -dtlines:0 -rtp:-1 $lpquery
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

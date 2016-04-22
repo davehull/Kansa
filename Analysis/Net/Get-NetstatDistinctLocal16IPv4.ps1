@@ -6,7 +6,7 @@ filter for local addresses in other analysis scripts, so you can see
 what hosts are communicating to hosts outside your environment.
 
 This script exepcts files matching the pattern 
-*netstat.tsv to be in the current working
+*netstat.csv to be in the current working
 directory
 #>
 
@@ -16,12 +16,12 @@ if (Get-Command logparser.exe) {
     SELECT
         Distinct substr(LocalAddress, 0, last_index_of(substr(LocalAddress, 0, last_index_of(LocalAddress, '.')), '.')) as Local/16
     FROM
-        *netstat.tsv
+        *netstat.csv
     ORDER BY
         Local/16
 "@
 
-    & logparser -stats:off -i:csv -fixedsep:on -dtlines:0 -rtp:-1 $lpquery
+    & logparser -stats:off -i:csv -dtlines:0 -rtp:-1 $lpquery
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

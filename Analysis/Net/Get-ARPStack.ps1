@@ -4,7 +4,7 @@ Get-ARPStack.ps1
 Requires logparser.exe in path
 Pulls frequency of ARP based on IpAddr
 
-This script expects files matching the *Arp.tsv pattern to be in the
+This script expects files matching the *Arp.csv pattern to be in the
 current working directory.
 .NOTES
 DATADIR Arp
@@ -19,7 +19,7 @@ if (Get-Command logparser.exe) {
         Mac,
         Type
     FROM
-        *arp.tsv
+        *arp.csv
     GROUP BY
         IpAddr,
         Mac,
@@ -28,7 +28,7 @@ if (Get-Command logparser.exe) {
         ct ASC
 "@
 
-    & logparser -stats:off -i:csv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"
+    & logparser -stats:off -i:csv -dtlines:0 -rtp:-1 "$lpquery"
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

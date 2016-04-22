@@ -11,6 +11,8 @@ provides some useful information.
 
 This script expects files matching the *autorunsc.txt pattern to be in
 the current working directory.
+.NOTES
+DATADIR Autorunsc
 #>
 
 

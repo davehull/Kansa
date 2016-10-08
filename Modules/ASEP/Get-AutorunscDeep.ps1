@@ -126,7 +126,7 @@ Param(
 if (Test-Path "$env:SystemRoot\Autorunsc.exe") {
     # This regex matches all of the path types I've encountered, but there may be some it misses, if you find some, please send a sample to kansa@trustedsignal.com
     $fileRegex = New-Object System.Text.RegularExpressions.Regex "(([a-zA-Z]:|\\\\\w[ \w\.]*)(\\\w[- \w\.\\\{\}]*|\\%[ \w\.]+%+)+|%[ \w\.]+%(\\\w[ \w\.]*|\\%[ \w\.]+%+)*)"
-    & $env:SystemRoot\Autorunsc.exe /accepteula -a * -c -h -s '*' 2> $null | ConvertFrom-Csv | ForEach-Object {
+    & $env:SystemRoot\Autorunsc.exe /accepteula -a * -c -h -s '*' -nobanner 2> $null | ConvertFrom-Csv | ForEach-Object {
         $_ | Add-Member NoteProperty ScriptMD5 $null
         $_ | Add-Member NoteProperty ScriptModTimeUTC $null
         $_ | Add-Member NoteProperty ShannonEntropy $null

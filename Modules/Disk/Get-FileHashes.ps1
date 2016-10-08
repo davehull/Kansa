@@ -95,7 +95,7 @@ workflow Get-HashesWorkflow {
 	$hashList = @()
 	
 	$Files = (
-		Get-ChildItem -Force -Path $basePath -Recurse -Force -ErrorAction SilentlyContinue | 
+		Get-ChildItem -Force -Path $basePath -Recurse -ErrorAction SilentlyContinue | 
 		? -FilterScript { 
 			($_.Length -ge $MinB -and $_.Length -le $_.Length) -and 
 			($_.Extension -match $extRegex) 
@@ -163,7 +163,7 @@ function Get-Hashes {
 	$hashList = @()
 	
 	$Files = (
-		Get-ChildItem -Force -Path $basePath -Recurse -Force -ErrorAction SilentlyContinue | 
+		Get-ChildItem -Force -Path $basePath -Recurse -ErrorAction SilentlyContinue | 
 		? -FilterScript { 
 			($_.Length -ge $MinB -and $_.Length -le $_.Length) -and 
 			($_.Extension -match $extRegex) 

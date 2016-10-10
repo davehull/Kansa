@@ -1,13 +1,7 @@
 <#
 .SYNOPSIS
 Get-ShedTasks.ps1 returns information about all Windows Scheduled Tasks.
-.NOTES
-The following line is required by Kansa.ps1, which uses it to determine
-how to handle the output from this script.
-OUTPUT tsv
 #>
-if (Get-Command Get-ScheduledTask -errorAction SilentlyContinue) {
-    Get-ScheduledTask
-} else {
-    schtasks /query /FO CSV | Select-String -n "`"TaskName`",`""
-}
+$tasks = schtasks /query /FO CSV /v | Select-String -n "`"TaskName`",`""
+$tasks = $tasks | foreach {$_ -replace '"',''} |ConvertFrom-String -Delimiter "," -PropertyNames "HostName","TaskName","Next Run Time","Status","Logon Mode","Last Run Time","Last Result","Author","Task To Run","Start In","Comment","Scheduled Task State","Idle Time","Power Management","Run As User","Delete Task If Not Rescheduled","Stop Task If Runs X Hours and X Mins","Schedule","Schedule Type","Start Time","Start Date","End Date","Days","Months","Repeat: Every","Repeat: Until: Time","Repeat: Until: Duration","Repeat: Stop If Still Running"
+$tasks

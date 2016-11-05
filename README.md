@@ -10,7 +10,7 @@ More info:
 http://trustedsignal.blogspot.com/search/label/Kansa  
 http://www.powershellmagazine.com/2014/07/18/kansa-a-powershell-based-incident-response-framework/  
 
-##What does it do? 
+##What does it do?
 It uses Powershell Remoting to run user contributed, ahem, user contri-  
 buted modules across hosts in an enterprise to collect data for use  
 during incident response, breach hunts, or for building an environmental  
@@ -19,7 +19,7 @@ baseline.
 ##How do you use it?
 Here's a very simple command line example you can run on your own local  
 host.  
-  
+
 1.  After downloading the project and unzipping it, you'll likely need  
 to "unblock" the ps1 files. The easiest way to do this if you're using  
 Powershell v3 or later is to cd to the directory where Kansa resides  
@@ -27,20 +27,27 @@ and do:
 ```Powershell
 ls -r *.ps1 | Unblock-File
 ```
-If you're not running PS v3 or later, Sysinternal's Streams utility can  
+1. Ensure that you check your execution policies with PowerShell. Check [Using the Set-ExecutionPolicy Cmdlet](https://technet.microsoft.com/en-us/library/ee176961.aspx) for information on how to do so within your environment.  
+```
+Set-ExecutionPolicy AllSigned | RemoteSigned | Unrestricted
+```
+1. If you're not running PS v3 or later, [Sysinternal's Streams utility](https://technet.microsoft.com/en-us/sysinternals/streams.aspx) can  
 be used to remove the alternate data streams that Powershell uses to  
 determine if files came from the Internet. Once you've removed those  
 ADSes, you'll be able to run the scripts without issue.  
-  
+```
+c:\ streams -sd <Kansa directory>
+```
+
 I've not run into any issues running the downloaded scripts via Windows  
 Remote Management / Powershell Remoting through Kansa, so you shouldn't  
 have to do anything if you want to run the scripts via remoting.  
-  
+
 2.  Open an elevated Powershell Prompt (Right-click Run As Administrator)  
-  
-3.  At the command prompt, enter: 
+
+3.  At the command prompt, enter:
 ```Powershell
-.\kansa.ps1 -Target localhost -ModulePath .\Modules -Verbose  
+.\kansa.ps1 -Target $env:COMPUTERNAME -ModulePath .\Modules -Verbose  
 ```
 The script should start collecting data or you may see an error about  
 not having Windows Remote Management enabled. If so, do a little  

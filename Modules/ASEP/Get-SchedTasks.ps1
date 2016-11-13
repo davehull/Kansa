@@ -2,9 +2,8 @@
 .SYNOPSIS
 Get-ShedTasks.ps1 returns information about all Windows Scheduled Tasks.
 .NOTES
-The following line is required by Kansa.ps1, which uses it to determine
-Output will be a PS Object.
-- schtasks.exe output is not good.  It needs to be parsed to remove redundant headers.
+schtasks.exe output is not that good.  It needs to be parsed to remove redundant headers.
+OUTPUT tsv
 #>
 # Run schtasks and remove redundant headers
 $tasks = schtasks /query /FO CSV /v | Select-String -n "`"TaskName`",`""

@@ -11,4 +11,4 @@ The following line is used by Kansa.ps1 to determine how to treat the
 output from this script.
 OUTPUT TSV
 #>
-Get-WmiObject -Namespace root\subscription -Query "select * from __EventFilter"
+ForEach ($NameSpace in "root\subscription","root\default") { Get-WmiObject -Namespace $NameSpace -Query "select * from __EventFilter" }

@@ -10,4 +10,4 @@ The following line is used by Kansa.ps1 to determine how ouptut from
 this script should be handled.
 OUTPUT TSV
 #>
-get-wmiobject -namespace root\subscription -query "select * from __EventConsumer"
+ForEach ($NameSpace in "root\subscription","root\default") { get-wmiobject -namespace $NameSpace -query "select * from __EventConsumer" }

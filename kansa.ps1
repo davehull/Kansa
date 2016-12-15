@@ -683,6 +683,7 @@ Param(
             if($Error) {
                 $ModuleName + " reports error on " + $ChildJob.Location + ": `"" + $Error + "`"" | Add-Content -Encoding $Encoding $ErrorLog
                 $Error.Clear()
+                Return
             }
 
             # Now that we know our hostname, let's double check our path length, if it's too long, we'll write an error
@@ -690,7 +691,7 @@ Param(
             $Outfile = $OutputPath + $GetlessMod + $ArgFileName + "\" + $ChildJob.Location + "-" + $GetlessMod + $ArgFileName
             if ($Outfile.length -gt 256) {
                 "ERROR: ${GetlessMod}'s output path length exceeds 260 character limit. Can't write the output to disk for $($ChildJob.Location)." | Add-Content -Encoding $Encoding $ErrorLog
-                Continue
+                Return
             }
 
             # save the data

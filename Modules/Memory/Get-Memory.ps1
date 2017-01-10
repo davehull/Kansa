@@ -54,11 +54,6 @@ if (Test-Path ($memoryzepath)) {
     if (Test-Path($memoryze)) {
         & $cmdlocation  /c $memoryze |
                 ForEach-Object { $_ }               
-            <#$hashdump = (ls $memoryzedest + "\x64\Audits\" -recurse *.img | Get-FileHash $memoryzedest + "\x64\Audits\" -Algorithm SHA256 | Out-File $memoryzedest + "\x64\Audits\memoryhashes.txt" ) |
-            Write-Output "get-date 
-                          env:computername
-                          Memory img files have been hashed for the above" >> $memoryzedest + "\x64\Audits\memoryhashes.txt" |
-            ForEach-Object { $_ }#>
     } else {
         "memoryze.zip found, but not unzipped."
     }
@@ -66,4 +61,6 @@ if (Test-Path ($memoryzepath)) {
     "memoryze.zip not found on $env:COMPUTERNAME"
 }
 
-#need to add option to copy image file to a centeral repo for further analysis
+#optional: add feature to copy image file to a centeral repo for further analysis
+#might want to hash the image dump if using for forensics
+

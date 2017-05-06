@@ -10,13 +10,13 @@ More info:
 http://trustedsignal.blogspot.com/search/label/Kansa  
 http://www.powershellmagazine.com/2014/07/18/kansa-a-powershell-based-incident-response-framework/  
 
-##What does it do?
+## What does it do?
 It uses Powershell Remoting to run user contributed, ahem, user contri-  
 buted modules across hosts in an enterprise to collect data for use  
 during incident response, breach hunts, or for building an environmental  
 baseline.
 
-##How do you use it?
+## How do you use it?
 Here's a very simple command line example you can run on your own local  
 host.  
 
@@ -60,7 +60,7 @@ on a collection of data from a single host. Kansa was written for
 collection and analysis of data from dozens, hundreds, thousands, tens  
 of thousands of systems.  
 
-##Running Modules Standalone
+## Running Modules Standalone
 Kansa modules can be run as standalone utilities outside of the Kansa  
 framework. Why might you want to do this? Consider netstat -naob, the  
 output of the command line utility is ugly and doesn't easily lend  
@@ -78,7 +78,7 @@ cmdlets. Here's an example:
 the result of the above will be a file called netstat.tsv containing  
 unquoted, tab separate values for netstat -naob's ouput.
 
-##Caveats:
+## Caveats:
 Powershell relies on the Windows API. Your adversary may use subterfuge.*
 
 * Collectors can be written to bypass the Windows API as well.  

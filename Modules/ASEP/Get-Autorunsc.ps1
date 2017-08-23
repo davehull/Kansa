@@ -35,7 +35,7 @@ time stamps.
 #>
 
 if (Test-Path "$env:SystemRoot\Autorunsc.exe") {
-    & $env:SystemRoot\Autorunsc.exe /accepteula -a * -c -h -s '*' -nobanner 2> $null | ConvertFrom-Csv | ForEach-Object {
+    & $env:SystemRoot\Autorunsc.exe /accepteula -a * -c -h -s '*' 2> $null | ConvertFrom-Csv | ForEach-Object {
         $_
     }
 } else {

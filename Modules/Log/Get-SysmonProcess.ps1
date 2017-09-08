@@ -40,7 +40,6 @@
 
 .LINK
 .NOTES
-OUTPUT tsv
 Configured for Sysmon 5.02
 Sysmon configuration plays a large part in the amount of events.
 I have configured the module to report back for a Sysmon hash configuration of: MD5,SHA1,SHA256. For any other configurations you will need to reconfigure the Propertybag array to report relevant algorythms.

@@ -39,7 +39,6 @@
 
 .LINK
 .NOTES
-OUTPUT tsv
 Configured for Sysmon 5.02
 Sysmon configuration plays a large part in the amount of events.
 For offline parsing of event logs modify script to remove "-LogName" and add "-Path <PATH_to_Logs>". 

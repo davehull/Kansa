@@ -15,7 +15,7 @@ for Git Commit messages
 * **Do** fork the main repo via github, click the fork button
 * **Do** clone your forked repo to your local system using the 
 `git clone` command followed by something like 
-git@github.com:<username>/Kansa.git
+git@github.com:username/Kansa.git
 * **Do** track the remote upstream branch, from your local repo
 do this:
 `git remote add upstream git@github.com:davehull/Kansa.git`

@@ -19,8 +19,9 @@ git@github.com:username/Kansa.git
 * **Do** track the remote upstream branch, from your local repo
 do this:
 `git remote add upstream git@github.com:davehull/Kansa.git`
-then do this and make sure you have origin tracking your fork and
-upstream tracking against the original repo.
+then do this: `git remote -v` and make sure you have origin 
+tracking your fork and upstream tracking against the original
+repo.
 * **Do** create a [topic branch] from within your local clone of 
 your fork from the command line interface in your local system, 
 this may look like the following sequence of commands:

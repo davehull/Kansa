@@ -24,10 +24,8 @@ a full dump.
 !! The dump is quickish; however, transferring it accross the network is slow !!
 
 .NOTES
-Next two lines are required by kansa for proper handling of output and 
-when used with -Pushbin, the BINDEP directive below tells Kansa where
-to find the third-party code.
-OUTPUT txt
+Next line is required by Kansa for proper handling of third-party binary.
+The BINDEP directive below tells Kansa where to find the third-party code.
 BINDEP .\Modules\bin\memoryze.zip
 #>
 
@@ -40,6 +38,12 @@ Function Expand-Zip ($zipfile, $destination) {
         $shell.Namespace($destination).copyhere($item, $copyOption)
     }
 } 
+
+#Check OS Versiona and bail if Version 10 or later
+if ([environment]::OSVersion.Version.Major -ge 10) {
+	"Not supported on Windows OS Major Version 10 or greater"
+	exit
+}
 
 #set the memoryze path
 $memoryzepath = ($env:SystemRoot + "\memoryze.zip")

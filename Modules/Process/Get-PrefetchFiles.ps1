@@ -6,8 +6,6 @@ to a zip file. The zip file is then encoded and returned as a powershell object.
 The output of this script needs to be processed by the Deserialize-KansaField.ps1 script.
 Example:
 Deserialize-KansaField.ps1 -InputFile .\COMPUTERNAME-PrefetchFiles.csv -Field Content -OutputFile PrefetchFiles.zip
-Next line is Kansa.ps1's output directive
-OUTPUT csv
 #>
 
 function GetBase64GzippedStream {

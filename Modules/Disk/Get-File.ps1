@@ -65,7 +65,7 @@ Param(
     [System.Convert]::ToBase64String($memStrm.ToArray())   
 }
 
-$obj = "" | Select-Object FullName,Length,CreationTimeUtc,LastAccessTimeUtc,LastWriteTimeUtc,Content
+$obj = "" | Select-Object FullName,Length,CreationTimeUtc,LastAccessTimeUtc,LastWriteTimeUtc,Hash,Content
 
 if (Test-Path($File)) {
     $Target = ls $File
@@ -74,6 +74,7 @@ if (Test-Path($File)) {
     $obj.CreationTimeUtc   = $Target.CreationTimeUtc
     $obj.LastAccessTimeUtc = $Target.LastAccessTimeUtc
     $obj.LastWriteTimeUtc  = $Target.LastWriteTimeUtc
+    $ogj.Hash              = $(Get-FileHash $File -Algorithm SHA256).Hash
     $obj.Content           = GetBase64GzippedStream($Target)
 }  
 $obj

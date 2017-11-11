@@ -74,7 +74,14 @@ if (Test-Path($File)) {
     $obj.CreationTimeUtc   = $Target.CreationTimeUtc
     $obj.LastAccessTimeUtc = $Target.LastAccessTimeUtc
     $obj.LastWriteTimeUtc  = $Target.LastWriteTimeUtc
-    $ogj.Hash              = $(Get-FileHash $File -Algorithm SHA256).Hash
+    $EAP = $ErrorActionPreference
+    $ErrorActionPreference = Stop
+    Try {
+        $ogj.Hash              = $(Get-FileHash $File -Algorithm SHA256).Hash
+    } Catch {
+        $obj.Hash = 'Error hashing file'
+    }
+    $ErrorActionPreference = $EAP
     $obj.Content           = GetBase64GzippedStream($Target)
 }  
 $obj

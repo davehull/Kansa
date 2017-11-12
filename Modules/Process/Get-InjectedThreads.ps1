@@ -2164,11 +2164,6 @@ Bytes                     : {144, 195, 0, 0...}
 
 #>
 
-[CmdletBinding()]
-param
-(
-
-)
 
 $hSnapshot = CreateToolhelp32Snapshot -ProcessId 0 -Flags 4
 

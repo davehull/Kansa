@@ -77,7 +77,7 @@ if (Test-Path($File)) {
     $EAP = $ErrorActionPreference
     $ErrorActionPreference = Stop
     Try {
-        $ogj.Hash              = $(Get-FileHash $File -Algorithm SHA256).Hash
+        $obj.Hash              = $(Get-FileHash $File -Algorithm SHA256).Hash
     } Catch {
         $obj.Hash = 'Error hashing file'
     }

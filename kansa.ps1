@@ -540,11 +540,10 @@ function Get-Directives {
 .SYNOPSIS
 Returns a hashtable of directives found in the script
 Directives are used for two things:
-1) The BINDEP directive tells Kansa that a module depends on one  
-or more binaries and what the paths of the binaries are 
-(separated by semi-colons). If Kansa is called with -PushBin, the 
-script will look in Modules\bin\ for the binary and attempt to copy 
-it to targets.
+1) The BINDEP directive tells Kansa that a module depends on some 
+binary and what the name of the binary is. If Kansa is called with 
+-PushBin, the script will look in Modules\bin\ for the binary and 
+attempt to copy it to targets.
 2) The DATADIR directive tells Kansa what the output path is for
 the given module's data so that if it is called with the -Analysis
 flag, the analysis scripts can find the data.
@@ -633,8 +632,8 @@ Param(
         $DirectivesHash  = @{}
         $DirectivesHash = Get-Directives $Module
         if ($Pushbin) {
-            $bindeps = [string]$DirectivesHash.Get_Item("BINDEP") -split ';'
-            foreach ($bindep in $bindeps) {
+            $bindep = $($DirectivesHash.Get_Item("BINDEP"))
+            if ($bindep) {
                 
                 # Send-File only supports a single destination at a time, so we have to loop this.
                 # Fix for Issue 146, originally suggested by sc2pyro.
@@ -739,7 +738,7 @@ Param(
         Remove-Job $Job
 
         if ($rmbin) {
-            foreach ($bindep in $bindeps) {
+            if ($bindep) {
                 Remove-Bindep -Targets $Targets -Module $Module -Bindep $bindep -Credential $Credential
             }
         }

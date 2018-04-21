@@ -75,7 +75,7 @@ if (Test-Path($File)) {
     $obj.LastAccessTimeUtc = $Target.LastAccessTimeUtc
     $obj.LastWriteTimeUtc  = $Target.LastWriteTimeUtc
     $EAP = $ErrorActionPreference
-    $ErrorActionPreference = Stop
+    $ErrorActionPreference = 'Stop'
     Try {
         $obj.Hash              = $(Get-FileHash $File -Algorithm SHA256).Hash
     } Catch {

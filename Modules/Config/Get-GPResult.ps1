@@ -52,7 +52,7 @@ $Date = Get-Date -Format "yyyyMMddHHmmss"
 $Path = ($env:temp) + "\" + $Comp + "_" + $Date + "GPResult.xml"
 
 if (Get-Command Get-GPResultantSetOfPolicy -ErrorAction SilentlyContinue) {
-    Get-GPResultantSetOfPolicy-Path $Path -ReportType XML
+    Get-GPResultantSetOfPolicy -Path $Path -ReportType XML
 } else {
     GPResult.exe /X $Path
 }

@@ -543,7 +543,9 @@ Directives are used for two things:
 1) The BINDEP directive tells Kansa that a module depends on some 
 binary and what the name of the binary is. If Kansa is called with 
 -PushBin, the script will look in Modules\bin\ for the binary and 
-attempt to copy it to targets.
+attempt to copy it to targets. Specify multiple BINDEPs by
+separating each path with a semi-colon (;).
+
 2) The DATADIR directive tells Kansa what the output path is for
 the given module's data so that if it is called with the -Analysis
 flag, the analysis scripts can find the data.
@@ -632,15 +634,17 @@ Param(
         $DirectivesHash  = @{}
         $DirectivesHash = Get-Directives $Module
         if ($Pushbin) {
-            $bindep = $($DirectivesHash.Get_Item("BINDEP"))
-            if ($bindep) {
+            $bindeps = [string]$DirectivesHash.Get_Item("BINDEP") -split ';'
+            foreach($bindep in $bindeps) {
+                if ($bindep) {
                 
-                # Send-File only supports a single destination at a time, so we have to loop this.
-                # Fix for Issue 146, originally suggested by sc2pyro.
-                foreach ($PSSession in $PSSessions)
-                {
-                    $RemoteWindir = Invoke-Command -Session $PSSession -ScriptBlock { Get-ChildItem -Force env: | Where-Object { $_.Name -match "windir" } | Select-Object -ExpandProperty value }
-                    $null = Send-File -Path (ls $bindep).FullName -Destination $RemoteWindir -Session $PSSession
+                    # Send-File only supports a single destination at a time, so we have to loop this.
+                    # Fix for Issue 146, originally suggested by sc2pyro.
+                    foreach ($PSSession in $PSSessions)
+                    {
+                        $RemoteWindir = Invoke-Command -Session $PSSession -ScriptBlock { Get-ChildItem -Force env: | Where-Object { $_.Name -match "windir" } | Select-Object -ExpandProperty value }
+                        $null = Send-File -Path (ls $bindep).FullName -Destination $RemoteWindir -Session $PSSession
+                    }
                 }
             }
         }
@@ -738,8 +742,11 @@ Param(
         Remove-Job $Job
 
         if ($rmbin) {
-            if ($bindep) {
-                Remove-Bindep -Targets $Targets -Module $Module -Bindep $bindep -Credential $Credential
+            if ($bindeps) {
+                foreach ($bindep in $bindeps) {
+                    $RemoteBinDep = "$RemoteWinDir\$(split-path -path $bindep -leaf)"
+                    Invoke-Command -Session $PSSession -ScriptBlock { Remove-Item -force -path $using:RemoteBinDep}
+                }
             }
         }
 

@@ -1,13 +1,11 @@
 ﻿<#
 .SYNOPSIS
-Get-SvcAll.ps1 returns information about all Windows services.
+Get-PersistenceFilesAndRegistryKeys.ps1 gathers information about various files and registry keys
+derived from MITRE's Att&ck matrix data on Persistence mechanisms.  They are broken down in to
+sections which are included in the data returned so they can be broken up and analyzed
+seperatly.
 
-.NOTES
-The following line is required by Kansa.ps1, which uses it to determine
-how to handle the output from this script.
-OUTPUT CSV
 #>
-
 
 <#
 	.SYNOPSIS
@@ -65,38 +63,8 @@ function Get-MyFileHash {
 	}
 	$return
 }
-<#
-	.SYNOPSIS
-		Retrieve a registry key value.
-	
-	.DESCRIPTION
-		Provided the hive, and path, retrieve a registry key value.
-		
-		NOTE:  This function includes built-in error handling and shoud only ever return a string value indicating what happened.  
-		I build this function this way so I didn't have to keep repeating error-handling in the script later.  
-		This may not be the right or proper way to do error handling, but hey, it's my script.
-	
-	.PARAMETER hive
-		Specify which hive you want to query.
-	
-	.PARAMETER path
-		The path to the registry key.
-	
-	.PARAMETER key
-		The specific key withing the registry path that you want to query.
-	
-	.EXAMPLE
-		PS C:\> Get-RegistryKey -hive HKLM -path 'Value2'
-	
-	.NOTES
-		Additional information about the function.
-#>
 
-#Since this is a combined search, we need a good data structure to handle the results
-#Type (file/regkey)
-#set (list the set/persistence mechanism this is a part of, exe: "AppCertDLL"
-#path (path to file or path to registy key ex: c:\Windows\System32\lsass.exe, or hklm:\SYSTEM\ControlSet\
-#value
+#data object to hold information until we're ready to return the results
 $Objects = @()
 
 

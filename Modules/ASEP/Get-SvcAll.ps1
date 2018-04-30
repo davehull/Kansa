@@ -1,11 +1,6 @@
 ﻿<#
 .SYNOPSIS
 Get-SvcAll.ps1 returns information about all Windows services.
-
-.NOTES
-The following line is required by Kansa.ps1, which uses it to determine
-how to handle the output from this script.
-
 #>
 
 #Powershell introduced the official Get-FileHash in Powershell version 4

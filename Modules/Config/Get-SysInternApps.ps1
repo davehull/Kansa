@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Get-Process.ps1 returns data about Process.
+Get-SysInternApps.ps1 returns data about if SysInternals are installed via Registry.
 .NOTES
 The next line is needed by Kansa.ps1 to determine how to handle output
 from this script.

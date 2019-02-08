@@ -1,11 +1,26 @@
-﻿<#
+<#
 .SYNOPSIS
 Kansa is a Powershell based incident response framework for Windows 
 environments.
+
+"Improvements" have been made by adding two additional output formats: 
+GL and SPLUNK.  Both allow the user to route data output to a GrayLog 
+or Splunk instance respectively, while also writing the output to JSON 
+files in a manner similar to the default JSON output format.
+
+.CONFIGURATION
+In order to use the GL and SPLUNK output formats, the user needs to configure
+the appropriate OutputFormat parameter for their specific receiving system's 
+configuration - this is done in logging.conf, which must reside in the same
+directory as kansa.ps1. If you want to move logging.conf, edit the appropriate
+line(s) in the Get-LoggingConf function (somewhere around line 445).
+
+For GrayLog output, the facility parameter in the message body should be 
+configured by the user... Unless the user is fine with the pre-defined facility.
+
 .DESCRIPTION
 Kansa is a modular, PowerShell based incident response framework for
 Windows environments that have Windows Remote Management enabled.
-
 Kansa looks for a modules.conf file in the .\Modules directory. If one
 is found, it controls which modules execute and in what order. If no 
 modules.conf is found, all modules will be executed in the order that 
@@ -15,10 +30,8 @@ After parsing modules.conf or the -ModulesPath parameter argument,
 Kansa will execute each module on each target (remote host) and 
 write the output to a folder named for each module in a time stamped
 output path. Each target will have its data written to separate files.
-
 For example, the Get-PrefetchListing.ps1 module data will be written
 to Output_timestamp\PrefetchListing\Hostname-PrefetchListing.txt.
-
 All modules should return Powershell objects. Kansa converts those
 objects into one of several file formats, including csv, json, tsv and
 xml. The default output format is csv. Kansa's user may specify 
@@ -27,9 +40,7 @@ parameter argument.
 
 Kansa.ps1 was written to avoid the need for CredSSP, therefore 
 "second-hops" should be avoided. For more details on this see:
-
 http://trustedsignal.blogspot.com/2014/04/kansa-modular-live-response-tool-for.html
-
 The script assumes you will have administrator level privileges on
 target hosts, though such privileges may not be required by all 
 modules.
@@ -37,9 +48,7 @@ modules.
 If you run this script without the -TargetList argument, Remote Server
 Administration Tools (RSAT), is required. These are available from 
 Microsoft's Download Center for Windows 7 and 8. You can search for 
-RSAT at:
-
-http://www.microsoft.com/en-us/download/default.aspx
+RSAT at: http://www.microsoft.com/en-us/download/default.aspx
 
 .PARAMETER ModulePath
 An optional parameter, default value is .\Modules\, that specifies the
@@ -55,12 +64,10 @@ to collect data from. If these hosts are outside the current forest,
 fully qualified domain names are required. In general, it is advised to
 use FQDNs.
 
-PARAMETER Target
+.PARAMETER Target
 An optional parameter, the name of a single system to collect data from.
-
 .PARAMETER TargetCount
 An optional parameter that specifies the maximum number of targets.
-
 In the absence of the TargetList and / or Target arguments, Kansa will 
 use Remote System Administration Tools (a separate installed package) 
 to query Active Directory and will build a list of hosts to target 
@@ -81,7 +88,6 @@ contains a special line called a "directive" that instructs Kansa.ps1
 to copy the Autorunsc.exe binary to remote systems when called with the
 -Pushbin flag. The user executing Kansa is responsible for downloading
 any required binaries, they are not distributed with Kansa.
-
 Kansa does not ship with third-party binaries. Conventionally, 
 third-party binaries are placed in the .\Modules\bin\ path. The BINDEP
 directive should reference the binary via its path relative to 
@@ -128,7 +134,6 @@ to run.
 .PARAMETER Analysis
 An optional switch that causes Kansa to run automated analysis based on
 the contents of the Analysis\Analysis.conf file.
-
 .PARAMETER Transcribe
 An optional flag that causes Start-Transcript to run at the start
 of the script, writing to $OutputPath\yyyyMMddhhmmss.log
@@ -163,28 +168,26 @@ methods before using an alternate.
 
 .PARAMETER JSONDepth
 An optional parameter specifying how many levels of contained objects
-are included in the JSON representation. Default is 10.
+are included in the JSON representation. Default was 10, but has been 
+changed to 20.
 
 .INPUTS
 None
-
 You cannot pipe objects to this cmdlet
+
 .OUTPUTS
 Various and sundry.
 
 .NOTES
 In the absence of a configuration file, specifying which modules to run, 
 this script will run each module across all hosts.
-
 Each module should return objects.
-
 Because modules should only COLLECT data from remote hosts, their 
 filenames must begin with "Get-". Examples:
 Get-PrefetchListing.ps1
 Get-Netstat.ps1
 
 Any module not beginning with "Get-" will be ignored.
-
 Note this read-only aspect is unenforced, therefore, Kansa can be used 
 to make changes to remote hosts. As a result, it can be used to 
 facilitate remediation.
@@ -206,24 +209,29 @@ a list of hosts that it is able to query from Active Directory. Errors
 and all output will be written to a timestamped output directory. If
 .\Modules\Modules.conf is not found, all ps1 scripts starting with Get-
 under the .\Modules\ directory (recursively) will be run.
+
 .EXAMPLE
 Kansa.ps1 -TargetList hosts.txt -Credential $Credential -Transcribe
 In this example the user has specified a list of hosts to target, a 
 user credential under which to execute. The -Transcribe flag is also
 supplied, causing all script output to be written to a transcript. By
 default, the script will also output verbose runstate information.
+
 .EXAMPLE
 Kansa.ps1 -ModulePath ".\Modules\Disk\Get-File.ps1 C:\Windows\WindowsUpdate.log" -Target HHWWSQL01
 In this example -ModulePath refers to a specific module that takes a 
 positional parameter (only positional parameters are supported) and the
 script is being run against a single target.
+
 .EXAMPLE
 Kansa.ps1 -TargetList hostlist -Analysis
 Runs collection according to the configuration in Modules\Modules.conf.
 Following collection, runs analysis scripts per Analysis\Analysis.conf.
+
 .EXAMPLE
 Kansa.ps1 -ListModules
 Returns a list of all the modules found under the default modules path.
+
 .EXAMPLE
 Kansa.ps1 -ListAnalysis
 Returns a list of all analysis scripts found under the Analysis path.
@@ -242,7 +250,7 @@ Param(
     [Parameter(Mandatory=$False,Position=4)]
         [System.Management.Automation.PSCredential]$Credential=$Null,
     [Parameter(Mandatory=$False,Position=5)]
-    [ValidateSet("CSV","JSON","TSV","XML")]
+    [ValidateSet("CSV","JSON","TSV","XML","GL","SPLUNK")]
         [String]$OutputFormat="CSV",
     [Parameter(Mandatory=$False,Position=6)]
         [Switch]$Pushbin,
@@ -274,7 +282,7 @@ Param(
         [ValidateSet("Basic","CredSSP","Default","Digest","Kerberos","Negotiate","NegotiateWithImplicitCredential")]
         [String]$Authentication="Kerberos",
     [Parameter(Mandatory=$false,Position=19)]
-        [int32]$JSONDepth="10"
+        [int32]$JSONDepth=20
 )
 
 # Opening with a Try so the Finally block at the bottom will always call
@@ -422,6 +430,36 @@ Param(
     Write-Verbose "Running modules:`n$(($ModuleHash.Keys | Select-Object -ExpandProperty BaseName) -join "`n")"
     $ModuleHash
     Write-Debug "Exiting $($MyInvocation.MyCommand)"
+}
+
+function Get-LoggingConf {
+<#
+.SYNOPSIS
+If $OutputFormat is either GL or Splunk, load the proper configuration so that
+the output reaches the proper destination.
+#>
+Param(
+    [Parameter(Mandatory=$True,Position=0)]
+        [String]$OutputFormat,
+    [Parameter(Mandatory=$False,Position=1)]
+        [String]$LoggingConf = ".\logging.conf"
+)
+
+    Write-Debug "Results will be sent to $($OutputFormat)"
+    $Error.Clear()
+    # ToDo: There should probably be some error handling in this function.
+
+    if (Test-Path($LoggingConf)) {
+        Write-Verbose "Found logging.conf"
+        # We should only grab lines that correspond with our desired destination, otherwise, data will just fly off in to the ether
+        # and you'll be stuck analyzing JSON files.
+        if ($OutputFormat -eq "splunk") {
+            Get-Content $LoggingConf | Foreach-Object { $_.Trim() } | ? {$_.StartsWith('spl') -and (!($_.StartsWith("#")))}
+        }
+        elseif ($OutputFormat -eq "gl") {
+            Get-Content $LoggingConf | Foreach-Object { $_.Trim() } | ? {$_.StartsWith('gl') -and (!($_.StartsWith("#")))}
+        }
+    }
 }
 
 function Load-AD {
@@ -594,7 +632,9 @@ Param(
     [Parameter(Mandatory=$False,Position=2)]
         [System.Management.Automation.PSCredential]$Credential=$False,
     [Parameter(Mandatory=$False,Position=3)]
-        [Int]$ThrottleLimit
+        [Int]$ThrottleLimit,
+    [Parameter(Mandatory=$False,Position=4)]
+        [Array]$LogConf
 )
     Write-Debug "Entering $($MyInvocation.MyCommand)"
     $Error.Clear()
@@ -644,6 +684,14 @@ Param(
                 }
             }
         }
+
+        # set up external logging parameters to be used below
+        if ($LogConf) {
+            $LogConf | foreach {
+                $logAssign = $_ -split '=' 
+                New-Variable -Name $logAssign[0] -Value $logAssign[1] -Force
+            }
+        } 
             
         # run the module on the targets            
         if ($Arguments) {
@@ -683,7 +731,6 @@ Param(
             if($Error) {
                 $ModuleName + " reports error on " + $ChildJob.Location + ": `"" + $Error + "`"" | Add-Content -Encoding $Encoding $ErrorLog
                 $Error.Clear()
-                Return
             }
 
             # Now that we know our hostname, let's double check our path length, if it's too long, we'll write an error
@@ -691,7 +738,7 @@ Param(
             $Outfile = $OutputPath + $GetlessMod + $ArgFileName + "\" + $ChildJob.Location + "-" + $GetlessMod + $ArgFileName
             if ($Outfile.length -gt 256) {
                 "ERROR: ${GetlessMod}'s output path length exceeds 260 character limit. Can't write the output to disk for $($ChildJob.Location)." | Add-Content -Encoding $Encoding $ErrorLog
-                Return
+                Continue
             }
 
             # save the data
@@ -713,6 +760,44 @@ Param(
                     $Outfile = $Outfile + ".xml"
                     $Recpt | Export-Clixml $Outfile -Encoding $Encoding
                 }
+                "*gl" {
+                    # We're going to handle output to a GrayLog instance in two ways... we're going to attempt to send it to the GrayLog server
+                    # and we're also going to write the output to JSON files.
+                    $Outfile = $Outfile + ".json"
+                    $Recpt | ConvertTo-Json -Depth $JSONDepth | Set-Content -Encoding $Encoding $Outfile
+                    # The next line tells Kansa where to send the data; hopefully you've entered the proper information in logging.conf
+                    $glurl = "http://${glServerName}:$glServerPort/gelf"
+                    # The next few lines define how we're going to handle information output from the various Kansa modules, then ship it off to GL
+                    ForEach ($item in $Recpt){
+                        $body = @{
+                            message = $item
+                            facility = "main"
+                            host = $Target.Split(":")[0]
+                            } | ConvertTo-Json
+                            Invoke-RestMethod -Method Post -Uri $glurl -Body $body
+                        }
+                    
+                } # end GL definition
+                "*splunk" {
+                    # We're going to handle output to a Splunk instance in two ways... we're going to attempt to send it to a Splunk instance
+                    # and we're also going to write the output to JSON files.  Much like the above GrayLog example.
+                    $Outfile = $Outfile + ".json"
+                    $Recpt | ConvertTo-Json -Depth $JSONDepth | Set-Content -Encoding $Encoding $Outfile
+                    # Parameters for the next line are configured in logging.conf... don't say I didn't warn you
+                    $url = "http://${splServerName}:$splServerPort/services/collector/event"
+                    $header = @{Authorization = "Splunk $splHECToken"}
+                    # The next few lines define how we're going to handle information output from the various Kansa modules and then ship it off to Splunk
+                    ForEach ($item in $Recpt){
+                        $body = @{
+                        event = $item
+                        source = "$GetlessMod"
+                        sourcetype = "_json"
+                        host = $ChildJob.Location
+                        } | ConvertTo-Json
+                        Invoke-RestMethod -Method Post -Uri $url -Headers $header -Body $body
+                        }
+                    
+                    } # end Splunk definition
                 <# Following output formats are no longer supported in Kansa
                 "*bin" {
                     $Outfile = $Outfile + ".bin"
@@ -762,15 +847,12 @@ If a module depends on an external binary, the binary should be copied
 to .\Modules\bin\ and the module should reference the binary in the 
 .NOTES section of the .SYNOPSIS as follows:
 BINDEP .\Modules\bin\autorunsc.exe
-
 !! This directive is case-sensitve and must start the line !!
-
 Some Modules may require multiple binary files, say an executable and 
 required dlls. See the .\Modules\Disk\Get-FlsBodyFile.ps1 as an 
 example. The BINDEP line in that module references 
 .\Modules\bin\fls.zip. Kansa will copy that zip file to the targets, 
 but the module itself handles the unzipping of the fls.zip file.
-
 BINDEP must include the path to the binary, relative to Kansa.ps1's 
 path.
 #>
@@ -825,28 +907,21 @@ function Send-File
 		This function sends a file (or folder of files recursively) to a destination WinRm session. This function was originally
 		built by Lee Holmes (http://poshcode.org/2216) but has been modified to recursively send folders of files as well
 		as to support UNC paths.
-
 	.PARAMETER Path
 		The local or UNC folder path that you'd like to copy to the session. This also support multiple paths in a comma-delimited format.
 		If this is a UNC path, it will be copied locally to accomodate copying.  If it's a folder, it will recursively copy
 		all files and folders to the destination.
-
 	.PARAMETER Destination
 		The local path on the remote computer where you'd like to copy the folder or file.  If the folder does not exist on the remote
 		computer it will be created.
-
 	.PARAMETER Session
 		The remote session. Create with New-PSSession.
-
 	.EXAMPLE
 		$session = New-PSSession -ComputerName MYSERVER
 		Send-File -Path C:\test.txt -Destination C:\ -Session $session
-
 		This example will copy the file C:\test.txt to be C:\test.txt on the computer MYSERVER
-
 	.INPUTS
 		None. This function does not accept pipeline input.
-
 	.OUTPUTS
 		System.IO.FileInfo
 	#>
@@ -1204,6 +1279,9 @@ if ($ListModules) {
 $Modules = Get-Modules -ModulePath $ModulePath
 # Done getting modules #
 
+# Retrieve logging configuration for Splunk or GL
+$LogConf = Get-LoggingConf -OutputFormat $OutputFormat
+# Done getting logging config
 
 # Get our analysis scripts #
 if ($ListAnalysis) {
@@ -1228,7 +1306,14 @@ if ($TargetList) {
 
 
 # Finally, let's gather some data. #
-Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential -ThrottleLimit $ThrottleLimit
+# If you're just logging everything to a file, no need to pass your special logging config
+if ($OutputFormat -eq "csv" -or $OutputFormat -eq "json" -or $OutputFormat -eq "tsv" -or $OutputFormat -eq "xml") {
+    Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential -ThrottleLimit $ThrottleLimit
+}
+# However, if you are using a special logging config, you need to send it off to Get-TargetData
+elseif ($OutputFormat -eq "gl" -or $OutputFormat -eq "splunk") {
+    Get-TargetData -Targets $Targets -Modules $Modules -Credential $Credential -ThrottleLimit $ThrottleLimit -LogConf $LogConf
+}
 # Done gathering data. #
 
 # Are we running analysis scripts? #

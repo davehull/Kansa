@@ -8,6 +8,8 @@ what hosts are communicating to hosts outside your environment.
 This script exepcts files matching the pattern 
 *netstat.csv to be in the current working
 directory
+.NOTES
+DATADIR Netstat
 #>
 
 if (Get-Command logparser.exe) {

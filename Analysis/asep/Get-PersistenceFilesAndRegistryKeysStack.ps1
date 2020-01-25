@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-Get-PersistanceFilesAndRegistryKeysStack.ps1
+Get-PersistenceFilesAndRegistryKeysStack.ps1
 Requires logparser.exe in path
 Pulls stack rank of all Service Failures from acquired Service Failure data
 
@@ -17,7 +17,7 @@ if (Get-Command logparser.exe) {
         COUNT(Type) as Quantity, 
         Type, Set, Path, Value
     FROM
-        *PersistanceFilesAndRegistryKeys.csv
+        *PersistenceFilesAndRegistryKeys.csv
     GROUP BY
        Type, Set, Path, Value
     ORDER BY

@@ -1,35 +1,35 @@
 <#
 .SYNOPSIS
-Get-SvcFailStack.ps1
+Get-SchedTasksAllStack.ps1
 Requires logparser.exe in path
 Pulls stack rank of all Service Failures from acquired Service Failure data
 
 This script expects files matching the pattern *SvcFail.tsv to be in 
 the current working directory.
 .NOTES
-DATADIR SvcAll
+DATADIR SchedTasksAll
 #>
 
 if (Get-Command logparser.exe) {
 
     $lpquery = @"
     SELECT
-        COUNT(Name) as Quantity, 
-        Name,
-        DescriptiveName,
-        Path,
-        ServiceDLL, 
-        PathMD5Sum, 
-        ServiceDLLMd5Sum
+        COUNT(*) as Quantity, 
+        Author,
+        [Task To Run],
+        BinaryPath,
+        dllPath, 
+        BinaryHash, 
+        dllHash
     FROM
-        *SvcAll.csv
+        *SchedTasksAll.csv
     GROUP BY
-        Name,
-        DescriptiveName,
-        Path,
-        ServiceDLL, 
-        PathMD5Sum, 
-        ServiceDLLMd5Sum
+        Author,
+        [Task To Run],
+        BinaryPath,
+        dllPath, 
+        BinaryHash, 
+        dllHash
     ORDER BY
         Quantity ASC
 "@

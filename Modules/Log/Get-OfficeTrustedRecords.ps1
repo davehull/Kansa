@@ -33,7 +33,7 @@ Get-TrustedRecords.ps1 -AllowedSize 10
 .EXAMPLE
 kansa.ps1 -Target COMPTROLLER -ModulePath ".\Modules\Disk\Get-TrustedRecords.ps1 -AllowedSize 10"
 VERBOSE: Running module:
-Get-TrustedRecords -AllowedSize 10
+Get-TrustedRecords 10
 VERBOSE: Waiting for Get-TrustedRecords -AllowedSize 10 to complete.
 
 Id     Name            PSJobTypeName   State         HasMoreData     Location             Command
@@ -52,6 +52,7 @@ function Get-OfficeTrustedRecords
 {
     #Microsoft office applications
     $MicrosoftOfficeApps = @("PowerPoint","Excel","Word")
+
     # ordinary sitatuion for IR Data aquiesation using PSRemote, that you will login using domain admin, if you are logging using domain user that doesn't have full access to all users on the machine
     # then you have to just check users that you have access to, not all users
     $Users = @()
@@ -93,7 +94,6 @@ function Get-OfficeTrustedRecords
 
                         if($property -match "C:\\Windows\\system32\\config\\systemprofile")
                         {
-                          #$UserName = (((Get-WmiObject -class win32_computerSystem ).username) -split "\\")[1]
 
                           $property = $property -replace "C:\\Windows\\system32\\config\\systemprofile\\","C:\Users\$User\"
 
@@ -120,8 +120,6 @@ function Get-OfficeTrustedRecords
             {
                 Write-Host  "No Trusted Documents in $App for $User,"
                 Write-Error "No Trusted Documents in $App for $User," 
-
-
             }
        
         }

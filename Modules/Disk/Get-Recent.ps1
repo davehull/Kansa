@@ -28,7 +28,7 @@ Get-Recent.ps1
 kansa.ps1 -Target COMPTROLLER -ModulePath ".\Modules\Disk\Get-Recent.ps1  10"
 
 VERBOSE: Running module:
-Get-Recent -AllowedSize 10
+Get-Recent 10
 VERBOSE: Waiting for Get-Recent 10 to complete.
 
 Id     Name            PSJobTypeName   State         HasMoreData     Location             Command

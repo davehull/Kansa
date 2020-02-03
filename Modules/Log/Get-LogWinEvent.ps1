@@ -10,7 +10,9 @@
     Note: when used with Kansa.ps1, parameters must be positional. Named params are not supported.
 
 .PARAMETER DaysAgo
-    An optional parameter that allows you to specify how many days back you'd like logs for
+    An optional parameter that allows you to specify how many days back you'd like to gather logs.
+    
+    Note: If this parameter is left blank, you'll gather "all the logs".
 
 .PARAMETER EventIDs
     An optional parameter that allows you to filter on event IDs... just in case you want a select few, rather than all.

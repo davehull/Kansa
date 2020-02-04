@@ -163,7 +163,9 @@ Else {$Span = $DaysAgo} # end else
 $StartTime = (Get-Date).AddDays(-$Span)
 
 if ($EventIDs.Count -eq 0) {
-    Get-WinEvent -FilterHashtable @{ Logname=$LogName; StartTime=$StartTime} -EA SilentlyContinue  | Convert-EventLogRecord
+    ForEach ($log in $LogName) {
+        Get-WinEvent -FilterHashtable @{ Logname=$LogName; StartTime=$StartTime} -EA SilentlyContinue  | Convert-EventLogRecord
+    } # end outter ForEach ($log in LogName)
 } # end If
 else {
     ForEach ($log in $LogName) {

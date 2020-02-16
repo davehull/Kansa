@@ -381,9 +381,10 @@ foreach($Device in $Devices)
         $obj.DiskID = $DiskId
         $obj.ClassGUID = $ClassGUID
         $obj.'Mounted Name' = $MountedName
-        $obj.'First time connection' = $FirstTimeConnection 
+        $TimeZone = (Get-TimeZone).Displayname.split(" ")[0] 
+        $obj.'First time connection' = $FirstTimeConnection + $TimeZone
         $temp = Get-RegKeyInfo -RegRoot "HKLM" -RegSubKey "$USBSTROKEY$Device\$SerialNumber"
-        $obj.'Last Time Connection' = $temp.LastWriteTime
+        $obj.'Last Time Connection' = $temp.LastWriteTime + "(UTC+00:00)"
         $obj
         
         

@@ -1,10 +1,10 @@
 ﻿<# 
 .SYNOPSIS
-USBForensics.ps1 retrieves USB artifacts
+Get-USBForensics.ps1 retrieves USB artifacts
 
 
 .EXAMPLE
-USBForensics.ps1
+Get-USBForensics.ps1
 
 .NOTES
 To get GUI View for USb artifacts from the output of kansa
@@ -17,13 +17,15 @@ Last Connection time is not accurte 100%
     decompression script works only with CSV files
 
 .EXAMPLE
-kansa.ps1 -Target <ComputerIP or Name> -ModulePath ".\Modules\Registry\USBForensics.ps1"
+kansa.ps1 -Target <ComputerIP or Name> -ModulePath ".\Modules\Registry\Get-USBForensics.ps1"
 
 #>
 
 
 ###########
 ## I add this class to be able to use C/C++ functions (P/Invoke)
+##
+## Add-Type causing jit compilation, triggering csc.exe and cvtres.exe processes, writing temporary files and dlls to disk on the endpoint
 ###########
 Add-Type @"
 
@@ -129,12 +131,11 @@ Add-Type @"
 
 # Store the type in a variable:
 
-$RegTools = ("{0}.advapi32" -f ("USBForensics" -join ".")) -as [type]
-
+$RegTools = ("USBForensics.advapi32") -as [type]
 
 
 ###########
-#Call for RegkeyInfo C function
+# Call for RegkeyInfo C function
 ###########
 function Get-RegKeyInfo{
 
@@ -144,35 +145,47 @@ function Get-RegKeyInfo{
         [Parameter(Mandatory=$True,Position=1)]
             [String]$RegSubKey
     )
-    <#
-    HKLM --> 2147483650
-    HKCU -->
-    #>
-    $RootKeys = @{ HKLM = 2147483650; HKCU = "0"; HKCR = "0"}
-    $hkey = [UIntPtr]::new(0) #Handle to the opened key
+    # this HashTable ($RootKeys) contains the predefined numbers for various Key Hives
+
+    $RootKeys = @{ HKLM = 2147483650; HKCU = 2147483649; HKCR = 2147483648; HKU = 2147483651; HKCC = 2147483653 }
+    $hkeyRes = [UIntPtr]::new(0) #Handle to the opened key (Returned by RegOpenKeyEx)
     $HKEY = [UIntPtr]::new($RootKeys[$RegRoot])
-    $res = $RegTools::RegOpenKeyEx($HKEY,$RegSubKey,0,1,[ref]$hkey)
-    
+    $res = $RegTools::RegOpenKeyEx($HKEY,$RegSubKey,0,1,[ref]$hkeyRes)
+    if(-not($res -eq 0))
+    {
+        Write-Error (("Couldn't open {0}//{1}" -f $RegRoot , $RegSubKey))
+        break;
+    }
+
     $SubKeyCount = $ValueCount = $null
 
     $LastWrite = New-Object System.Runtime.InteropServices.ComTypes.FILETIME
 
     #Call the function
 
-    $res = $RegTools::RegQueryInfoKey($hkey, $null, [ref]$null, $null, [ref] $SubKeyCount, [ref] $null, [ref] $null, [ref] $ValueCount, [ref] $null, [ref] $null, [ref] $null, [ref] $LastWrite)
-   
+    $res = $RegTools::RegQueryInfoKey($hkeyRes, $null, [ref]$null, $null, [ref] $SubKeyCount, [ref] $null, [ref] $null, [ref] $ValueCount, [ref] $null, [ref] $null, [ref] $null, [ref] $LastWrite)
+    if(-not($res -eq 0))
+    {
+        Write-Error (("Couldn't Query info about {0}//{1}" -f $RegRoot , $RegSubKey))
+        break;
+    }
+
     #Convert FILETIME to SYSTEMTIME
 
     $SYSTEMTIME = New-Object USBForensics.advapi32+SYSTEMTIME
 
     $res = $RegTools::FileTimeToSystemTime([ref]$LastWrite,[ref]$SYSTEMTIME)
+    if($res -eq 0)
+    {
+        Write-Error ("Couldn't convert FILETIME to SYSTEMTIME")
+        break;
+    }
 
-    #####
+
     #SYSTEMTIME will be in UTC+0 so you have to query TimeZone and add it to the hours
-    #####
+
     $LastWriteTime = $SYSTEMTIME.year.tostring() + "/" + $SYSTEMTIME.month.tostring() + "/" + $SYSTEMTIME.day.tostring() + "  " + $SYSTEMTIME.Hour.tostring() + ":" + $SYSTEMTIME.Minute.tostring() + ":" + $SYSTEMTIME.Second.tostring() 
    
-    
    
    # Return results:
 
@@ -186,14 +199,8 @@ function Get-RegKeyInfo{
 
     $obj
 
-
 }
 
-
-
-$Device = "Disk&Ven_Kingston&Prod_DataTraveler_3.0&Rev_\E0D55E6CE77AF3A1A9451127&0"
-
-$SubKey = "SYSTEM\CurrentControlSet\Enum\USBSTOR\" + $Device
 
 $Hive = 'HKLM:\'
 $USBSTROKEY = 'SYSTEM\CurrentControlSet\Enum\USBSTOR\'
@@ -228,8 +235,17 @@ foreach($Device in $Devices)
             }
         }
 
-        
+        ############
+        # Start of checking if the USB is connected or not
+        ###########
+
         if(GET-WMIOBJECT win32_diskdrive | Where { $_.InterfaceType -eq 'USB'} | where{$_.PnpDeviceID -match $SerialNumber}){$Connected = "True"}
+
+        ############
+        # End of checking if the USB is connected or not
+        ###########
+
+
 
         #############
         #Start of getting Mounted Name
@@ -242,12 +258,14 @@ foreach($Device in $Devices)
             if ($m -match $SerialNumber)
             {     
                 $MountedName = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Portable Devices\Devices\$m" -Name FriendlyName | Select-Object -ExpandProperty FriendlyName 
-                $MountedNameRegKey = $m       
+                $MountedNameRegKey = $m 
+                break;      
             } 
             elseif($m -match $DiskId)
             {
                 $MountedName = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Portable Devices\Devices\$m" -Name FriendlyName | Select-Object -ExpandProperty FriendlyName 
                 $MountedNameRegKey = $m 
+                break;
             }
 
 
@@ -255,6 +273,23 @@ foreach($Device in $Devices)
         #############
         #End of getting Mounted Name
         #############
+
+
+
+
+        #########
+        #Start of getting First time connection
+        #########
+        if($MountedNameRegKey -match "SWD#WPDBUSENUM#")
+        {
+            $MountedNameRegKey_ = $MountedNameRegKey.Replace("SWD#WPDBUSENUM#","")
+        }
+        $LineNumber = (Get-Content -Path C:\Windows\INF\setupapi.dev.log | Select-String -Pattern "\(Hardware initiated\).*$MountedNameRegKey_").linenumber
+        $FirstTimeConnection = if($LineNumber){(Get-Content -Path 'C:\Windows\INF\setupapi.dev.log' |select -Index $LineNumber).replace(">>>  Section start ","")}else{"-"} 
+
+        #########
+        #End of getting First time connection
+        #########
 
 
 
@@ -283,9 +318,6 @@ foreach($Device in $Devices)
         #End of Getting VID and PID
         ##########
 
-
-
-       
 
 
 
@@ -349,6 +381,7 @@ foreach($Device in $Devices)
                     {
 
                         $obj.'User Name run it' = Get-WmiObject -Class win32_useraccount | where{$_.SID -eq $SID} |select -ExpandProperty Name
+                        break;
 
                     }
 
@@ -362,16 +395,6 @@ foreach($Device in $Devices)
         #End of User who run it
         ##########
 
-
-        #########
-        #Start of getting First time connection
-        #########
-        $MountedNameRegKey_ = $MountedNameRegKey.Replace("SWD#WPDBUSENUM#","")
-        $LineNumber = (Get-Content -Path C:\Windows\INF\setupapi.dev.log | Select-String -Pattern "\(Hardware initiated\).*$MountedNameRegKey_").linenumber
-        $FirstTimeConnection = if($LineNumber){(Get-Content -Path 'C:\Windows\INF\setupapi.dev.log' |select -Index $LineNumber).replace(">>>  Section start ","")}else{"-"} 
-        #########
-        #End of getting First time connection
-        #########
 
         
 
@@ -397,7 +420,4 @@ foreach($Device in $Devices)
   Write-Host 'To get GUI View for USb artifacts from the output of kansa do the following:
     $Data = import-csv [path to the csv]
     $Data | out-gridview' -ForegroundColor Green
-   
-
-
-
+  

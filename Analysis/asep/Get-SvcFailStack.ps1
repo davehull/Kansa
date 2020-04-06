@@ -26,7 +26,7 @@ if (Get-Command logparser.exe) {
         FailAction2,
         FailAction3
     FROM
-        *SvcFail.tsv
+        *SvcFail.csv
     WHERE
         CmdLine <> 'customScript.cmd' AND
         CmdLine is not NULL
@@ -40,7 +40,7 @@ if (Get-Command logparser.exe) {
         ct ASC
 "@
 
-    & logparser -stats:off -i:csv -fixedsep:on -dtlines:0 -rtp:-1 $lpquery
+    & logparser -stats:off -i:csv -dtlines:0 -rtp:-1 $lpquery
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

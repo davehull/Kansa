@@ -20,7 +20,7 @@ if (Get-Command logparser.exe) {
         LaunchString,
         Publisher
     FROM
-        *autorunsc.tsv
+        *autorunsc.csv
     WHERE
         (ImagePath not like 'File not found%')
     GROUP BY
@@ -31,7 +31,7 @@ if (Get-Command logparser.exe) {
         ct ASC
 "@
 
-    & logparser -stats:off -i:csv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"
+    & logparser -stats:off -i:csv -dtlines:0 -rtp:-1 "$lpquery"
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

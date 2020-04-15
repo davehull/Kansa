@@ -94,11 +94,11 @@ A quick tutorial on setting up Splunk to receive data from Kansa is available he
 Due to the way in which Kansa parses module names and accompanying parameters, the parameter passed to ```Get-LogWinEvent``` is encodes 3 data points in to one pseudo parameter - the log name(s), how many days back the user wishes to search, and the event IDs the user wishes to filter on. **Only the log name(s) are mandatory***
 
 In Modules.conf, you can specify the parameter(s) for Get-LogWinEvent as such:
-```Log\Get-LogWinEvent2.ps1 Security|Application|System-7-4624|1003|1014```
+```Log\Get-LogWinEvent.ps1 Security|Application|System-7-4624|1003|1014```
 
 Or, if you wish to call ```Get-LogWinEvent``` as a stand alone module:
 ```Powershell
-.\kansa.ps1 -Target $env:COMPUTERNAME -Authentication Default -ModulePath ".\Modules\Log\Get-LogWinEvent2.ps1 Security-7-4624"
+.\kansa.ps1 -Target $env:COMPUTERNAME -Authentication Default -ModulePath ".\Modules\Log\Get-LogWinEvent.ps1 Security-7-4624"
 ```
 
 ## Caveats:

@@ -1,8 +1,7 @@
 Kansa
 =====
 
-A modular incident response framework in Powershell. It's been tested in PSv2 / .NET 2 and
-later and works mostly without issue.
+A modular incident response framework in Powershell. It's been tested in PSv2 / .NET 2 and later and works mostly without issue.
 
 But really, upgrade to PSv3 or later. Be happy.
 
@@ -11,19 +10,12 @@ http://trustedsignal.blogspot.com/search/label/Kansa
 http://www.powershellmagazine.com/2014/07/18/kansa-a-powershell-based-incident-response-framework/
 
 ## What does it do?
-It uses Powershell Remoting to run user contributed, ahem, user contri-  
-buted modules across hosts in an enterprise to collect data for use  
-during incident response, breach hunts, or for building an environmental  
-baseline.
+It uses Powershell Remoting to run user contributed, ahem, user contributed modules across hosts in an enterprise to collect data for use during incident response, breach hunts, or for building an environmental  baseline.
 
 ## How do you use it?
-Here's a very simple command line example you can run on your own local  
-host.  
+Here's a very simple command line example you can run on your own local host.  
 
-1.  After downloading the project and unzipping it, you'll likely need  
-to "unblock" the ps1 files. The easiest way to do this if you're using  
-Powershell v3 or later is to cd to the directory where Kansa resides  
-and do:  
+1.  After downloading the project and unzipping it, you'll likely need to "unblock" the ps1 files. The easiest way to do this if you're using Powershell v3 or later is to cd to the directory where Kansa resides and do:  
 ```Powershell
 ls -r *.ps1 | Unblock-File
 ```
@@ -31,52 +23,32 @@ ls -r *.ps1 | Unblock-File
 ```
 Set-ExecutionPolicy AllSigned | RemoteSigned | Unrestricted
 ```
-1. If you're not running PS v3 or later, [Sysinternal's Streams utility](https://technet.microsoft.com/en-us/sysinternals/streams.aspx) can  
-be used to remove the alternate data streams that Powershell uses to  
-determine if files came from the Internet. Once you've removed those  
-ADSes, you'll be able to run the scripts without issue.  
+1. If you're not running PS v3 or later, [Sysinternal's Streams utility](https://technet.microsoft.com/en-us/sysinternals/streams.aspx) can be used to remove the alternate data streams that Powershell uses to determine if files came from the Internet. Once you've removed those ADSes, you'll be able to run the scripts without issue.  
 ```
 c:\ streams -sd <Kansa directory>
 ```
 
-I've not run into any issues running the downloaded scripts via Windows  
-Remote Management / Powershell Remoting through Kansa, so you shouldn't  
-have to do anything if you want to run the scripts via remoting.  
+I've not run into any issues running the downloaded scripts via Windows Remote Management / Powershell Remoting through Kansa, so you shouldn't have to do anything if you want to run the scripts via remoting.  
 
-2.  Open an elevated Powershell Prompt (Right-click Run As Administrator)  
+2. Open an elevated Powershell Prompt (Right-click Run As Administrator)  
 
-3.  At the command prompt, enter:
+3. At the command prompt, enter:
 ```Powershell
 .\kansa.ps1 -Target $env:COMPUTERNAME -ModulePath .\Modules -Verbose  
 ```
-The script should start collecting data or you may see an error about  
-not having Windows Remote Management enabled. If so, do a little  
-searching online, it's easy to turn on. Turn it on and try again. When  
-it finishes running, you'll have a new Output_timestamp subdirectory,  
-with subdirectories for data collected by each module. You can cd into  
-those subdirectories and checkout the data. There are some analysis  
-scripts in the Analysis directory, but many of those won't make sense  
-on a collection of data from a single host. Kansa was written for  
-collection and analysis of data from dozens, hundreds, thousands, tens  
-of thousands of systems.  
+The script should start collecting data or you may see an error about not having Windows Remote Management enabled. If so, do a little searching online, it's easy to turn on. Turn it on and try again. When it finishes running, you'll have a new Output_timestamp subdirectory, with subdirectories for data collected by each module. You can cd into those subdirectories and checkout the data. There are some analysis scripts in the Analysis directory, but many of those won't make sense on a collection of data from a single host. Kansa was written for collection and analysis of data from dozens, hundreds, thousands, tens of thousands of systems.  
 
 ## Running Modules Standalone
-Kansa modules can be run as standalone utilities outside of the Kansa  
-framework. Why might you want to do this? Consider netstat -naob, the  
-output of the command line utility is ugly and doesn't easily lend  
-itself to analysis. Running  
+Kansa modules can be run as standalone utilities outside of the Kansa framework. Why might you want to do this? Consider netstat -naob, the output of the command line utility is ugly and doesn't easily lend itself to analysis. Running  
 ```Powershell
 Modules\Net\Get-Netstat.ps1
 ```
-as a standalone script will call netstat -naob, but it will return  
-Powershell objects in an easy to read, easy to analyze format. You can  
-easily convert its output to CSV, TSV or XML using normal Powershell  
+as a standalone script will call netstat -naob, but it will return Powershell objects in an easy to read, easy to analyze format. You can easily convert its output to CSV, TSV or XML using normal Powershell  
 cmdlets. Here's an example:  
 ```Powershell
 .\Get-Netstat.ps1 | ConvertTo-CSV -Delimiter "`t" -NoTypeInformation | % { $_ -replace "`"" } | Set-Content netstat.tsv
 ```
-the result of the above will be a file called netstat.tsv containing  
-unquoted, tab separate values for netstat -naob's ouput.
+the result of the above will be a file called netstat.tsv containing unquoted, tab separate values for netstat -naob's ouput.
 
 ## Expanded use cases
 Over the past few years, additional output types have been added to Kansa, and several modules have been added or expanded.
@@ -91,7 +63,7 @@ A quick tutorial on setting up Splunk to receive data from Kansa is available he
 ### Enhanced Windows Event Log retrieval
 ```.\Modules\Log\Get-LogWinEvent``` has been modified to allow the user to specify multiple parameters to allow for greater filtering, as well as enhanced parsing of the message body, which is handy if the destination is a log aggregator.
 
-Due to the way in which Kansa parses module names and accompanying parameters, the parameter passed to ```Get-LogWinEvent``` is encodes 3 data points in to one pseudo parameter - the log name(s), how many days back the user wishes to search, and the event IDs the user wishes to filter on. **Only the log name(s) are mandatory***
+Due to the way in which Kansa parses module names and accompanying parameters, the parameter passed to ```Get-LogWinEvent``` encodes 3 data points in to one pseudo parameter - the log name(s), how many days back the user wishes to search, and the event IDs the user wishes to filter on. **Only the log name(s) are mandatory***
 
 In Modules.conf, you can specify the parameter(s) for Get-LogWinEvent as such:
 ```Log\Get-LogWinEvent.ps1 Security|Application|System-7-4624|1003|1014```

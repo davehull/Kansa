@@ -8,7 +8,7 @@ But really, upgrade to PSv3 or later. Be happy.
 
 More info:  
 http://trustedsignal.blogspot.com/search/label/Kansa  
-http://www.powershellmagazine.com/2014/07/18/kansa-a-powershell-based-incident-response-framework/  
+http://www.powershellmagazine.com/2014/07/18/kansa-a-powershell-based-incident-response-framework/
 
 ## What does it do?
 It uses Powershell Remoting to run user contributed, ahem, user contri-  
@@ -77,6 +77,29 @@ cmdlets. Here's an example:
 ```
 the result of the above will be a file called netstat.tsv containing  
 unquoted, tab separate values for netstat -naob's ouput.
+
+## Expanded use cases
+Over the past few years, additional output types have been added to Kansa, and several modules have been added or expanded.
+
+### Sending output to a log aggregator
+It is now possible to configure Kansa to send collected data to Splunk or GrayLog for analysis and retention. In order to do so, configure the proper parameters in ```logging.conf```.
+```Powershell
+.\kansa.ps1 -Target $env:COMPUTERNAME -Authentication Default -OutputFormat SPLUNK
+```
+A quick tutorial on setting up Splunk to receive data from Kansa is available here: https://powerhunt.org/enterprise-dfir-on-a-budget/
+
+### Enhanced Windows Event Log retrieval
+```.\Modules\Log\Get-LogWinEvent``` has been modified to allow the user to specify multiple parameters to allow for greater filtering, as well as enhanced parsing of the message body, which is handy if the destination is a log aggregator.
+
+Due to the way in which Kansa parses module names and accompanying parameters, the parameter passed to ```Get-LogWinEvent``` is encodes 3 data points in to one pseudo parameter - the log name(s), how many days back the user wishes to search, and the event IDs the user wishes to filter on. **Only the log name(s) are mandatory***
+
+In Modules.conf, you can specify the parameter(s) for Get-LogWinEvent as such:
+```Log\Get-LogWinEvent2.ps1 Security|Application|System-7-4624|1003|1014```
+
+Or, if you wish to call ```Get-LogWinEvent``` as a stand alone module:
+```
+.\kansa.ps1 -Target $env:COMPUTERNAME -Authentication Default -ModulePath ".\Modules\Log\Get-LogWinEvent2.ps1 Security-7-4624"
+```
 
 ## Caveats:
 Powershell relies on the Windows API. Your adversary may use subterfuge.*

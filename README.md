@@ -97,7 +97,7 @@ In Modules.conf, you can specify the parameter(s) for Get-LogWinEvent as such:
 ```Log\Get-LogWinEvent2.ps1 Security|Application|System-7-4624|1003|1014```
 
 Or, if you wish to call ```Get-LogWinEvent``` as a stand alone module:
-```
+```Powershell
 .\kansa.ps1 -Target $env:COMPUTERNAME -Authentication Default -ModulePath ".\Modules\Log\Get-LogWinEvent2.ps1 Security-7-4624"
 ```
 

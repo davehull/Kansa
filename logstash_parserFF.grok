@@ -1,0 +1,81 @@
+input {
+ tcp {
+    port=>1337
+    type=>"irscript"
+    codec=>"json"
+  }
+}
+filter {
+if [type]=~ /heartbeat/ {
+} else {
+json {
+        source => "message"
+}
+mutate {
+    # Rename field A to field B
+        rename => { "Source Host" => "shost" }
+        rename => { "host" => "src" }
+        rename => { "Document Path" => "filePath" }
+        rename => { "_id" => "fileId" }
+        rename => { "filename" => "fname" }
+}
+if [sourceScript] == "kansa.ps1" {
+        grok {
+    add_tag => [ "kansa" ]
+  }
+}
+else {
+grok {
+    add_tag => [ "notkansa" ]
+  }
+}
+if [tags] =~ "notkansa" {
+drop {}
+}
+if [KansaModule] {
+   mutate {
+      add_field => {"tempmodule" => "%{KansaModule}"}
+        }
+   mutate {
+      split => { "tempmodule" => "." }
+        }
+   mutate {
+      lowercase => ["tempmodule"]
+      }
+   mutate {
+      add_field => {"truncmodulename" => "%{tempmodule[0]}"}
+      remove_field => ["tempmodule"]
+        }
+}
+if [ModuleStatus] {
+   mutate {
+      add_tag => [ "telemetry" ]
+  }
+}
+if [Message] == "FireForget Kansa module launched on endpoint" {
+   mutate {
+      add_tag => [ "telemetry" ]
+  }
+}
+}
+}
+output {
+   if "telemetry" in [tags] {
+      elasticsearch {
+         hosts => ["elasticserver01:9200"] #specify array of ELK servers
+         user => "logstash"
+         password => "123456" #specify your ELK API password
+         flush_size=>1000
+         index => "logstash-kansatelemetry-%{+YYYY.MM.dd}"
+      }
+   } else {
+      elasticsearch {
+         hosts => ["elasticserver01:9200"] #specify array of ELK servers
+         user => "logstash"
+         password => "123456" #specify your ELK API password
+         flush_size=>1000
+         index => "logstash-%{truncmodulename}-%{+YYYY.MM}"
+       }
+   }
+#   stdout{codec=>"rubydebug"}
+}

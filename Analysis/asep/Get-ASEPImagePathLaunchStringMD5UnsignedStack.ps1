@@ -23,7 +23,7 @@ if (Get-Command logparser.exe) {
         MD5,
         Publisher
     FROM
-        *autorunsc.tsv
+        *autorunsc.csv
     WHERE
         Publisher not like '(Verified)%' and
         (ImagePath not like 'File not found%')
@@ -36,7 +36,7 @@ if (Get-Command logparser.exe) {
         ct ASC
 "@
 
-    & logparser -stats:off -i:csv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"
+    & logparser -stats:off -i:csv -dtlines:0 -rtp:-1 "$lpquery"
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

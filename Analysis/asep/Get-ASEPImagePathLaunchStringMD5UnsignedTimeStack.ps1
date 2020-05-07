@@ -26,7 +26,7 @@ if (Get-Command logparser.exe) {
         Time,
         Publisher
     FROM
-        *autorunsc.tsv
+        *autorunsc.csv
     WHERE
         ImagePath is not null and
         Publisher not like '(Verified)%' and
@@ -41,7 +41,7 @@ if (Get-Command logparser.exe) {
         ct ASC
 "@
 
-    & logparser -i:csv -dtlines:0 -fixedsep:on -rtp:-1 "$lpquery"
+    & logparser -i:csv -dtlines:0 -rtp:-1 "$lpquery"
 
 } else {
     $ScriptName = [System.IO.Path]::GetFileName($MyInvocation.ScriptName)

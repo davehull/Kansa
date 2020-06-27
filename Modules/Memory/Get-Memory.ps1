@@ -4,7 +4,7 @@ Get-Memoryze.ps1
 
 This module will allow you to dump the live memory on systems you may have 
 identified as needing more analysis. You can use the dump in other tools, 
-such as Redline or Volitility.
+such as Redline or Volatility.
 
 Requires the x64 folder in the Memoryze directory (where you installed 
 it on the source machine) be zipped in the in Modules\Bin\ as memoryze.zip. The 

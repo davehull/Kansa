@@ -1,0 +1,17 @@
+# Use this file to configure the logging destination of your choice.
+
+## Splunk
+# The next few lines define the Splunk instance information
+# Remember to configure the HEC on Splunk prior to use
+# https://docs.splunk.com/Documentation/Splunk/7.2.3/Data/UsetheHTTPEventCollector#Configure_HTTP_Event_Collector_on_Splunk_Enterprise
+# 
+# Also, don't encapsulate anything in quotation marks. 
+# If you do, it will break the parsing of configuation parameters, and nothing will work.
+#
+# splHECToken=
+# splServerName=
+# splServerPort=
+
+## Graylog
+# glServerName=
+# glServerPort=

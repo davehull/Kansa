@@ -534,7 +534,6 @@ Param(
             } else {
                 # module found add it and its arguments to the $ModuleHash
                 $ModuleHash.Add((ls $ModPath), $Moduleargs)
-                # $FoundModules += ls $ModPath # deprecated code, remove after testing
             }
         }
         # $Modules = $FoundModules # deprecated, remove after testing

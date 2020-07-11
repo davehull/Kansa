@@ -536,7 +536,6 @@ Param(
                 $ModuleHash.Add((ls $ModPath), $Moduleargs)
             }
         }
-        # $Modules = $FoundModules # deprecated, remove after testing
     } else {
         # we had no modules.conf
         ls -r "${ModulePath}\Get-*.ps1" | Foreach-Object { $Module = $_

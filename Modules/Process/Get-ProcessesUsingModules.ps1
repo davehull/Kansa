@@ -20,13 +20,17 @@ As with all modules that take command line parameters, you should not put
 quotes around the entry in the Modules.conf file.
 #>
 
-[CmdletBinding()]
-Param(
-    [Parameter(Mandatory=$False,Position=0)]
-        [Array]$ModuleList=('wininet.dll','iertutil.dll','winhttp.dll','dhcpcsvc6.dll',`
+if ($args.Count -gt 0)
+{
+    $ModuleList = $args
+}
+else 
+{
+    # Set the list to dlls inserted by meterpreter http reverse shell inject
+    $ModuleList=('wininet.dll','iertutil.dll','winhttp.dll','dhcpcsvc6.dll',`
         'dhcpcsvc.dll','webio.dll','psapi.dll','winmm.dll','winmmbase.dll','ole32.dll',`
         'mpr.dll','netapi32.dll','wkscli.dll')
-) 
+}
 
 $ErrorActionPreference = "Continue"
 

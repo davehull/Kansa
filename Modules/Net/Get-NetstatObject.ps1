@@ -15,8 +15,8 @@ $ProcessObject=@{}
 
 Get-CimInstance -Namespace root/cimv2 -ClassName win32_process|
    Select-Object ProcessName,Path,CommandLine,ExecutablePath,Handle,ProcessId,ParentProcessID,ThreadCount,
-      @{Name="User";Expression={($|Invoke-CimMethod -MethodName GetOwner).User};},
-      @{Name="Domain";Expression={($|Invoke-CimMethod -MethodName GetOwner).Domain};}|
+      @{Name="User";Expression={($_|Invoke-CimMethod -MethodName GetOwner).User};},
+      @{Name="Domain";Expression={($_|Invoke-CimMethod -MethodName GetOwner).Domain};}|
          %{$ProcessObject[[int]$_.Handle]=$_}
 
 Get-CimInstance -Namespace root/StandardCimv2 -ClassName MSFT_NetTCPConnection|

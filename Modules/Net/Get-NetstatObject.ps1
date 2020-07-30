@@ -41,7 +41,8 @@ $NetworkObject.keys|%{
          @{Name="ParentProcessID";Expression={$ProcessObject[[int]$_.OwningProcess].ParentProcessID}},
          @{Name="ThreadCount";Expression={$ProcessObject[[int]$_.OwningProcess].ThreadCount}},
          @{Name="Domain";Expression={$ProcessObject[[int]$_.OwningProcess].Domain}},
-         @{Name="User";Expression={$ProcessObject[[int]$_.OwningProcess].User}}
+         @{Name="User";Expression={$ProcessObject[[int]$_.OwningProcess].User}},
+         @{Name="Timestamp";Expression={Get-Date -Format "o"}}
    }
 }
     

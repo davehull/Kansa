@@ -8,10 +8,10 @@
 # Also, don't encapsulate anything in quotation marks. 
 # If you do, it will break the parsing of configuation parameters, and nothing will work.
 #
-splHECToken=q2v9f4c6-5b0c-1m9p-21l8-q17c0101709a
-splServerName=monstro
-splServerPort=8088
+# splHECToken=
+# splServerName=
+# splServerPort=
 
 ## Graylog
-glServerName=monstro
-glServerPort=12201
+# glServerName=
+# glServerPort=

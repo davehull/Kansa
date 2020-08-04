@@ -406,14 +406,6 @@ else {
 # the Exit-Script function and clean up things as needed.
 Try {
 
-# Long paths prevent data from being written, this is used to test their length
-# Per http://msdn.microsoft.com/en-us/library/aa365247.aspx#maxpath, maximum
-# path length should be 260 characters. We set it to 241 here to account for
-# max computername length of 15 characters, it's part of the path, plus a 
-# hyphen separator and a dot-three extension.
-# extension -- 260 - 19 = 241.
-Set-Variable -Name MAXPATH -Value 241 -Option Constant
-
 # Since Kansa provides so much useful information through Write-Vebose, we
 # want it to run with that flag enabled by default. This behavior can be
 # overridden by passing the -Quiet flag. This is scoped only to this context,
@@ -500,7 +492,7 @@ Param(
     $Error.Clear()
     # ToDo: There should probably be some error handling in this function.
 
-    Write-Debug "`$ModulePath is ${ModulePath}."
+    Write-Debug ('$ModulePath argument is {0}.' -f $ModulePath)
 
     # User may have passed a full path to a specific module, possibly with an argument
     $ModuleScript = ($ModulePath -split " ")[0]
@@ -534,10 +526,8 @@ Param(
             } else {
                 # module found add it and its arguments to the $ModuleHash
                 $ModuleHash.Add((ls $ModPath), $Moduleargs)
-                # $FoundModules += ls $ModPath # deprecated code, remove after testing
             }
         }
-        # $Modules = $FoundModules # deprecated, remove after testing
     } else {
         # we had no modules.conf
         ls -r "${ModulePath}\Get-*.ps1" | Foreach-Object { $Module = $_
@@ -685,6 +675,8 @@ function Get-LegalFileName {
 <#
 .SYNOPSIS
 Returns argument with illegal filename characters removed.
+Collector module output are named after the module and any
+arguments.
 #>
 Param(
     [Parameter(Mandatory=$True,Position=0)]
@@ -847,19 +839,28 @@ Param(
             $GetlessMod = $($ModuleName -replace "Get-") 
             # Long paths prevent output from being written, so we truncate $ArgFileName to accomodate
             # We're estimating the output path because at this point, we don't know what the hostname
-            # is and it is part of the path. Hostnames are 15 characters max, so we assume worst case
-            $EstOutPathLength = $OutputPath.Length + ($GetlessMod.Length * 2) + ($ArgFileName.Length * 2)
-            if ($EstOutPathLength -gt $MAXPATH) { 
-                # Get the path length without the arguments, then we can determine how long $ArgFileName can be
-                $PathDiff = [int] $EstOutPathLength - ($OutputPath.Length + ($GetlessMod.Length * 2) -gt 0)
-                $MaxArgLength = $PathDiff - $MAXPATH
-                if ($MaxArgLength -gt 0 -and $MaxArgLength -lt $ArgFileName.Length) {
-                    $OrigArgFileName = $ArgFileName
-                    $ArgFileName = $ArgFileName.Substring(0, $MaxArgLength)
-                    "WARNING: ${GetlessMod}'s output path contains the arguments that were passed to it. Those arguments were truncated from $OrigArgFileName to $ArgFileName to accomodate Window's MAXPATH limit of 260 characters." | Add-Content -Encoding $Encoding $ErrorLog
-                }
-            }
-        
+            # is and it is part of the path. Hostnames are 15 characters max, so we assume worst case.
+            # Per http://msdn.microsoft.com/en-us/library/aa365247.aspx#maxpath, maximum
+            # path length should be 260 characters. 
+			Set-Variable -Name MAXPATH -Value 260 -Option Constant
+			Set-Variable -Name EXTLENGTH -Value 4 -Option Constant
+			Set-Variable -Name SEPARATOR -Value 1 -Option Constant
+			Set-Variable -Name CMPNAMELENGTH -Value 15 -Option Constant
+			
+			# Esitmate path length without arguments
+			$EstOutPathLength = $OutputPath.Length + $GetlessMod.Length + $SEPARATOR + $CMPNAMELENGTH + $SEPARATOR + $GetlessMod.Length + $EXTLENGTH
+			
+			# Clean up $ArgFileName
+			$ArgFileName = $ArgFileName -replace "'","-" -replace "--","-"
+			
+			if ($EstOutPathLength + $ArgFileName.Length + $ArgFileName.Length -gt $MAXPATH)
+			{
+				$MaxArgLength = [int]($MAXPATH - $EstOutPathLength) / 2 # Divide by two because args are in folder and file name
+				$OrigArgFileName = $ArgFileName
+				$ArgFileName = $ArgFileName.Substring(0, $MaxArgLength)
+				"WARNING: ${GetlessMod}'s output path contains arguments that were passed to it. Those arguments were truncated from $OrigArgFileName to $ArgFileName to accommodate Window's MAXPATH limitations of 260 characters."
+			}
+			
             # Set Module output directory based on module name and arg file name (if present)
             $ModuleOutputDir = ($GetlessMod + $ArgFileName)
 

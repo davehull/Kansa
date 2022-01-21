@@ -502,14 +502,15 @@ Param(
     # Need to maintain the order for "order of volatility"
     $ModuleHash = New-Object System.Collections.Specialized.OrderedDictionary
 
-    if (!(ls $ModuleScript | Select-Object -ExpandProperty PSIsContainer)) {
-        # User may have provided full path to a .ps1 module, which is how you run a single module explicitly
-        $ModuleHash.Add((ls $ModuleScript), $ModuleArgs)
+    if (Test-Path($ModuleScript)) {
+    	if (!(ls $ModuleScript | Select-Object -ExpandProperty PSIsContainer)) {
+        	# User may have provided full path to a .ps1 module, which is how you run a single module explicitly
+        	$ModuleHash.Add((ls $ModuleScript), $ModuleArgs)
 
-        if (Test-Path($ModuleScript)) {
-            $Module = ls $ModuleScript | Select-Object -ExpandProperty BaseName
-            Write-Verbose "Running module: `n$Module $ModuleArgs"
-            Return $ModuleHash
+        
+            	$Module = ls $ModuleScript | Select-Object -ExpandProperty BaseName
+           	Write-Verbose "Running module: `n$Module $ModuleArgs"
+            	Return $ModuleHash
         }
     }
     $ModConf = $ModulePath + "\" + "Modules.conf"

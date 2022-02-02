@@ -374,7 +374,7 @@ Param(
     [Parameter(Mandatory=$false,Position=21)]
         [String[]]$ElkAlert=@(),
     [Parameter(Mandatory=$false,Position=22)]
-        [int32]$JobTimeout=600,
+        [int32]$JobTimeout=900,
     [Parameter(Mandatory=$false,Position=23)]
         [uint16[]]$ElkPort=@(1337),
     [Parameter(Mandatory=$false,Position=24)]

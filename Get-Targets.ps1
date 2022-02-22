@@ -24,9 +24,10 @@ if($LastLogonLessThanDaysAgo -gt 0){
 
 $real_targets = New-Object System.Collections.ArrayList
 
+#MR edit - $tgt.Name changed to $tgt as Name does not appear to valid attribute from my own testing and this loop results in an empty array
 foreach ($tgt in $targets){
-    if ($tgt.Name -match $HostnameRegex){
-        [void]$real_targets.Add($tgt.Name)
+    if ($tgt.ObjectClass -eq "computer"){
+        [void]$real_targets.Add($tgt.DNSHostName)
     }
 }
 

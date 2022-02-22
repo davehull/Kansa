@@ -801,7 +801,11 @@ Param(
                 $bindeps = [string]$DirectivesHash.Get_Item("BINDEP") -split ';'
                 foreach($bindep in $bindeps) {
                 if ($bindep) {
-
+		 #$PSScriptRoot is parsed as literal string into $bindep from the module script rather than the directory path, below is a fix to replace the literal '$PSScriptRoot' with the directory path required
+		 if($bindep -match "PSScriptRoot"){
+		 $bindep = $bindep.Trim("$")
+		 $bindep = $bindep.Replace("PSScriptRoot", $PSScriptRoot)
+		 }
                     # Send-File only supports a single destination at a time, so we have to loop this.
                     # Fix for Issue 146, originally suggested by sc2pyro.
                     foreach ($PSSession in $PSSessions)
@@ -881,8 +885,10 @@ Param(
 
                 # Remove excess properties that we don't need in the module output
                 foreach ($i in $Recpt){
-                    $i.PSObject.Properties.Remove("PSShowComputerName")
+                    if(-not ([string]::IsNullOrEmpty($i))){
+		    $i.PSObject.Properties.Remove("PSShowComputerName")
                     $i.PSObject.Properties.Remove("RunspaceId")
+		    }
                 }
             
                 # Log errors from child jobs, including module and host that failed.
@@ -898,7 +904,7 @@ Param(
                     "ERROR: ${GetlessMod}'s output path length exceeds 260 character limit. Can't write the output to disk for $($ChildJob.Location)." | Add-Content -Encoding $Encoding $ErrorLog
                     Continue
                 }
-
+		try{
                 # save the data
                 switch -Wildcard ($OutputFormat) {
                     "*csv" {
@@ -974,6 +980,7 @@ Param(
                         $Recpt | Export-Csv -NoTypeInformation -Encoding $Encoding $Outfile
                     }
                 }
+		}catch{("Caught:{0}" -f $_)}
             }
 
             # Release memory reserved for Job data since we don't need it any more.

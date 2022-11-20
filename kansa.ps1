@@ -847,10 +847,10 @@ Param(
             # is and it is part of the path. Hostnames are 15 characters max, so we assume worst case.
             # Per http://msdn.microsoft.com/en-us/library/aa365247.aspx#maxpath, maximum
             # path length should be 260 characters. 
-			Set-Variable -Name MAXPATH -Value 260 -Option Constant
-			Set-Variable -Name EXTLENGTH -Value 4 -Option Constant
-			Set-Variable -Name SEPARATOR -Value 1 -Option Constant
-			Set-Variable -Name CMPNAMELENGTH -Value 15 -Option Constant
+			Set-Variable -Name MAXPATH -Value 260 
+			Set-Variable -Name EXTLENGTH -Value 4 
+			Set-Variable -Name SEPARATOR -Value 1 
+			Set-Variable -Name CMPNAMELENGTH -Value 15 
 			
 			# Esitmate path length without arguments
 			$EstOutPathLength = $OutputPath.Length + $GetlessMod.Length + $SEPARATOR + $CMPNAMELENGTH + $SEPARATOR + $GetlessMod.Length + $EXTLENGTH

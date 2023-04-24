@@ -51,6 +51,11 @@ function GetTimestampUTC {
     Get-Date (Get-Date).ToUniversalTime() -Format "yyyy-MM-ddTHH:mm:ssZ"
 }
 
+if($((Get-WmiObject Win32_OperatingSystem).Name).Contains(" XP ")){
+Write-Error ("{0}: This script is not supported on Windows XP." -f (GetTimestampUTC))
+exit
+}
+
 function ConvertBase64-ToByte {
 Param(
     [Parameter(Mandatory=$True,Position=0)]
